@@ -87,11 +87,11 @@ export function AnalysisForm({ origem = "home" }: { origem?: string }) {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-[16px] border border-line-strong bg-ink-900/90 shadow-[0_40px_120px_-40px_rgb(0_0_0/0.9)] backdrop-blur">
+    <div className="relative overflow-hidden rounded-[16px] border border-line-strong bg-ink-900/90 backdrop-blur">
       {step < 3 && (
         <div className="flex items-center gap-3 border-b border-line px-6 py-4 md:px-8">
           <span className="font-mono text-xs text-dim">Passo {step} de 2</span>
-          <span className="relative h-1 flex-1 overflow-hidden rounded-full bg-white/10">
+          <span className="relative h-1 flex-1 overflow-hidden rounded-full bg-fg/10">
             <span className="absolute inset-y-0 left-0 rounded-full bg-signal transition-all duration-700 ease-out-expo" style={{ width: step === 1 ? "50%" : "100%" }} />
           </span>
         </div>
@@ -124,7 +124,7 @@ export function AnalysisForm({ origem = "home" }: { origem?: string }) {
                 <label className="mt-3 flex cursor-pointer items-center gap-2.5 text-sm text-muted">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 accent-[#22d3ff]"
+                    className="h-4 w-4 accent-[#1e5be6]"
                     checked={data.semSite}
                     onChange={(e) => {
                       set("semSite", e.target.checked);
@@ -149,7 +149,7 @@ export function AnalysisForm({ origem = "home" }: { origem?: string }) {
                         aria-pressed={on}
                         onClick={() => toggleImprovement(m)}
                         className={`rounded-[8px] border px-3.5 py-2 text-sm transition-all duration-300 ${
-                          on ? "border-signal bg-signal/10 text-signal" : "border-line-strong text-muted hover:border-white/30 hover:text-fg"
+                          on ? "border-signal bg-signal/10 text-signal" : "border-line-strong text-muted hover:border-fg/30 hover:text-fg"
                         }`}
                       >
                         {m}
@@ -176,7 +176,7 @@ export function AnalysisForm({ origem = "home" }: { origem?: string }) {
                     <label
                       key={u}
                       className={`cursor-pointer rounded-xl border px-3.5 py-3 text-sm transition-all duration-300 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-signal ${
-                        data.urgencia === u ? "border-signal bg-signal/10 text-fg" : "border-line-strong text-muted hover:border-white/30"
+                        data.urgencia === u ? "border-signal bg-signal/10 text-fg" : "border-line-strong text-muted hover:border-fg/30"
                       }`}
                     >
                       <input type="radio" name="urgencia" value={u} className="sr-only" checked={data.urgencia === u} onChange={() => set("urgencia", u)} />

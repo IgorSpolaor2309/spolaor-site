@@ -11,7 +11,7 @@ const parts = [
 
 function Dot({ n, className }: { n: number; className: string }) {
   return (
-    <span className={`absolute z-10 grid h-7 w-7 place-items-center rounded-full bg-signal font-mono text-[0.7rem] font-semibold text-ink-950 shadow-[0_0_0_6px_rgb(34_211_255/0.15)] ${className}`}>
+    <span className={`absolute z-10 grid h-7 w-7 place-items-center rounded-full bg-signal font-mono text-[0.7rem] font-semibold text-ink-950 shadow-[0_0_0_6px_rgb(10_114_173/0.15)] ${className}`}>
       {n}
     </span>
   );
@@ -25,8 +25,8 @@ export function ConversionAnatomy() {
           <div className="relative flex items-center justify-between">
             <span className="flex items-center gap-2 text-sm font-semibold"><span className="h-4 w-4 rounded-md bg-signal" />Sua empresa</span>
             <span className="flex items-center gap-4">
-              <span className="hidden h-2 w-12 rounded bg-white/15 sm:block" />
-              <span className="hidden h-2 w-12 rounded bg-white/15 sm:block" />
+              <span className="hidden h-2 w-12 rounded bg-fg/15 sm:block" />
+              <span className="hidden h-2 w-12 rounded bg-fg/15 sm:block" />
               <span className="relative rounded-full bg-signal px-4 py-2 text-xs font-semibold text-ink-950">
                 Pedir orçamento
                 <Dot n={2} className="-right-3 -top-4" />
@@ -37,8 +37,8 @@ export function ConversionAnatomy() {
             <div className="relative md:col-span-3">
               <Dot n={1} className="-left-3 -top-4" />
               <p className="text-2xl font-semibold leading-tight tracking-tight md:text-3xl">O resultado que seu cliente quer, dito sem rodeios.</p>
-              <span className="mt-4 block h-2 w-[85%] rounded bg-white/15" />
-              <span className="mt-2 block h-2 w-[60%] rounded bg-white/15" />
+              <span className="mt-4 block h-2 w-[85%] rounded bg-fg/15" />
+              <span className="mt-2 block h-2 w-[60%] rounded bg-fg/15" />
               <div className="relative mt-6 flex flex-wrap items-center gap-3">
                 <Dot n={3} className="-left-3 -top-4" />
                 <span className="text-sm text-signal">★★★★★</span>
@@ -50,15 +50,15 @@ export function ConversionAnatomy() {
           <div className="relative mt-8 grid grid-cols-3 gap-3">
             <Dot n={4} className="-left-3 -top-4" />
             {["Benefício", "Benefício", "Benefício"].map((b, i) => (
-              <div key={i} className="rounded-xl border border-line bg-white/[0.02] p-3">
-                <span className="block h-2 w-10 rounded bg-white/40" />
-                <span className="mt-2 block h-1.5 w-full rounded bg-white/10" />
-                <span className="mt-1 block h-1.5 w-3/4 rounded bg-white/10" />
+              <div key={i} className="rounded-xl border border-line bg-fg/[0.02] p-3">
+                <span className="block h-2 w-10 rounded bg-fg/40" />
+                <span className="mt-2 block h-1.5 w-full rounded bg-fg/10" />
+                <span className="mt-1 block h-1.5 w-3/4 rounded bg-fg/10" />
               </div>
             ))}
           </div>
           <div className="relative mt-3 grid gap-3 sm:grid-cols-2">
-            <div className="relative rounded-xl border border-line bg-white/[0.02] p-3">
+            <div className="relative rounded-xl border border-line bg-fg/[0.02] p-3">
               <Dot n={5} className="-left-3 -top-4" />
               {["Quanto custa?", "Quanto tempo leva?"].map((q) => (
                 <div key={q} className="flex items-center justify-between border-b border-line py-1.5 text-xs text-muted last:border-0">

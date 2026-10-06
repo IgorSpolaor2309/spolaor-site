@@ -32,7 +32,7 @@ export function MobileCtaBar() {
         visible ? "translate-y-0" : "translate-y-[120%]"
       }`}
     >
-      <div className="flex items-center gap-2 rounded-[14px] border border-line-strong bg-ink-900/95 p-1.5 shadow-2xl shadow-black/60 backdrop-blur">
+      <div className="flex items-center gap-2 rounded-[14px] border border-line-strong bg-ink-900/95 p-1.5 shadow-[0_8px_30px_-12px_rgb(20_37_61/0.25)] backdrop-blur">
         <Link
           href="/analise"
           className="flex h-12 flex-1 items-center justify-center rounded-[10px] bg-royal text-[0.95rem] font-semibold text-white"

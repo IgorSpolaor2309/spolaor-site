@@ -17,8 +17,8 @@ function d(track: typeof spine, off: number) {
 const lines = [
   { path: d(spine, -14), stroke: "#1e5be6", width: 1.4 },
   { path: d(spine, 0), stroke: "#2f8cff", width: 1.4 },
-  { path: d(spine, 14), stroke: "#22d3ff", width: 1 },
-  { path: d(leak, 0), stroke: "#ff8a1f", width: 1.4 },
+  { path: d(spine, 14), stroke: "#0ea5d8", width: 1 },
+  { path: d(leak, 0), stroke: "#f07a12", width: 1.4 },
 ];
 
 export function SLines({ className = "" }: { className?: string }) {

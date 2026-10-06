@@ -5,31 +5,32 @@
   --font-display: var(--font-sora), var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  /* Base escura azulada, derivada do azul-marinho da logo */
-  --color-ink-950: #050913;
-  --color-ink-900: #080e1c;
-  --color-ink-850: #0b1324;
-  --color-ink-800: #0f182d;
-  --color-ink-700: #16223b;
-  --color-ink-600: #213050;
-  --color-fg: #eef3fb;
-  --color-muted: #a5b1c6;
-  --color-dim: #8390a8;
-  --color-line: rgb(150 185 255 / 0.10);
-  --color-line-strong: rgb(150 185 255 / 0.18);
+  /* Base clara: gesso, branco e marinho. Os nomes "ink" são históricos: ink-950 é o fundo
+     da página, ink-900 as superfícies de interface e os demais, tons de apoio. */
+  --color-ink-950: #f5f4f0;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #fafaf7;
+  --color-ink-800: #efeee9;
+  --color-ink-700: #e7e6e1;
+  --color-ink-600: #cfcec8;
+  --color-fg: #14253d;
+  --color-muted: #475569;
+  --color-dim: #5f6b7c;
+  --color-line: #dededa;
+  --color-line-strong: #c8c8c2;
 
-  /* Cores da marca (logo Spolaor Tecnologia) */
+  /* Cores da marca (logo Spolaor Tecnologia), ajustadas para contraste no fundo claro */
   --color-navy: #0b2a6b;
   --color-royal: #1e5be6;
-  --color-sky: #2f8cff;
+  --color-sky: #1d55d6;
   --color-cyan: #22d3ff;
-  /* ember = laranja da marca (alerta, perda, destaque) */
-  --color-ember: #ff8a1f;
-  --color-ember-soft: #ffb15c;
-  /* signal = ciano da marca (resolvido, conectado, foco) */
-  --color-signal: #22d3ff;
-  --color-signal-soft: #8fe8ff;
-  --color-ice: #5aa2ff;
+  /* ember = laranja da marca (alerta, perda, detalhe). Tom escurecido para texto legível. */
+  --color-ember: #b65205;
+  --color-ember-soft: #a84c06;
+  /* signal = azul-ciano escurecido (resolvido, conectado, foco) */
+  --color-signal: #0a72ad;
+  --color-signal-soft: #3d9ad0;
+  --color-ice: #2f6fe0;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
@@ -65,7 +66,7 @@
 
 @layer base {
   html {
-    color-scheme: dark;
+    color-scheme: light;
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -78,9 +79,9 @@
     color: var(--color-fg);
     font-family: var(--font-sans);
   }
-  ::selection { background: var(--color-signal); color: var(--color-ink-950); }
+  ::selection { background: #cfe0ff; color: var(--color-fg); }
   :focus-visible {
-    outline: 2px solid var(--color-signal);
+    outline: 2px solid var(--color-royal);
     outline-offset: 3px;
     border-radius: 6px;
   }
@@ -108,8 +109,8 @@
   /* Fundo técnico: grid fino com máscara radial */
   .bg-grid {
     background-image:
-      linear-gradient(to right, rgb(120 170 255 / 0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(120 170 255 / 0.06) 1px, transparent 1px);
+      linear-gradient(to right, rgb(20 37 61 / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(20 37 61 / 0.05) 1px, transparent 1px);
     background-size: 72px 72px;
   }
   .mask-radial {
@@ -127,7 +128,7 @@
     position: absolute;
     inset: 0 0 auto 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgb(90 170 255 / 0.35), transparent);
+    background: linear-gradient(90deg, transparent, var(--color-line-strong), transparent);
   }
 
 
@@ -145,19 +146,19 @@
     width: 100%;
     border-radius: 14px;
     border: 1px solid var(--color-line-strong);
-    background: rgb(255 255 255 / 0.03);
+    background: #ffffff;
     padding: 14px 16px;
     font-size: 1rem;
     color: var(--color-fg);
     transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
   }
   .field::placeholder { color: var(--color-dim); }
-  .field:hover { border-color: rgb(150 185 255 / 0.3); }
+  .field:hover { border-color: #a9a9a2; }
   .field:focus {
     outline: none;
-    border-color: var(--color-signal);
-    background: rgb(34 211 255 / 0.04);
-    box-shadow: 0 0 0 4px rgb(34 211 255 / 0.12);
+    border-color: var(--color-royal);
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgb(30 91 230 / 0.14);
   }
   .field[aria-invalid="true"] { border-color: var(--color-ember); }
 }

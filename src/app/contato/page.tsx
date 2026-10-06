@@ -28,7 +28,7 @@ export default function ContatoPage() {
           </p>
           <div className="fade-up mt-10 grid gap-3" style={{ animationDelay: "0.24s" }}>
             {whatsappLink() && (
-              <a href={whatsappLink()!} target="_blank" rel="noopener" className="group flex items-center justify-between rounded-2xl border border-line-strong bg-white/[0.02] p-5 transition-colors hover:border-white/30">
+              <a href={whatsappLink()!} target="_blank" rel="noopener" className="group flex items-center justify-between rounded-2xl border border-line-strong bg-fg/[0.02] p-5 transition-colors hover:border-fg/30">
               <span>
                 <span className="block text-sm text-dim">Prefere conversar agora?</span>
                 <span className="mt-1 block text-lg font-medium">WhatsApp</span>
@@ -37,7 +37,7 @@ export default function ContatoPage() {
             </a>
             )}
             {site.email && (
-              <a href={mailtoLink("Projeto com a Spolaor Tecnologia")!} className="group flex items-center justify-between rounded-2xl border border-line-strong bg-white/[0.02] p-5 transition-colors hover:border-white/30">
+              <a href={mailtoLink("Projeto com a Spolaor Tecnologia")!} className="group flex items-center justify-between rounded-2xl border border-line-strong bg-fg/[0.02] p-5 transition-colors hover:border-fg/30">
               <span>
                 <span className="block text-sm text-dim">E-mail</span>
                 <span className="mt-1 block text-lg font-medium">{site.email}</span>

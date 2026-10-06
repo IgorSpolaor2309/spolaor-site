@@ -13,23 +13,23 @@ const rows = [
 export function HiringVsAutomation() {
   return (
     <Reveal>
-      <table className="w-full border-collapse text-left">
+      <table className="w-full table-fixed border-collapse text-left">
         <caption className="sr-only">Contratar alguém para tarefas repetitivas ou automatizar essas tarefas</caption>
         <thead>
           <tr className="border-b border-line-strong">
-            <th scope="col" className="w-[18%] py-4 pr-4 align-bottom font-mono text-[0.68rem] font-normal uppercase tracking-[0.14em] text-dim">
+            <th scope="col" className="w-[24%] py-4 pr-3 align-bottom font-mono sm:w-[18%] sm:pr-4 text-[0.68rem] font-normal uppercase tracking-[0.1em] text-dim [overflow-wrap:anywhere]">
               Para tarefas repetitivas
             </th>
-            <th scope="col" className="py-4 pr-6 align-bottom text-sm font-semibold text-ember-soft md:text-base">Contratar mais uma pessoa</th>
+            <th scope="col" className="py-4 pr-3 align-bottom sm:pr-6 text-sm font-semibold text-ember-soft md:text-base">Contratar mais uma pessoa</th>
             <th scope="col" className="py-4 align-bottom text-sm font-semibold text-signal md:text-base">Automatizar</th>
           </tr>
         </thead>
         <tbody>
           {rows.map(([k, a, b]) => (
             <tr key={k} className="border-b border-line align-top">
-              <th scope="row" className="py-4 pr-4 text-[0.82rem] font-normal text-dim md:text-sm">{k}</th>
-              <td className="py-4 pr-6 text-[0.9rem] text-muted md:text-base">{a}</td>
-              <td className="py-4 text-[0.9rem] text-fg md:text-base">{b}</td>
+              <th scope="row" className="py-4 pr-3 text-[0.8rem] sm:pr-4 font-normal text-dim md:text-sm">{k}</th>
+              <td className="py-4 pr-3 text-[0.86rem] sm:pr-6 text-muted md:text-base">{a}</td>
+              <td className="py-4 text-[0.86rem] text-fg md:text-base">{b}</td>
             </tr>
           ))}
         </tbody>

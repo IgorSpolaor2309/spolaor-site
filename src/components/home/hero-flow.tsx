@@ -71,18 +71,18 @@ export function HeroFlow({ className = "" }: { className?: string }) {
       const b = bg.getContext("2d")!;
       b.setTransform(dpr, 0, 0, dpr, 0, 0);
       const g0 = b.createLinearGradient(w, 0, 0, h);
-      g0.addColorStop(0, "rgba(11,42,107,0.95)");
-      g0.addColorStop(1, "rgba(30,91,230,0.7)");
+      g0.addColorStop(0, "rgba(11,42,107,1)");
+      g0.addColorStop(1, "rgba(30,91,230,0.9)");
       const g1 = b.createLinearGradient(0, 0, w, h);
-      g1.addColorStop(0, "rgba(30,91,230,0.85)");
-      g1.addColorStop(0.6, "rgba(47,140,255,0.8)");
-      g1.addColorStop(1, "rgba(34,211,255,0.85)");
+      g1.addColorStop(0, "rgba(30,91,230,1)");
+      g1.addColorStop(0.6, "rgba(30,120,235,1)");
+      g1.addColorStop(1, "rgba(14,160,216,1)");
       const g2 = b.createLinearGradient(0, h * 0.4, w * 0.4, h);
-      g2.addColorStop(0, "rgba(255,138,31,0.95)");
-      g2.addColorStop(1, "rgba(255,177,92,0.75)");
+      g2.addColorStop(0, "rgba(240,122,18,1)");
+      g2.addColorStop(1, "rgba(250,160,70,0.95)");
       ribbon(b, spine, -gap, gap * 0.9, g0);
       ribbon(b, spine, 0, gap * 0.95, g1);
-      ribbon(b, spine, gap, gap * 0.55, "rgba(47,140,255,0.55)");
+      ribbon(b, spine, gap, gap * 0.55, "rgba(30,110,225,0.5)");
       ribbon(b, leak, 0, gap * 0.75, g2);
       draw();
     };
@@ -134,7 +134,8 @@ export function HeroFlow({ className = "" }: { className?: string }) {
         const leaking = d.leak && d.t >= BRANCH_T;
         const fade = leaking ? 1 - d.s : d.t < 0 ? Math.max(0, 1 + d.t / 0.22) : 1;
         ctx!.globalAlpha = Math.max(0, Math.min(1, fade));
-        ctx!.fillStyle = leaking ? "#ffd2a6" : d.t > 0.85 ? "#c9f4ff" : "#ffffff";
+        // fora das fitas (chegando) o ponto é marinho; sobre as fitas, branco
+        ctx!.fillStyle = d.t < 0 ? "#14253d" : "#ffffff";
         ctx!.beginPath();
         ctx!.arc(p[0], p[1], leaking ? 1.8 : 2.1, 0, Math.PI * 2);
         ctx!.fill();
@@ -234,13 +235,14 @@ export function HeroFlow({ className = "" }: { className?: string }) {
         <span className="absolute bottom-[-1%] left-[10%] text-signal">→ CRM · em atendimento</span>
       </div>
 
-      <p className="absolute right-[2%] top-[34%] hidden w-[11.5rem] border-l border-line-strong pl-4 xl:block" aria-live="off">
-        <span className="block font-mono text-[0.68rem] uppercase tracking-[0.14em] text-dim">De cada 100 contatos</span>
-        <span className="mt-1 block font-[family-name:var(--font-display)] text-[2.4rem] font-semibold leading-none tracking-[-0.04em] text-fg tabular-nums">
+      <p className="absolute right-0 top-[calc(100%+14px)] hidden items-baseline gap-3 lg:flex" aria-live="off">
+        <span className="font-[family-name:var(--font-display)] text-[2rem] font-semibold leading-none tracking-[-0.04em] text-fg tabular-nums">
           {rate}
         </span>
-        <span className="mt-1.5 block text-sm leading-snug text-muted">viram conversa com a sua equipe.</span>
-        <span className="mt-2 block font-mono text-[0.62rem] text-dim">{live ? "simulação · role a página" : "simulação"}</span>
+        <span className="text-sm leading-snug text-muted">
+          de cada 100 contatos viram conversa
+          <span className="ml-2 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-dim">{live ? "simulação · role a página" : "simulação"}</span>
+        </span>
       </p>
     </div>
   );

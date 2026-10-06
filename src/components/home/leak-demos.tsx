@@ -58,7 +58,7 @@ function Meter({ value, on, label }: { value: number; on: boolean; label: string
   return (
     <div className="flex items-center gap-3">
       <span className="text-[0.75rem] text-dim">{label}</span>
-      <div className="h-1.5 w-24 overflow-hidden rounded-full bg-white/10 sm:w-32">
+      <div className="h-1.5 w-24 overflow-hidden rounded-full bg-fg/10 sm:w-32">
         <div
           className={`h-full rounded-full transition-all duration-1000 ease-out-expo ${on ? "bg-signal" : "bg-ember"}`}
           style={{ width: `${value}%` }}
@@ -79,33 +79,33 @@ export function PresenceDemo() {
       </div>
       <div className="relative overflow-hidden rounded-[12px] border border-line bg-ink-850">
         <div className="flex items-center gap-1.5 border-b border-line px-3 py-2">
-          <span className="h-2 w-2 rounded-full bg-white/15" />
-          <span className="h-2 w-2 rounded-full bg-white/15" />
-          <span className="h-2 w-2 rounded-full bg-white/15" />
-          <span className="ml-3 h-4 flex-1 rounded bg-white/[0.05] px-2 font-mono text-[0.6rem] leading-4 text-dim">suaempresa.com.br</span>
+          <span className="h-2 w-2 rounded-full bg-fg/15" />
+          <span className="h-2 w-2 rounded-full bg-fg/15" />
+          <span className="h-2 w-2 rounded-full bg-fg/15" />
+          <span className="ml-3 h-4 flex-1 rounded bg-fg/[0.05] px-2 font-mono text-[0.6rem] leading-4 text-dim">suaempresa.com.br</span>
         </div>
         <div className="relative h-[230px] sm:h-[250px]" aria-hidden>
           {/* Hoje */}
           <div className={`absolute inset-0 p-4 transition-all duration-700 ease-out-expo ${on ? "scale-[0.97] opacity-0 blur-sm" : "opacity-100"}`}>
             <div className="flex items-center justify-between">
-              <span className="font-serif text-sm tracking-widest text-white/50">EMPRESA LTDA</span>
+              <span className="font-serif text-sm tracking-widest text-fg/50">EMPRESA LTDA</span>
               <span className="flex gap-1.5">
                 {Array.from({ length: 7 }).map((_, i) => (
-                  <span key={i} className="h-1.5 w-5 rounded bg-white/15" />
+                  <span key={i} className="h-1.5 w-5 rounded bg-fg/15" />
                 ))}
               </span>
             </div>
-            <div className="mt-3 grid h-[84px] place-items-center rounded bg-gradient-to-r from-white/[0.06] to-white/[0.1]">
-              <span className="font-serif text-[0.8rem] italic text-white/40">Bem-vindo ao nosso site!</span>
+            <div className="mt-3 grid h-[84px] place-items-center rounded bg-gradient-to-r from-fg/[0.06] to-fg/[0.1]">
+              <span className="font-serif text-[0.8rem] italic text-fg/40">Bem-vindo ao nosso site!</span>
             </div>
             <div className="mt-3 space-y-1.5">
               {[100, 96, 99, 92, 97, 60].map((w, i) => (
-                <span key={i} className="block h-1.5 rounded bg-white/10" style={{ width: `${w}%` }} />
+                <span key={i} className="block h-1.5 rounded bg-fg/10" style={{ width: `${w}%` }} />
               ))}
             </div>
             <div className="mt-3 flex items-center justify-between">
-              <span className="text-[0.6rem] text-white/30 underline">clique aqui para saber mais</span>
-              <span className="rounded bg-white/10 px-2 py-1 text-[0.55rem] text-white/40">Fale conosco</span>
+              <span className="text-[0.6rem] text-fg/30 underline">clique aqui para saber mais</span>
+              <span className="rounded bg-fg/10 px-2 py-1 text-[0.55rem] text-fg/40">Fale conosco</span>
             </div>
           </div>
           {/* Com a Spolaor */}
@@ -115,8 +115,8 @@ export function PresenceDemo() {
                 <span className="h-3 w-3 rounded-[4px] bg-signal" /> Empresa
               </span>
               <span className="flex items-center gap-3">
-                <span className="h-1.5 w-7 rounded bg-white/20" />
-                <span className="h-1.5 w-7 rounded bg-white/20" />
+                <span className="h-1.5 w-7 rounded bg-fg/20" />
+                <span className="h-1.5 w-7 rounded bg-fg/20" />
                 <span className="rounded-full bg-signal px-2.5 py-1 text-[0.55rem] font-semibold text-ink-950">Pedir orçamento</span>
               </span>
             </div>
@@ -125,8 +125,8 @@ export function PresenceDemo() {
                 <p className="text-[0.95rem] font-semibold leading-tight tracking-tight sm:text-[1.05rem]">
                   O resultado que seu cliente procura, explicado em uma frase.
                 </p>
-                <span className="mt-2 block h-1.5 w-[90%] rounded bg-white/15" />
-                <span className="mt-1.5 block h-1.5 w-[70%] rounded bg-white/15" />
+                <span className="mt-2 block h-1.5 w-[90%] rounded bg-fg/15" />
+                <span className="mt-1.5 block h-1.5 w-[70%] rounded bg-fg/15" />
                 <div className="mt-3 flex items-center gap-2">
                   <span className="rounded-full bg-signal px-3 py-1.5 text-[0.6rem] font-semibold text-ink-950">Quero uma proposta</span>
                   <span className="text-[0.6rem] text-muted">★★★★★ 4,9 · 300+ avaliações</span>
@@ -136,7 +136,7 @@ export function PresenceDemo() {
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2">
               {["Garantia", "Entrega em 48h", "Atendimento direto"].map((t) => (
-                <span key={t} className="rounded-lg border border-line bg-white/[0.03] px-2 py-1.5 text-center text-[0.55rem] text-muted">
+                <span key={t} className="rounded-lg border border-line bg-fg/[0.03] px-2 py-1.5 text-center text-[0.55rem] text-muted">
                   {t}
                 </span>
               ))}
@@ -195,7 +195,7 @@ export function ManualTasksDemo() {
             <li key={t.name} className="flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0">
               <span
                 className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border transition-all duration-500 ${
-                  on ? "border-signal bg-signal text-ink-950" : "border-white/20"
+                  on ? "border-signal bg-signal text-ink-950" : "border-fg/20"
                 }`}
                 style={{ transitionDelay: on ? `${i * 90}ms` : "0ms" }}
                 aria-hidden
@@ -205,7 +205,7 @@ export function ManualTasksDemo() {
                 </svg>
               </span>
               <span className={`flex-1 text-[0.86rem] transition-colors duration-500 ${on ? "text-muted" : "text-fg/90"}`}>{t.name}</span>
-              <span className="hidden h-1 w-16 overflow-hidden rounded-full bg-white/10 sm:block" aria-hidden>
+              <span className="hidden h-1 w-16 overflow-hidden rounded-full bg-fg/10 sm:block" aria-hidden>
                 <span
                   className={`block h-full rounded-full transition-all duration-1000 ease-out-expo ${on ? "bg-signal" : "bg-ember"}`}
                   style={{ width: `${(hours / 22) * 100}%`, transitionDelay: on ? `${i * 90}ms` : "0ms" }}

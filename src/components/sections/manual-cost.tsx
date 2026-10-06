@@ -23,8 +23,8 @@ function Slider({ label, value, min, max, step, onChange, format }: { label: str
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-3 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-[#22d3ff] [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-signal [&::-webkit-slider-thumb]:shadow-[0_0_0_6px_rgb(34_211_255/0.15)]"
-        style={{ background: `linear-gradient(to right, #22d3ff ${pct}%, rgb(255 255 255 / 0.1) ${pct}%)` }}
+        className="mt-3 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-fg/10 accent-[#1e5be6] [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-signal [&::-webkit-slider-thumb]:shadow-[0_0_0_6px_rgb(10_114_173/0.15)]"
+        style={{ background: `linear-gradient(to right, #1e5be6 ${pct}%, rgb(20 37 61 / 0.1) ${pct}%)` }}
       />
     </div>
   );

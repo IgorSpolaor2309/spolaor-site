@@ -60,24 +60,24 @@ function SiteA({ active }: { active: Zone }) {
       <Chrome url="empresa-a.com.br" />
       <div className="p-4">
         <div className={`${z("hero")} p-1`}>
-          <div className="text-center font-serif text-[0.85rem] tracking-[0.3em] text-white/50">EMPRESA A</div>
-          <div className="mt-1 text-center text-[0.55rem] italic text-white/30">Qualidade e compromisso desde 1998</div>
-          <div className="mt-2 h-14 rounded bg-gradient-to-r from-white/[0.05] to-white/[0.09]" />
+          <div className="text-center font-serif text-[0.85rem] tracking-[0.3em] text-fg/50">EMPRESA A</div>
+          <div className="mt-1 text-center text-[0.55rem] italic text-fg/30">Qualidade e compromisso desde 1998</div>
+          <div className="mt-2 h-14 rounded bg-gradient-to-r from-fg/[0.05] to-fg/[0.09]" />
         </div>
         <div className={`${z("offer")} mt-3 space-y-1 p-1`}>
           {[100, 97, 99, 94, 98].map((w, i) => (
-            <span key={i} className="block h-1 rounded bg-white/10" style={{ width: `${w}%` }} />
+            <span key={i} className="block h-1 rounded bg-fg/10" style={{ width: `${w}%` }} />
           ))}
         </div>
         <div className={`${z("proof")} mt-3 grid h-7 place-items-center p-1`}>
-          <span className="text-[0.5rem] text-white/20">—</span>
+          <span className="text-[0.5rem] text-fg/20">—</span>
         </div>
         <div className="mt-2 flex items-end justify-between">
-          <div className={`${z("mobile")} flex h-12 w-7 items-start justify-center rounded-md border border-white/15 p-0.5`}>
-            <span className="h-1 w-full rounded-sm bg-white/15" />
+          <div className={`${z("mobile")} flex h-12 w-7 items-start justify-center rounded-md border border-fg/15 p-0.5`}>
+            <span className="h-1 w-full rounded-sm bg-fg/15" />
           </div>
           <div className={`${z("speed")} px-1.5 py-0.5 font-mono text-[0.55rem] text-ember`}>7,8s</div>
-          <span className={`${z("cta")} px-1.5 py-0.5 text-[0.5rem] text-white/30 underline`}>Fale conosco</span>
+          <span className={`${z("cta")} px-1.5 py-0.5 text-[0.5rem] text-fg/30 underline`}>Fale conosco</span>
         </div>
       </div>
     </div>
@@ -87,7 +87,7 @@ function SiteA({ active }: { active: Zone }) {
 function SiteB({ active }: { active: Zone }) {
   const z = (k: Zone) => `rounded-lg transition-all duration-500 ${zoneClass(active, k, true)}`;
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-line-strong bg-ink-850 shadow-[0_30px_80px_-30px_rgb(34_211_255/0.25)]" aria-hidden>
+    <div className="relative overflow-hidden rounded-2xl border border-line-strong bg-ink-850" aria-hidden>
       <Chrome url="empresa-b.com.br" />
       <div className="p-4">
         <div className={`${z("hero")} p-1.5`}>
@@ -96,11 +96,11 @@ function SiteB({ active }: { active: Zone }) {
             Empresa B
           </div>
           <p className="mt-1.5 text-[0.8rem] font-semibold leading-tight tracking-tight">Resolva X em 48h, com garantia.</p>
-          <span className="mt-1 block h-1 w-[80%] rounded bg-white/15" />
+          <span className="mt-1 block h-1 w-[80%] rounded bg-fg/15" />
         </div>
         <div className={`${z("offer")} mt-2 grid grid-cols-3 gap-1.5 p-1`}>
           {["Rápido", "Garantido", "Sem custo extra"].map((t) => (
-            <span key={t} className="rounded border border-line bg-white/[0.04] px-1 py-1 text-center text-[0.45rem] text-muted">
+            <span key={t} className="rounded border border-line bg-fg/[0.04] px-1 py-1 text-center text-[0.45rem] text-muted">
               {t}
             </span>
           ))}
@@ -110,9 +110,9 @@ function SiteB({ active }: { active: Zone }) {
           <span className="text-[0.5rem] text-muted">4,9 · 312 avaliações</span>
         </div>
         <div className="mt-2 flex items-end justify-between">
-          <div className={`${z("mobile")} flex h-12 w-7 flex-col gap-0.5 rounded-md border border-white/25 p-0.5`}>
-            <span className="h-1 w-full rounded-sm bg-white/40" />
-            <span className="h-0.5 w-3/4 rounded-sm bg-white/20" />
+          <div className={`${z("mobile")} flex h-12 w-7 flex-col gap-0.5 rounded-md border border-fg/25 p-0.5`}>
+            <span className="h-1 w-full rounded-sm bg-fg/40" />
+            <span className="h-0.5 w-3/4 rounded-sm bg-fg/20" />
             <span className="mt-auto h-1.5 w-full rounded-sm bg-signal" />
           </div>
           <div className={`${z("speed")} px-1.5 py-0.5 font-mono text-[0.55rem] text-signal`}>1,1s</div>
@@ -126,9 +126,9 @@ function SiteB({ active }: { active: Zone }) {
 function Chrome({ url }: { url: string }) {
   return (
     <div className="flex items-center gap-1 border-b border-line px-3 py-1.5">
-      <span className="h-1.5 w-1.5 rounded-full bg-white/15" />
-      <span className="h-1.5 w-1.5 rounded-full bg-white/15" />
-      <span className="h-1.5 w-1.5 rounded-full bg-white/15" />
+      <span className="h-1.5 w-1.5 rounded-full bg-fg/15" />
+      <span className="h-1.5 w-1.5 rounded-full bg-fg/15" />
+      <span className="h-1.5 w-1.5 rounded-full bg-fg/15" />
       <span className="ml-2 font-mono text-[0.55rem] text-dim">{url}</span>
     </div>
   );
@@ -186,7 +186,7 @@ export function SameProduct({ index = "02", label = "Sites", showLink = true }: 
             </div>
             <div className="mt-4 hidden items-center gap-1.5 lg:flex" aria-hidden>
               {criteria.map((c, i) => (
-                <span key={c.zone} className={`h-1 flex-1 rounded-full transition-colors duration-500 ${i <= active ? "bg-fg/70" : "bg-white/10"}`} />
+                <span key={c.zone} className={`h-1 flex-1 rounded-full transition-colors duration-500 ${i <= active ? "bg-fg/70" : "bg-fg/10"}`} />
               ))}
             </div>
           </div>
@@ -204,8 +204,8 @@ export function SameProduct({ index = "02", label = "Sites", showLink = true }: 
                 }`}
               >
                 <span className="font-mono text-xs text-dim">0{i + 1} / 0{criteria.length}</span>
-                <h3 className={`mt-3 text-h3 font-medium transition-opacity duration-500 ${active === i ? "opacity-100" : "opacity-40"}`}>{c.title}</h3>
-                <div className={`mt-6 grid gap-4 transition-opacity duration-500 ${active === i ? "opacity-100" : "opacity-30"}`}>
+                <h3 className={`mt-3 text-h3 font-medium transition-opacity duration-500 ${active === i ? "opacity-100" : "opacity-55"}`}>{c.title}</h3>
+                <div className={`mt-6 grid gap-4 transition-opacity duration-500 ${active === i ? "opacity-100" : "opacity-45"}`}>
                   <p className="flex gap-3 text-[0.98rem] leading-relaxed text-muted">
                     <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ember" aria-hidden />
                     <span>

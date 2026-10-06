@@ -98,7 +98,7 @@ export function ContactForm() {
                 type="button"
                 aria-pressed={on}
                 onClick={() => set("servicos", on ? data.servicos!.filter((x) => x !== m) : [...(data.servicos ?? []), m])}
-                className={`rounded-[8px] border px-3.5 py-2 text-sm transition-all duration-300 ${on ? "border-signal bg-signal/10 text-signal" : "border-line-strong text-muted hover:border-white/30 hover:text-fg"}`}
+                className={`rounded-[8px] border px-3.5 py-2 text-sm transition-all duration-300 ${on ? "border-signal bg-signal/10 text-signal" : "border-line-strong text-muted hover:border-fg/30 hover:text-fg"}`}
               >
                 {m}
               </button>
@@ -153,7 +153,7 @@ export function ContactForm() {
         </p>
         <div role="radiogroup" aria-labelledby="urg-c" className="grid grid-cols-2 gap-2 md:grid-cols-4">
           {urgencies.map((u) => (
-            <label key={u} className={`cursor-pointer rounded-xl border px-3.5 py-3 text-sm transition-all duration-300 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-signal ${data.urgencia === u ? "border-signal bg-signal/10 text-fg" : "border-line-strong text-muted hover:border-white/30"}`}>
+            <label key={u} className={`cursor-pointer rounded-xl border px-3.5 py-3 text-sm transition-all duration-300 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-signal ${data.urgencia === u ? "border-signal bg-signal/10 text-fg" : "border-line-strong text-muted hover:border-fg/30"}`}>
               <input type="radio" name="urgencia-c" className="sr-only" checked={data.urgencia === u} onChange={() => set("urgencia", u)} />
               {u}
             </label>

@@ -4,18 +4,18 @@ import type { ComponentProps, ReactNode } from "react";
 type Variant = "primary" | "secondary" | "ghost";
 
 const base =
-  "group relative inline-flex items-center justify-center gap-2.5 rounded-[10px] font-semibold tracking-[-0.01em] transition-[transform,background-color,border-color,color,box-shadow] duration-300 ease-out-expo active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 whitespace-nowrap";
+  "group relative inline-flex items-center justify-center gap-2.5 rounded-[10px] font-semibold tracking-[-0.01em] transition-[transform,background-color,border-color,color,box-shadow] duration-300 ease-out-expo active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 max-w-full whitespace-normal text-center sm:whitespace-nowrap";
 
 const sizes = {
-  md: "h-11 px-5 text-[0.95rem]",
-  lg: "h-14 px-7 text-[1.02rem]",
+  md: "min-h-11 px-5 py-2 text-[0.95rem]",
+  lg: "min-h-14 px-7 py-3 text-[1.02rem]",
 };
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-royal text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_1px_0_rgb(0_0_0/0.4)] hover:bg-[#2a6cf0]",
+    "bg-royal text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_1px_2px_rgb(20_37_61/0.18)] hover:bg-[#1a4fcc]",
   secondary:
-    "border border-line-strong text-fg hover:border-[rgb(150_185_255/0.4)] hover:bg-white/[0.03]",
+    "border border-line-strong text-fg hover:border-fg/40 hover:bg-fg/[0.03]",
   ghost: "text-fg/80 hover:text-fg",
 };
 

@@ -83,7 +83,7 @@ export function SiteHeader() {
               aria-expanded={open}
               aria-controls="menu-mobile"
               aria-label={open ? "Fechar menu" : "Abrir menu"}
-              className="relative z-10 grid h-11 w-11 place-items-center rounded-full border border-line-strong bg-white/[0.03] lg:hidden"
+              className="relative z-10 grid h-11 w-11 place-items-center rounded-full border border-line-strong bg-fg/[0.03] lg:hidden"
             >
               <span className="relative block h-3 w-5">
                 <span className={`absolute left-0 h-[1.5px] w-5 bg-fg transition-all duration-300 ${open ? "top-[5px] rotate-45" : "top-0"}`} />

@@ -117,14 +117,14 @@ export function AutomationFlow({ initial = "comercial" }: { initial?: keyof type
   const stage = flow.record.stageAt.filter((a) => a <= step).length - 1;
 
   return (
-    <div ref={ref} className="overflow-hidden rounded-[14px] border border-line-strong bg-ink-900">
+    <div ref={ref} className="overflow-hidden rounded-[14px] border border-line bg-ink-900 shadow-[0_1px_2px_rgb(20_37_61/0.06),0_24px_60px_-30px_rgb(20_37_61/0.3)]">
       {/* barra da janela */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-ink-950/60 px-4 py-2.5 md:px-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-ink-850 px-4 py-2.5 md:px-5">
         <p className="flex items-center gap-3 font-mono text-[0.7rem] text-dim">
-          <span className={`h-1.5 w-1.5 rounded-full ${step >= 0 ? "bg-signal" : "bg-white/25"}`} aria-hidden />
+          <span className={`h-1.5 w-1.5 rounded-full ${step >= 0 ? "bg-signal" : "bg-fg/25"}`} aria-hidden />
           automação · {flow.label.toLowerCase()} · {Math.max(0, step + 1)}/{total} etapas
         </p>
-        <div role="tablist" aria-label="Exemplos de fluxo" className="inline-flex rounded-[8px] border border-line bg-ink-950 p-0.5">
+        <div role="tablist" aria-label="Exemplos de fluxo" className="inline-flex rounded-[8px] border border-line bg-ink-800 p-0.5">
           {Object.entries(flows).map(([key, f]) => (
             <button
               key={key}
@@ -132,7 +132,7 @@ export function AutomationFlow({ initial = "comercial" }: { initial?: keyof type
               type="button"
               aria-selected={flowKey === key}
               onClick={() => setFlowKey(key)}
-              className={`rounded-[6px] px-3 py-1 text-[0.8rem] transition-colors ${flowKey === key ? "bg-white/10 text-fg" : "text-muted hover:text-fg"}`}
+              className={`rounded-[6px] px-3 py-1 text-[0.8rem] transition-colors ${flowKey === key ? "bg-ink-900 text-fg shadow-sm" : "text-muted hover:text-fg"}`}
             >
               {f.label}
             </button>
@@ -164,12 +164,12 @@ export function AutomationFlow({ initial = "comercial" }: { initial?: keyof type
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.35 }}
                     className={`max-w-[85%] rounded-[12px] px-3.5 py-2.5 text-[0.84rem] leading-snug ${
-                      m.from === "them" ? "self-start rounded-bl-[4px] bg-ink-700 text-fg/90" : "self-end rounded-br-[4px] bg-[#123a7a] text-fg"
+                      m.from === "them" ? "self-start rounded-bl-[4px] bg-ink-700 text-fg/90" : "self-end rounded-br-[4px] bg-[#dce7ff] text-fg"
                     }`}
                   >
                     {m.text}
-                    <span className="mt-1 flex justify-end gap-2 font-mono text-[0.6rem] text-fg/45">
-                      {m.from === "auto" && <span className="text-signal/80">automático</span>}
+                    <span className="mt-1 flex justify-end gap-2 font-mono text-[0.6rem] text-fg/65">
+                      {m.from === "auto" && <span className="text-signal">automático</span>}
                       {m.time}
                     </span>
                   </motion.li>
@@ -188,7 +188,7 @@ export function AutomationFlow({ initial = "comercial" }: { initial?: keyof type
           <ol className="mt-4 grid grid-cols-3 gap-1" aria-label="Etapa">
             {flow.record.stages.map((s, i) => (
               <li key={s}>
-                <span className={`block h-[3px] rounded-full transition-colors duration-500 ${i <= stage ? "bg-signal" : "bg-white/10"}`} />
+                <span className={`block h-[3px] rounded-full transition-colors duration-500 ${i <= stage ? "bg-signal" : "bg-fg/10"}`} />
                 <span className={`mt-1.5 block text-[0.68rem] transition-colors duration-500 ${i === stage ? "text-fg" : "text-dim"}`}>{s}</span>
               </li>
             ))}

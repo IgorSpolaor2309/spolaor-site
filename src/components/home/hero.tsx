@@ -11,9 +11,9 @@ export function Hero() {
       <div className="container-x relative">
         <div className="relative grid min-h-[min(880px,calc(100svh-72px))] grid-cols-1 lg:grid-cols-12">
           {/* Assinatura: o fluxo de contatos desenhado com as fitas do símbolo */}
-          <HeroFlow className="h-[340px] sm:h-[440px] lg:absolute lg:inset-y-[7%] lg:right-[-1%] lg:h-auto lg:w-[47%]" />
+          <HeroFlow className="order-last -mx-2 h-[230px] sm:h-[320px] lg:absolute lg:inset-y-[12%] lg:right-0 lg:order-none lg:mx-0 lg:h-auto lg:w-[40%]" />
 
-          <div className="relative z-10 flex flex-col justify-center pb-16 pt-6 lg:col-span-7 lg:py-20 xl:col-span-6">
+          <div className="relative z-10 flex flex-col justify-center pb-6 pt-10 lg:col-span-7 lg:py-20">
             <h1 id="hero-title" className="max-w-[13ch] text-[clamp(2.3rem,1rem+3.4vw,4.25rem)] font-semibold leading-[1.03] tracking-[-0.045em] lg:max-w-none">
               <span className="sr-only">Quantos clientes sua empresa perde antes mesmo de falar com eles?</span>
               <span aria-hidden>
@@ -28,7 +28,7 @@ export function Hero() {
                 <br className="hidden lg:block" />
                 {lineB.map((w, i) => (
                   <span key={w} className="inline-block overflow-hidden pb-[0.1em] align-bottom">
-                    <span className="rise text-sky" style={{ animationDelay: `${0.38 + i * 0.04}s` }}>
+                    <span className="rise text-fg" style={{ animationDelay: `${0.38 + i * 0.04}s` }}>
                       {w}
                     </span>
                     &nbsp;

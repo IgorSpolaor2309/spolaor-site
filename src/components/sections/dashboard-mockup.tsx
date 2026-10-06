@@ -23,12 +23,12 @@ const feed = [
 
 export function DashboardMockup() {
   return (
-    <div className="overflow-hidden rounded-[14px] border border-line-strong bg-ink-900 text-left shadow-[0_60px_120px_-40px_rgb(0_0_0/0.9)]" aria-hidden>
+    <div className="overflow-hidden rounded-[14px] border border-line-strong bg-ink-900 text-left shadow-[0_1px_2px_rgb(20_37_61/0.06),0_40px_90px_-40px_rgb(20_37_61/0.35)]" aria-hidden>
       <div className="flex items-center gap-1.5 border-b border-line bg-ink-950/60 px-4 py-2.5">
-        <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-        <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-        <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
-        <span className="mx-auto rounded-md bg-white/[0.05] px-10 py-1 font-mono text-[0.62rem] text-dim">app.plataforma.com.br</span>
+        <span className="h-2.5 w-2.5 rounded-full bg-fg/15" />
+        <span className="h-2.5 w-2.5 rounded-full bg-fg/15" />
+        <span className="h-2.5 w-2.5 rounded-full bg-fg/15" />
+        <span className="mx-auto rounded-md bg-fg/[0.05] px-10 py-1 font-mono text-[0.62rem] text-dim">app.plataforma.com.br</span>
       </div>
       <div className="grid grid-cols-12">
         <aside className="col-span-3 hidden border-r border-line p-4 md:block lg:col-span-2">
@@ -37,7 +37,7 @@ export function DashboardMockup() {
           </div>
           <ul className="space-y-1">
             {modules.map((m, i) => (
-              <li key={m} className={`rounded-lg px-2.5 py-1.5 text-[0.7rem] ${i === 0 ? "bg-white/[0.07] text-fg" : "text-muted"}`}>
+              <li key={m} className={`rounded-lg px-2.5 py-1.5 text-[0.7rem] ${i === 0 ? "bg-fg/[0.07] text-fg" : "text-muted"}`}>
                 {m}
               </li>
             ))}
@@ -57,7 +57,7 @@ export function DashboardMockup() {
 
           <div className="mt-4 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
             {kpis.map((k) => (
-              <div key={k.label} className="rounded-xl border border-line bg-white/[0.02] p-3">
+              <div key={k.label} className="rounded-xl border border-line bg-fg/[0.02] p-3">
                 <p className="text-[0.62rem] text-dim">{k.label}</p>
                 <p className="mt-1.5 text-[0.95rem] font-medium tracking-tight md:text-base">{k.value}</p>
                 <p className="mt-0.5 font-mono text-[0.6rem] text-signal">{k.delta}</p>
@@ -66,7 +66,7 @@ export function DashboardMockup() {
           </div>
 
           <div className="mt-2.5 grid gap-2.5 lg:grid-cols-5">
-            <div className="rounded-xl border border-line bg-white/[0.02] p-3 lg:col-span-3">
+            <div className="rounded-xl border border-line bg-fg/[0.02] p-3 lg:col-span-3">
               <div className="flex items-center justify-between">
                 <p className="text-[0.68rem] text-muted">Receita x inadimplência</p>
                 <span className="flex gap-3 text-[0.58rem] text-dim">
@@ -77,24 +77,24 @@ export function DashboardMockup() {
               <svg viewBox="0 0 300 110" className="mt-2 h-28 w-full" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="area" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0" stopColor="rgb(34 211 255 / 0.35)" />
-                    <stop offset="1" stopColor="rgb(34 211 255 / 0)" />
+                    <stop offset="0" stopColor="rgb(14 160 216 / 0.22)" />
+                    <stop offset="1" stopColor="rgb(14 160 216 / 0)" />
                   </linearGradient>
                 </defs>
                 {[25, 55, 85].map((y) => (
-                  <line key={y} x1="0" x2="300" y1={y} y2={y} stroke="rgb(255 255 255 / 0.06)" />
+                  <line key={y} x1="0" x2="300" y1={y} y2={y} stroke="rgb(20 37 61 / 0.06)" />
                 ))}
                 <path d="M0 80 C 30 76, 50 70, 75 64 S 120 58, 150 50 S 200 40, 225 32 S 270 20, 300 14 L300 110 L0 110Z" fill="url(#area)" />
-                <path d="M0 80 C 30 76, 50 70, 75 64 S 120 58, 150 50 S 200 40, 225 32 S 270 20, 300 14" fill="none" stroke="#22d3ff" strokeWidth="1.8" />
-                <path d="M0 96 C 40 94, 70 97, 110 92 S 170 95, 210 98 S 260 100, 300 101" fill="none" stroke="#ff8a1f" strokeWidth="1.4" strokeDasharray="3 4" />
+                <path d="M0 80 C 30 76, 50 70, 75 64 S 120 58, 150 50 S 200 40, 225 32 S 270 20, 300 14" fill="none" stroke="#0a8fc8" strokeWidth="1.8" />
+                <path d="M0 96 C 40 94, 70 97, 110 92 S 170 95, 210 98 S 260 100, 300 101" fill="none" stroke="#e0700f" strokeWidth="1.4" strokeDasharray="3 4" />
               </svg>
             </div>
-            <div className="rounded-xl border border-line bg-white/[0.02] p-3 lg:col-span-2">
+            <div className="rounded-xl border border-line bg-fg/[0.02] p-3 lg:col-span-2">
               <p className="text-[0.68rem] text-muted">Atividade em tempo real</p>
               <ul className="mt-2 space-y-2">
                 {feed.map((f) => (
                   <li key={f.text} className="flex items-start gap-2 text-[0.66rem]">
-                    <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${f.tone === "signal" ? "bg-signal" : "bg-white/30"}`} />
+                    <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${f.tone === "signal" ? "bg-signal" : "bg-fg/30"}`} />
                     <span className="flex-1 text-fg/80">{f.text}</span>
                     <span className="font-mono text-dim">{f.t}</span>
                   </li>
@@ -105,7 +105,7 @@ export function DashboardMockup() {
 
           <div className="mt-2.5 hidden grid-cols-3 gap-2.5 sm:grid">
             {pipeline.map((col) => (
-              <div key={col.stage} className="rounded-xl border border-line bg-white/[0.02] p-3">
+              <div key={col.stage} className="rounded-xl border border-line bg-fg/[0.02] p-3">
                 <p className="text-[0.62rem] text-dim">
                   {col.stage} · {col.items.length}
                 </p>

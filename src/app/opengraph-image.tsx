@@ -18,8 +18,8 @@ export default async function OgImage() {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: 64,
-          background: "radial-gradient(circle at 82% 22%, #123a8f 0%, #0a1a3d 32%, #050913 62%)",
-          color: "#eef3fb",
+          background: "#f5f4f0",
+          color: "#14253d",
           fontFamily: "sans-serif",
         }}
       >
@@ -28,22 +28,22 @@ export default async function OgImage() {
           <img src={`data:image/png;base64,${mark}`} width={64} height={64} alt="" />
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontSize: 30, fontWeight: 700, letterSpacing: 4 }}>SPOLAOR</span>
-            <span style={{ fontSize: 14, letterSpacing: 9, color: "#2f8cff" }}>TECNOLOGIA</span>
+            <span style={{ fontSize: 14, letterSpacing: 9, color: "#1e5be6" }}>TECNOLOGIA</span>
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", fontSize: 64, lineHeight: 1.1, letterSpacing: -1, fontWeight: 700 }}>
           <span>Quantos clientes sua</span>
           <div style={{ display: "flex" }}>
             <span>empresa</span>
-            <span style={{ color: "#ff8a1f", marginLeft: 16 }}>perde</span>
+            <span style={{ color: "#c75a06", marginLeft: 16 }}>perde</span>
           </div>
-          <span style={{ color: "#3ca8ff" }}>antes mesmo de falar com eles?</span>
+          <span style={{ color: "#14253d" }}>antes mesmo de falar com eles?</span>
         </div>
-        <div style={{ display: "flex", gap: 24, fontSize: 28, color: "#a5b1c6" }}>
+        <div style={{ display: "flex", gap: 24, fontSize: 28, color: "#475569" }}>
           <span>Sites de alta conversão</span>
-          <span style={{ color: "#22d3ff" }}>·</span>
+          <span style={{ color: "#c75a06" }}>·</span>
           <span>Automação de processos</span>
-          <span style={{ color: "#22d3ff" }}>·</span>
+          <span style={{ color: "#c75a06" }}>·</span>
           <span>Sistemas sob medida</span>
         </div>
       </div>
