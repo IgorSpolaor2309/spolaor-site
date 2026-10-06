@@ -125,7 +125,7 @@ export function AutomationFlow({ initial = "comercial" }: { initial?: keyof type
                 key={s.title}
                 className={`relative flex items-start gap-4 rounded-2xl border p-4 transition-all duration-500 lg:flex-col lg:gap-5 lg:p-5 ${
                   current
-                    ? "border-signal/60 bg-signal/[0.06] shadow-[0_0_50px_-12px_rgb(215_255_58/0.45)]"
+                    ? "border-signal/60 bg-signal/[0.06] shadow-[0_0_50px_-12px_rgb(34_211_255/0.45)]"
                     : lit
                       ? "border-line-strong bg-white/[0.03]"
                       : "border-line bg-transparent"

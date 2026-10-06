@@ -16,7 +16,7 @@ export default function ContatoPage() {
     <section className="noise relative isolate overflow-hidden pb-24 pt-[150px] md:pb-32 md:pt-[190px]">
       <div aria-hidden className="absolute inset-0 -z-10">
         <div className="bg-grid mask-radial absolute inset-0 opacity-60" />
-        <div className="absolute -left-40 top-10 h-[600px] w-[600px] rounded-full bg-[radial-gradient(circle,rgb(143_180_255/0.12),transparent_60%)]" />
+        <div className="absolute -left-40 top-10 h-[600px] w-[600px] rounded-full bg-[radial-gradient(circle,rgb(47_128_255/0.12),transparent_60%)]" />
       </div>
       <div className="container-x grid gap-14 lg:grid-cols-12">
         <div className="lg:col-span-5">

@@ -11,7 +11,7 @@ const parts = [
 
 function Dot({ n, className }: { n: number; className: string }) {
   return (
-    <span className={`absolute z-10 grid h-7 w-7 place-items-center rounded-full bg-signal font-mono text-[0.7rem] font-semibold text-ink-950 shadow-[0_0_0_6px_rgb(215_255_58/0.15)] ${className}`}>
+    <span className={`absolute z-10 grid h-7 w-7 place-items-center rounded-full bg-signal font-mono text-[0.7rem] font-semibold text-ink-950 shadow-[0_0_0_6px_rgb(34_211_255/0.15)] ${className}`}>
       {n}
     </span>
   );

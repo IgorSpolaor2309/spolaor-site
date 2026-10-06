@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Instrument_Serif } from "next/font/google";
+import { Manrope, Sora } from "next/font/google";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { MobileCtaBar } from "@/components/layout/mobile-cta-bar";
@@ -9,11 +8,16 @@ import { SmoothScroll } from "@/components/layout/smooth-scroll";
 import { isIndexable, site, siteBaseUrl } from "@/lib/site";
 import "./globals.css";
 
-const instrument = Instrument_Serif({
+// Sora nos títulos (geométrica, ecoa o "SPOLAOR" da logo); Manrope no texto corrido.
+const sora = Sora({
   subsets: ["latin"],
-  weight: "400",
-  style: ["italic", "normal"],
-  variable: "--font-instrument",
+  variable: "--font-sora",
+  display: "swap",
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-manrope",
   display: "swap",
 });
 
@@ -47,7 +51,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#07080a",
+  themeColor: "#050913",
   colorScheme: "dark",
 };
 
@@ -66,7 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="pt-BR"
-      className={`${GeistSans.variable} ${GeistMono.variable} ${instrument.variable}`}
+      className={`${sora.variable} ${manrope.variable} ${GeistMono.variable}`}
     >
       <body className="min-h-dvh overflow-x-clip">
         <a

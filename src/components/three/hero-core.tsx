@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 
 type Mode = "pending" | "webgl" | "static";
+type SceneHandle = { setProgress: (p: number) => void };
+
+// Progresso da transformação (0 = operação dispersa, 1 = conectada), exposto como --p na seção
+// do hero para os cards. Sobe sozinho até AUTO logo após o carregamento (mostra que a peça
+// se mexe) e o scroll leva até 1 em pouco mais de meia tela, com a esfera ainda visível.
+const AUTO = 0.3;
 
 function canUseWebGL() {
   try {
@@ -18,6 +24,41 @@ export function HeroCore({ className = "" }: { className?: string }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [mode, setMode] = useState<Mode>("pending");
   const [ready, setReady] = useState(false);
+  const progress = useRef(0);
+  const sceneRef = useRef<SceneHandle | null>(null);
+
+  useEffect(() => {
+    const section = wrap.current?.closest("section");
+    if (!section) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let auto = 0;
+    let fromScroll = 0;
+    const apply = () => {
+      const p = Math.max(auto, fromScroll);
+      progress.current = p;
+      section.style.setProperty("--p", p.toFixed(3));
+      sceneRef.current?.setProgress(p);
+    };
+    const onScroll = () => {
+      fromScroll = Math.min(1, Math.max(0, window.scrollY / (window.innerHeight * 0.55)));
+      apply();
+    };
+    let raf = 0;
+    const t0 = performance.now() + (reduce ? 0 : 1400);
+    const ramp = (now: number) => {
+      const k = Math.min(1, Math.max(0, (now - t0) / 3200));
+      auto = AUTO * (1 - Math.pow(1 - k, 3));
+      apply();
+      if (k < 1) raf = requestAnimationFrame(ramp);
+    };
+    raf = requestAnimationFrame(ramp);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -44,10 +85,8 @@ export function HeroCore({ className = "" }: { className?: string }) {
       const onPointer = (e: PointerEvent) => {
         scene.setPointer((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
       };
-      const onScroll = () => {
-        const h = wrap.current?.closest("section")?.offsetHeight ?? window.innerHeight;
-        scene.setProgress(Math.min(1, Math.max(0, window.scrollY / (h * 0.75))));
-      };
+      sceneRef.current = scene;
+      scene.setProgress(progress.current);
       const ro = new ResizeObserver(() => scene.resize());
       ro.observe(canvas.current);
       const io = new IntersectionObserver(([entry]) => {
@@ -58,15 +97,13 @@ export function HeroCore({ className = "" }: { className?: string }) {
       const onVis = () => (document.hidden ? scene.stop() : scene.start());
 
       window.addEventListener("pointermove", onPointer, { passive: true });
-      window.addEventListener("scroll", onScroll, { passive: true });
       document.addEventListener("visibilitychange", onVis);
-      onScroll();
       scene.start();
       requestAnimationFrame(() => setReady(true));
 
       cleanup = () => {
         window.removeEventListener("pointermove", onPointer);
-        window.removeEventListener("scroll", onScroll);
+        sceneRef.current = null;
         document.removeEventListener("visibilitychange", onVis);
         ro.disconnect();
         io.disconnect();
@@ -112,9 +149,9 @@ export function HeroCore({ className = "" }: { className?: string }) {
       <div
         className={`absolute inset-0 transition-opacity duration-[1600ms] ${ready ? "opacity-40" : "opacity-100"}`}
       >
-        <div className="absolute left-1/2 top-1/2 aspect-square w-[62%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle_at_35%_30%,rgb(190_205_235/0.35),rgb(120_140_190/0.08)_45%,transparent_70%)] blur-[2px]" />
-        <div className={`absolute left-1/2 top-1/2 aspect-square w-[62%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10 ${ready ? "opacity-0" : ""}`} />
-        <div className={`absolute left-1/2 top-1/2 aspect-square w-[44%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.06] ${ready ? "opacity-0" : ""}`} />
+        <div className="absolute left-1/2 top-1/2 aspect-square w-[62%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle_at_35%_30%,rgb(90_160_255/0.32),rgb(30_91_230/0.1)_45%,transparent_70%)] blur-[2px]" />
+        <div className={`absolute left-1/2 top-1/2 aspect-square w-[62%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[rgb(90_160_255/0.18)] ${ready ? "opacity-0" : ""}`} />
+        <div className={`absolute left-1/2 top-1/2 aspect-square w-[44%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[rgb(34_211_255/0.1)] ${ready ? "opacity-0" : ""}`} />
         {mode === "static" &&
           Array.from({ length: 14 }).map((_, i) => (
             <span

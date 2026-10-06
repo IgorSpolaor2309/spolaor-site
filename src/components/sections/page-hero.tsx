@@ -5,7 +5,7 @@ export function PageHero({
   eyebrow,
   title,
   text,
-  primary = { href: "/analise", label: "Analisar meu site grátis" },
+  primary = { href: "/analise", label: "Solicitar análise do meu site" },
   secondary = { href: "/contato", label: "Falar sobre meu projeto" },
   tone = "ember",
   aside,
@@ -22,8 +22,8 @@ export function PageHero({
     <section className="noise relative isolate overflow-hidden pb-20 pt-[150px] md:pb-28 md:pt-[200px]">
       <div aria-hidden className="absolute inset-0 -z-10">
         <div className="bg-grid mask-radial absolute inset-0 opacity-70" />
-        <div className={`absolute -top-40 right-[-10%] h-[680px] w-[680px] rounded-full ${tone === "ember" ? "bg-[radial-gradient(circle,rgb(255_107_61/0.12),transparent_60%)]" : "bg-[radial-gradient(circle,rgb(215_255_58/0.10),transparent_60%)]"}`} />
-        <div className="absolute -left-40 top-20 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgb(143_180_255/0.10),transparent_60%)]" />
+        <div className={`absolute -top-40 right-[-10%] h-[680px] w-[680px] rounded-full ${tone === "ember" ? "bg-[radial-gradient(circle,rgb(255_138_31/0.12),transparent_60%)]" : "bg-[radial-gradient(circle,rgb(34_211_255/0.10),transparent_60%)]"}`} />
+        <div className="absolute -left-40 top-20 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgb(47_128_255/0.10),transparent_60%)]" />
       </div>
       <div className="container-x grid gap-12 lg:grid-cols-12 lg:items-end">
         <div className={aside ? "lg:col-span-7" : "lg:col-span-10"}>

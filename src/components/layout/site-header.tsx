@@ -74,7 +74,7 @@ export function SiteHeader() {
           <div className="flex items-center gap-2">
             <span className="hidden sm:block">
               <ButtonLink href="/analise" arrow>
-                Analisar meu site
+                Solicitar análise
               </ButtonLink>
             </span>
             <button
@@ -123,7 +123,7 @@ export function SiteHeader() {
             </nav>
             <div className="container-x grid gap-3 pb-8 pt-6">
               <ButtonLink href="/analise" size="lg" arrow>
-                Analisar meu site grátis
+                Solicitar análise do meu site
               </ButtonLink>
               {whatsappLink() ? (
                 <ButtonLink href={whatsappLink()!} variant="secondary" size="lg" target="_blank" rel="noopener">

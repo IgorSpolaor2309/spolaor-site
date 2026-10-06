@@ -13,9 +13,9 @@ const sizes = {
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-signal text-ink-950 shadow-[0_0_0_1px_rgb(215_255_58/0.4),0_10px_40px_-10px_rgb(215_255_58/0.55)] hover:shadow-[0_0_0_1px_rgb(215_255_58/0.6),0_14px_50px_-8px_rgb(215_255_58/0.7)] hover:-translate-y-0.5 overflow-hidden",
+    "bg-[linear-gradient(110deg,#1b4fd6_0%,#1f6ff0_55%,#1689e8_100%)] text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.22),0_0_0_1px_rgb(70_150_255/0.55),0_12px_40px_-10px_rgb(30_110_255/0.75)] hover:shadow-[inset_0_1px_0_rgb(255_255_255/0.28),0_0_0_1px_rgb(34_211_255/0.75),0_16px_54px_-8px_rgb(34_170_255/0.8)] hover:-translate-y-0.5 overflow-hidden",
   secondary:
-    "border border-line-strong bg-white/[0.03] text-fg hover:border-white/30 hover:bg-white/[0.07] backdrop-blur",
+    "border border-line-strong bg-[rgb(120_165_255/0.06)] text-fg hover:border-[rgb(34_211_255/0.45)] hover:bg-[rgb(120_165_255/0.1)] backdrop-blur",
   ghost: "text-fg/80 hover:text-fg",
 };
 
@@ -36,7 +36,7 @@ function Shine() {
   return (
     <span
       aria-hidden
-      className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0 transition-[left,opacity] duration-700 ease-out-expo group-hover:left-[120%] group-hover:opacity-100"
+      className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/35 to-transparent opacity-0 transition-[left,opacity] duration-700 ease-out-expo group-hover:left-[120%] group-hover:opacity-100"
     />
   );
 }

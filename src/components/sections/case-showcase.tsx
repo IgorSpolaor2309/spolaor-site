@@ -19,7 +19,7 @@ export function CaseShowcase() {
       <motion.div
         aria-hidden
         style={{ opacity: glow }}
-        className="absolute inset-x-[10%] -bottom-10 top-1/3 -z-10 rounded-full bg-[radial-gradient(ellipse,rgb(215_255_58/0.18),transparent_65%)] blur-2xl"
+        className="absolute inset-x-[10%] -bottom-10 top-1/3 -z-10 rounded-full bg-[radial-gradient(ellipse,rgb(34_211_255/0.18),transparent_65%)] blur-2xl"
       />
       <motion.div style={{ rotateX, scale, y, transformOrigin: "50% 100%" }} className="will-change-transform">
         <DashboardMockup />

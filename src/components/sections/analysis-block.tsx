@@ -45,7 +45,7 @@ export function AnalysisBlock({ index = "08", origem = "home", headingLevel = "h
     <section id="analise" className="relative overflow-hidden border-t border-line py-24 md:py-32" aria-labelledby="analysis-title">
       <div aria-hidden className="absolute inset-0 -z-10">
         <div className="bg-grid mask-radial absolute inset-0 opacity-50" />
-        <div className="absolute right-[-10%] top-[10%] h-[640px] w-[640px] rounded-full bg-[radial-gradient(circle,rgb(215_255_58/0.10),transparent_60%)]" />
+        <div className="absolute right-[-10%] top-[10%] h-[640px] w-[640px] rounded-full bg-[radial-gradient(circle,rgb(34_211_255/0.10),transparent_60%)]" />
       </div>
       <div className="container-x grid gap-14 lg:grid-cols-12">
         <Reveal className="lg:col-span-5">

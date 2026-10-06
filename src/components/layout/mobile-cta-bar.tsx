@@ -35,9 +35,9 @@ export function MobileCtaBar() {
       <div className="glass flex items-center gap-2 rounded-full bg-ink-900/80 p-1.5 shadow-2xl shadow-black/60">
         <Link
           href="/analise"
-          className="flex h-12 flex-1 items-center justify-center rounded-full bg-signal text-[0.95rem] font-medium text-ink-950"
+          className="flex h-12 flex-1 items-center justify-center rounded-full bg-[linear-gradient(110deg,#1b4fd6,#1f6ff0_55%,#1689e8)] text-[0.95rem] font-semibold text-white shadow-[0_0_0_1px_rgb(70_150_255/0.5)]"
         >
-          Analisar meu site grátis
+          Solicitar análise do site
         </Link>
         {wa && (
         <a

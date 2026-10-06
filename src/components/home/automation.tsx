@@ -7,7 +7,7 @@ import { HiringVsAutomation } from "@/components/sections/hiring-vs-automation";
 export function Automation() {
   return (
     <section className="relative overflow-hidden border-t border-line py-24 md:py-32" aria-labelledby="auto-title">
-      <div aria-hidden className="absolute left-1/2 top-0 h-[600px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,rgb(215_255_58/0.06),transparent_65%)]" />
+      <div aria-hidden className="absolute left-1/2 top-0 h-[600px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,rgb(34_211_255/0.06),transparent_65%)]" />
       <div className="container-x relative">
         <div className="grid gap-8 lg:grid-cols-12 lg:items-end">
           <Reveal className="lg:col-span-8">

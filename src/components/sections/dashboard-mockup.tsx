@@ -77,16 +77,16 @@ export function DashboardMockup() {
               <svg viewBox="0 0 300 110" className="mt-2 h-28 w-full" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="area" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0" stopColor="rgb(215 255 58 / 0.35)" />
-                    <stop offset="1" stopColor="rgb(215 255 58 / 0)" />
+                    <stop offset="0" stopColor="rgb(34 211 255 / 0.35)" />
+                    <stop offset="1" stopColor="rgb(34 211 255 / 0)" />
                   </linearGradient>
                 </defs>
                 {[25, 55, 85].map((y) => (
                   <line key={y} x1="0" x2="300" y1={y} y2={y} stroke="rgb(255 255 255 / 0.06)" />
                 ))}
                 <path d="M0 80 C 30 76, 50 70, 75 64 S 120 58, 150 50 S 200 40, 225 32 S 270 20, 300 14 L300 110 L0 110Z" fill="url(#area)" />
-                <path d="M0 80 C 30 76, 50 70, 75 64 S 120 58, 150 50 S 200 40, 225 32 S 270 20, 300 14" fill="none" stroke="#d7ff3a" strokeWidth="1.8" />
-                <path d="M0 96 C 40 94, 70 97, 110 92 S 170 95, 210 98 S 260 100, 300 101" fill="none" stroke="#ff6b3d" strokeWidth="1.4" strokeDasharray="3 4" />
+                <path d="M0 80 C 30 76, 50 70, 75 64 S 120 58, 150 50 S 200 40, 225 32 S 270 20, 300 14" fill="none" stroke="#22d3ff" strokeWidth="1.8" />
+                <path d="M0 96 C 40 94, 70 97, 110 92 S 170 95, 210 98 S 260 100, 300 101" fill="none" stroke="#ff8a1f" strokeWidth="1.4" strokeDasharray="3 4" />
               </svg>
             </div>
             <div className="rounded-xl border border-line bg-white/[0.02] p-3 lg:col-span-2">

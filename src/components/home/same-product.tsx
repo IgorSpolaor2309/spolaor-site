@@ -49,8 +49,8 @@ const criteria: { zone: Zone; title: string; a: string; b: string }[] = [
 function zoneClass(active: Zone, zone: Zone, good: boolean) {
   if (active !== zone) return "ring-0";
   return good
-    ? "ring-2 ring-signal/80 ring-offset-2 ring-offset-ink-850 shadow-[0_0_40px_-6px_rgb(215_255_58/0.5)]"
-    : "ring-2 ring-ember/80 ring-offset-2 ring-offset-ink-850 shadow-[0_0_40px_-6px_rgb(255_107_61/0.5)]";
+    ? "ring-2 ring-signal/80 ring-offset-2 ring-offset-ink-850 shadow-[0_0_40px_-6px_rgb(34_211_255/0.5)]"
+    : "ring-2 ring-ember/80 ring-offset-2 ring-offset-ink-850 shadow-[0_0_40px_-6px_rgb(255_138_31/0.5)]";
 }
 
 function SiteA({ active }: { active: Zone }) {
@@ -87,7 +87,7 @@ function SiteA({ active }: { active: Zone }) {
 function SiteB({ active }: { active: Zone }) {
   const z = (k: Zone) => `rounded-lg transition-all duration-500 ${zoneClass(active, k, true)}`;
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-line-strong bg-ink-850 shadow-[0_30px_80px_-30px_rgb(215_255_58/0.25)]" aria-hidden>
+    <div className="relative overflow-hidden rounded-2xl border border-line-strong bg-ink-850 shadow-[0_30px_80px_-30px_rgb(34_211_255/0.25)]" aria-hidden>
       <Chrome url="empresa-b.com.br" />
       <div className="p-4">
         <div className={`${z("hero")} p-1.5`}>

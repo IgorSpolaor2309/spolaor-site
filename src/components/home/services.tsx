@@ -56,7 +56,7 @@ function AutomationVisual() {
         <defs>
           <linearGradient id="ln" x1="0" x2="1">
             <stop offset="0" stopColor="rgb(255 255 255 / 0.05)" />
-            <stop offset="0.5" stopColor="rgb(215 255 58 / 0.7)" />
+            <stop offset="0.5" stopColor="rgb(34 211 255 / 0.7)" />
             <stop offset="1" stopColor="rgb(255 255 255 / 0.05)" />
           </linearGradient>
         </defs>

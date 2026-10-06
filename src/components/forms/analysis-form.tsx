@@ -124,7 +124,7 @@ export function AnalysisForm({ origem = "home" }: { origem?: string }) {
                 <label className="mt-3 flex cursor-pointer items-center gap-2.5 text-sm text-muted">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 accent-[#d7ff3a]"
+                    className="h-4 w-4 accent-[#22d3ff]"
                     checked={data.semSite}
                     onChange={(e) => {
                       set("semSite", e.target.checked);

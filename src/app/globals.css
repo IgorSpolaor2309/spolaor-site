@@ -1,38 +1,47 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sora), var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-serif: var(--font-instrument), ui-serif, Georgia, serif;
 
-  --color-ink-950: #07080a;
-  --color-ink-900: #0b0c0f;
-  --color-ink-850: #101115;
-  --color-ink-800: #15171c;
-  --color-ink-700: #1e2027;
-  --color-ink-600: #2a2d36;
-  --color-fg: #eef0f3;
-  --color-muted: #a1a5af;
-  --color-dim: #878b96;
-  --color-line: rgb(255 255 255 / 0.08);
-  --color-line-strong: rgb(255 255 255 / 0.14);
-  --color-ember: #ff6b3d;
-  --color-ember-soft: #ff9a72;
-  --color-signal: #d7ff3a;
-  --color-signal-soft: #e9ff94;
-  --color-ice: #8fb4ff;
+  /* Base escura azulada, derivada do azul-marinho da logo */
+  --color-ink-950: #050913;
+  --color-ink-900: #080e1c;
+  --color-ink-850: #0b1324;
+  --color-ink-800: #0f182d;
+  --color-ink-700: #16223b;
+  --color-ink-600: #213050;
+  --color-fg: #eef3fb;
+  --color-muted: #a5b1c6;
+  --color-dim: #8390a8;
+  --color-line: rgb(150 185 255 / 0.10);
+  --color-line-strong: rgb(150 185 255 / 0.18);
+
+  /* Cores da marca (logo Spolaor Tecnologia) */
+  --color-navy: #0b2a6b;
+  --color-royal: #1e5be6;
+  --color-sky: #2f8cff;
+  --color-cyan: #22d3ff;
+  /* ember = laranja da marca (alerta, perda, destaque) */
+  --color-ember: #ff8a1f;
+  --color-ember-soft: #ffb15c;
+  /* signal = ciano da marca (resolvido, conectado, foco) */
+  --color-signal: #22d3ff;
+  --color-signal-soft: #8fe8ff;
+  --color-ice: #5aa2ff;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
 
-  --text-display: clamp(2.75rem, 1.2rem + 6.6vw, 7.25rem);
-  --text-display--line-height: 0.95;
+  --text-display: clamp(2.5rem, 1.1rem + 5.4vw, 6rem);
+  --text-display--line-height: 1;
   --text-display--letter-spacing: -0.045em;
-  --text-h2: clamp(2.1rem, 1.2rem + 3.6vw, 4.6rem);
-  --text-h2--line-height: 1;
+  --text-h2: clamp(2rem, 1.15rem + 3.2vw, 4.1rem);
+  --text-h2--line-height: 1.04;
   --text-h2--letter-spacing: -0.04em;
-  --text-h3: clamp(1.5rem, 1.1rem + 1.4vw, 2.25rem);
-  --text-h3--line-height: 1.1;
+  --text-h3: clamp(1.45rem, 1.1rem + 1.2vw, 2.1rem);
+  --text-h3--line-height: 1.12;
   --text-h3--letter-spacing: -0.03em;
 
   --animate-marquee: marquee 40s linear infinite;
@@ -68,7 +77,6 @@
     background: var(--color-ink-950);
     color: var(--color-fg);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01", "cv11";
   }
   ::selection { background: var(--color-signal); color: var(--color-ink-950); }
   :focus-visible {
@@ -76,7 +84,7 @@
     outline-offset: 3px;
     border-radius: 6px;
   }
-  h1, h2, h3 { text-wrap: balance; }
+  h1, h2, h3 { text-wrap: balance; font-family: var(--font-display); }
   p { text-wrap: pretty; }
 }
 
@@ -89,18 +97,26 @@
   }
   @media (min-width: 768px) { .container-x { padding-inline: 40px; } }
 
+  /* Segunda voz dos títulos: mesma família (Sora), muda só a cor. O nome é histórico. */
   .serif-accent {
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-weight: 400;
-    letter-spacing: -0.02em;
+    font-family: var(--font-display);
+    font-style: normal;
+    font-weight: inherit;
+  }
+
+  /* Gradiente da marca: azul royal -> azul-claro -> ciano */
+  .text-brand {
+    background: linear-gradient(100deg, #3f7bff 0%, #2fa4ff 45%, #3ce0ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   /* Fundo técnico: grid fino com máscara radial */
   .bg-grid {
     background-image:
-      linear-gradient(to right, rgb(255 255 255 / 0.045) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+      linear-gradient(to right, rgb(120 170 255 / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(120 170 255 / 0.06) 1px, transparent 1px);
     background-size: 72px 72px;
   }
   .mask-radial {
@@ -110,7 +126,7 @@
   .mask-fade-x { mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent); }
 
   .glass {
-    background: linear-gradient(180deg, rgb(255 255 255 / 0.045), rgb(255 255 255 / 0.015));
+    background: linear-gradient(180deg, rgb(160 195 255 / 0.06), rgb(160 195 255 / 0.015));
     border: 1px solid var(--color-line);
     backdrop-filter: blur(14px) saturate(140%);
     -webkit-backdrop-filter: blur(14px) saturate(140%);
@@ -124,7 +140,7 @@
     position: absolute;
     inset: 0 0 auto 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.18), transparent);
+    background: linear-gradient(90deg, transparent, rgb(90 170 255 / 0.35), transparent);
   }
 
   .noise::after {
@@ -138,7 +154,7 @@
   }
 
   .text-gradient {
-    background: linear-gradient(180deg, #fff 20%, rgb(255 255 255 / 0.55));
+    background: linear-gradient(180deg, #fff 25%, rgb(205 222 255 / 0.62));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -164,12 +180,12 @@
     transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
   }
   .field::placeholder { color: var(--color-dim); }
-  .field:hover { border-color: rgb(255 255 255 / 0.22); }
+  .field:hover { border-color: rgb(150 185 255 / 0.3); }
   .field:focus {
     outline: none;
     border-color: var(--color-signal);
-    background: rgb(215 255 58 / 0.04);
-    box-shadow: 0 0 0 4px rgb(215 255 58 / 0.12);
+    background: rgb(34 211 255 / 0.04);
+    box-shadow: 0 0 0 4px rgb(34 211 255 / 0.12);
   }
   .field[aria-invalid="true"] { border-color: var(--color-ember); }
 }

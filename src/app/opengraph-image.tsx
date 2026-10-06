@@ -1,10 +1,13 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
 
-export const alt = "Spolaor Tecnologia: quanto sua empresa perde sem perceber?";
+export const alt = "Spolaor Tecnologia: quantos clientes sua empresa perde antes mesmo de falar com eles?";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default function OgImage() {
+export default async function OgImage() {
+  const mark = await readFile(join(process.cwd(), "public/brand/spolaor-mark.png"), "base64");
   return new ImageResponse(
     (
       <div
@@ -14,26 +17,33 @@ export default function OgImage() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          padding: 72,
-          background: "radial-gradient(circle at 80% 30%, #1d2433 0%, #07080a 55%)",
-          color: "#eef0f3",
+          padding: 64,
+          background: "radial-gradient(circle at 82% 22%, #123a8f 0%, #0a1a3d 32%, #050913 62%)",
+          color: "#eef3fb",
           fontFamily: "sans-serif",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 30 }}>
-          <div style={{ width: 22, height: 22, borderRadius: 999, background: "#d7ff3a" }} />
-          <span style={{ fontWeight: 600 }}>Spolaor</span>
-          <span style={{ color: "#a1a5af" }}>Tecnologia</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`data:image/png;base64,${mark}`} width={64} height={64} alt="" />
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontSize: 30, fontWeight: 700, letterSpacing: 4 }}>SPOLAOR</span>
+            <span style={{ fontSize: 14, letterSpacing: 9, color: "#2f8cff" }}>TECNOLOGIA</span>
+          </div>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", fontSize: 92, lineHeight: 1, letterSpacing: -4, fontWeight: 600 }}>
-          <span>Quanto sua empresa perde</span>
-          <span style={{ color: "#ff6b3d", fontStyle: "italic", fontWeight: 400 }}>sem perceber?</span>
+        <div style={{ display: "flex", flexDirection: "column", fontSize: 64, lineHeight: 1.1, letterSpacing: -1, fontWeight: 700 }}>
+          <span>Quantos clientes sua</span>
+          <div style={{ display: "flex" }}>
+            <span>empresa</span>
+            <span style={{ color: "#ff8a1f", marginLeft: 16 }}>perde</span>
+          </div>
+          <span style={{ color: "#3ca8ff" }}>antes mesmo de falar com eles?</span>
         </div>
-        <div style={{ display: "flex", gap: 24, fontSize: 28, color: "#a1a5af" }}>
-          <span>Sites que convertem</span>
-          <span>·</span>
-          <span>Automação</span>
-          <span>·</span>
+        <div style={{ display: "flex", gap: 24, fontSize: 28, color: "#a5b1c6" }}>
+          <span>Sites de alta conversão</span>
+          <span style={{ color: "#22d3ff" }}>·</span>
+          <span>Automação de processos</span>
+          <span style={{ color: "#22d3ff" }}>·</span>
           <span>Sistemas sob medida</span>
         </div>
       </div>
