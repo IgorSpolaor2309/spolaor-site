@@ -64,13 +64,7 @@ export function SiteFooter() {
           ))}
         </div>
 
-        <div className="mt-20 overflow-hidden">
-          <p aria-hidden className="select-none text-[clamp(4rem,17vw,15rem)] font-semibold leading-[0.8] tracking-[-0.07em] text-white/[0.04]">
-            Spolaor
-          </p>
-        </div>
-
-        <div className="mt-6 flex flex-col justify-between gap-3 border-t border-line pt-6 text-sm text-dim sm:flex-row">
+        <div className="mt-20 flex flex-col justify-between gap-3 border-t border-line pt-6 text-sm text-dim sm:flex-row">
           <p>© {new Date().getFullYear()} {site.name}. Todos os direitos reservados.</p>
           <p>O domínio do seu site é sempre seu.</p>
         </div>

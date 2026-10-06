@@ -64,7 +64,7 @@ export function ContactForm() {
 
   if (sent)
     return (
-      <div role="status" className="rounded-[28px] border border-line-strong bg-ink-900 p-10 text-center">
+      <div role="status" className="rounded-[16px] border border-line-strong bg-ink-900 p-10 text-center">
         <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-signal text-ink-950">
           <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
             <path d="m5 12.5 4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -83,7 +83,7 @@ export function ContactForm() {
   ] as const;
 
   return (
-    <form onSubmit={submit} noValidate className="grid gap-6 rounded-[28px] border border-line-strong bg-ink-900/90 p-6 md:p-9" aria-label="Falar sobre um projeto">
+    <form onSubmit={submit} noValidate className="grid gap-6 rounded-[16px] border border-line-strong bg-ink-900/90 p-6 md:p-9" aria-label="Falar sobre um projeto">
       <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
       <div>
         <p id="interesse-label" className="mb-2.5 text-sm font-medium">
@@ -98,7 +98,7 @@ export function ContactForm() {
                 type="button"
                 aria-pressed={on}
                 onClick={() => set("servicos", on ? data.servicos!.filter((x) => x !== m) : [...(data.servicos ?? []), m])}
-                className={`rounded-full border px-3.5 py-2 text-sm transition-all duration-300 ${on ? "border-signal bg-signal/10 text-signal" : "border-line-strong text-muted hover:border-white/30 hover:text-fg"}`}
+                className={`rounded-[8px] border px-3.5 py-2 text-sm transition-all duration-300 ${on ? "border-signal bg-signal/10 text-signal" : "border-line-strong text-muted hover:border-white/30 hover:text-fg"}`}
               >
                 {m}
               </button>

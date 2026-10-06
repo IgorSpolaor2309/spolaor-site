@@ -22,7 +22,7 @@ export function Process() {
   return (
     <ol ref={ref} className="relative">
       <span aria-hidden className="absolute bottom-3 left-[15px] top-3 w-px bg-line" />
-      <motion.span aria-hidden style={{ scaleY }} className="absolute bottom-3 left-[15px] top-3 w-px origin-top bg-gradient-to-b from-signal via-signal to-signal/30" />
+      <motion.span aria-hidden style={{ scaleY }} className="absolute bottom-3 left-[15px] top-3 w-px origin-top bg-sky" />
       {steps.map(([t, d], i) => (
         <li key={t} className="relative flex gap-6 pb-10 last:pb-0">
           <span className="relative z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full border border-line-strong bg-ink-950 font-mono text-[0.7rem] text-muted">

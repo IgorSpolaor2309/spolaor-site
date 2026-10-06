@@ -9,7 +9,7 @@ export function LogoMark({ className = "" }: { className?: string }) {
 export function Logo({ className = "" }: { className?: string }) {
   return (
     <span className={`inline-flex items-center gap-3 ${className}`}>
-      <LogoMark className="h-9 w-9 drop-shadow-[0_0_14px_rgb(47_140_255/0.35)]" />
+      <LogoMark className="h-9 w-9" />
       <span className="flex flex-col leading-none">
         <span className="font-[family-name:var(--font-display)] text-[1.08rem] font-semibold tracking-[0.1em] text-fg">
           SPOLAOR

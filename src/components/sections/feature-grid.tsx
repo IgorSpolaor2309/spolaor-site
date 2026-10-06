@@ -4,7 +4,7 @@ export type Feature = { title: string; text: string; tag?: string };
 
 export function FeatureGrid({ items, cols = 3 }: { items: Feature[]; cols?: 2 | 3 }) {
   return (
-    <ul className={`grid gap-px overflow-hidden rounded-[28px] border border-line bg-line sm:grid-cols-2 ${cols === 3 ? "lg:grid-cols-3" : ""}`}>
+    <ul className={`grid gap-px overflow-hidden rounded-[16px] border border-line bg-line sm:grid-cols-2 ${cols === 3 ? "lg:grid-cols-3" : ""}`}>
       {items.map((f, i) => (
         <Reveal as="li" key={f.title} delay={(i % 3) * 0.06} className="group bg-ink-950 p-7 transition-colors duration-500 hover:bg-ink-900 md:p-8">
           <div className="flex items-center justify-between">

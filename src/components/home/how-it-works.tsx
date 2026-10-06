@@ -25,8 +25,8 @@ export function HowItWorks() {
           <div className="lg:sticky lg:top-32">
             <Reveal>
               <SectionLabel index="07">Como funciona</SectionLabel>
-              <h2 id="how-title" className="mt-6 text-h2 font-medium">
-                Um caminho claro, <span className="serif-accent text-muted">do primeiro contato ao site no ar.</span>
+              <h2 id="how-title" className="mt-8 text-[clamp(1.9rem,1.2rem+2vw,2.9rem)] font-semibold leading-[1.08] tracking-[-0.04em]">
+                Do primeiro contato ao site no ar, <span className="text-muted">sem surpresa no meio.</span>
               </h2>
               <p className="mt-6 max-w-md text-lg leading-relaxed text-muted">
                 Cada projeto tem orçamento próprio, definido pela necessidade, complexidade e prazo. Sem pacotes genéricos.
@@ -39,22 +39,20 @@ export function HowItWorks() {
         </div>
       </div>
 
-      <div className="container-x mt-24">
-        <Reveal>
-          <p className="eyebrow">Sem amarras</p>
+      <div className="container-x mt-28 grid gap-10 lg:grid-cols-12">
+        <Reveal className="lg:col-span-4">
+          <p className="font-[family-name:var(--font-display)] text-[1.7rem] font-light leading-[1.2] tracking-[-0.025em]">
+            O que é seu continua sendo seu.
+          </p>
         </Reveal>
-        <div className="mt-6 grid gap-5 md:grid-cols-3">
+        <dl className="border-t border-line-strong lg:col-span-7 lg:col-start-6">
           {guarantees.map((g, i) => (
-            <Reveal key={g.title} delay={i * 0.08} className="rounded-[24px] border border-line bg-ink-900 p-7">
-              <svg viewBox="0 0 24 24" className="h-6 w-6 text-signal" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
-                <path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3Z" />
-                <path d="m8.5 12 2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <h3 className="mt-6 text-xl font-medium tracking-tight">{g.title}</h3>
-              <p className="mt-2 text-muted">{g.text}</p>
+            <Reveal key={g.title} delay={i * 0.05} className="grid gap-2 border-b border-line py-6 md:grid-cols-[1fr_1.3fr] md:gap-8">
+              <dt className="font-semibold">{g.title}</dt>
+              <dd className="text-muted">{g.text}</dd>
             </Reveal>
           ))}
-        </div>
+        </dl>
       </div>
     </section>
   );

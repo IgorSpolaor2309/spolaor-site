@@ -59,7 +59,7 @@ export function SiteHeader() {
                       {active && (
                         <motion.span
                           layoutId="nav-pill"
-                          className="absolute inset-0 rounded-full bg-white/[0.07]"
+                          className="absolute inset-x-3.5 -bottom-0.5 h-[2px] rounded-full bg-ember"
                           transition={{ type: "spring", stiffness: 380, damping: 32 }}
                         />
                       )}

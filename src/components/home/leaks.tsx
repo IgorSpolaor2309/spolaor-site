@@ -4,28 +4,28 @@ import { PresenceDemo, ManualTasksDemo } from "./leak-demos";
 
 const leaks = [
   {
-    tag: "Vazamento 01",
-    name: "Perda de clientes",
-    title: "Antes de conhecer seu produto, o cliente conhece a forma como você se apresenta.",
+    n: "01",
+    name: "Clientes que não chegam",
+    title: "O cliente conhece a forma como você se apresenta antes de conhecer o seu produto.",
     symptoms: [
       "Visitantes entram e saem sem pedir orçamento",
       "A oferta não fica clara nos primeiros segundos",
       "No celular, o site parece improvisado",
-      "Faltam provas, depoimentos e sinais de confiança",
+      "Faltam depoimentos, números e sinais de que outros confiaram",
       "O Instagram é o único endereço da empresa",
     ],
     demo: <PresenceDemo />,
   },
   {
-    tag: "Vazamento 02",
-    name: "Desperdício operacional",
-    title: "Antes de contratar mais uma pessoa, descubra o que sua empresa ainda faz à mão.",
+    n: "02",
+    name: "Horas que não voltam",
+    title: "Sua equipe gasta o dia fazendo à mão o que um sistema faria em segundos.",
     symptoms: [
       "Dados copiados de um sistema para outro",
       "As mesmas respostas digitadas no WhatsApp o dia todo",
       "Cobranças e prazos lembrados de cabeça",
-      "Relatórios montados em planilha toda semana",
-      "Leads esquecidos porque ninguém fez o follow-up",
+      "Relatório montado em planilha toda sexta-feira",
+      "Orçamentos esquecidos porque ninguém fez o follow-up",
     ],
     demo: <ManualTasksDemo />,
   },
@@ -33,45 +33,49 @@ const leaks = [
 
 export function Leaks() {
   return (
-    <section className="relative py-24 md:py-32" aria-labelledby="leaks-title">
+    <section className="relative pb-24 pt-20 md:pb-36 md:pt-28" aria-labelledby="leaks-title">
       <div className="container-x">
-        <div className="grid gap-8 lg:grid-cols-12 lg:items-end">
-          <Reveal className="lg:col-span-7">
-            <SectionLabel index="01" tone="ember">O diagnóstico</SectionLabel>
-            <h2 id="leaks-title" className="mt-6 text-h2 font-medium">
-              Dinheiro raramente some de uma vez. <span className="serif-accent text-ember">Ele vaza.</span>
+        <Reveal>
+          <SectionLabel index="01" tone="ember">Diagnóstico</SectionLabel>
+        </Reveal>
+        <div className="mt-8 grid gap-10 lg:grid-cols-12">
+          <Reveal className="lg:col-span-8">
+            <h2 id="leaks-title" className="text-h2 font-semibold">
+              A maior parte do prejuízo não aparece no relatório.
             </h2>
           </Reveal>
-          <Reveal delay={0.1} className="lg:col-span-5">
-            <p className="text-lg leading-relaxed text-muted">
-              Na maioria das empresas, o prejuízo se esconde em dois lugares que ninguém mede: os clientes que
-              desistiram antes de falar com você e as horas que sua equipe gasta com trabalho repetitivo.
+          <Reveal delay={0.08} className="lg:col-span-4 lg:col-start-9 lg:self-end">
+            <p className="text-[1.05rem] leading-relaxed text-muted">
+              Ele está nos clientes que desistiram antes de falar com você e nas horas que a equipe gasta repetindo tarefas. Dois
+              vazamentos que quase nenhuma empresa mede.
             </p>
           </Reveal>
         </div>
 
-        <div className="mt-16 grid gap-5 lg:grid-cols-2">
+        <div className="mt-20 grid gap-16 lg:grid-cols-2 lg:gap-0">
           {leaks.map((l, i) => (
-            <Reveal key={l.tag} delay={i * 0.12} as="article" className="group relative flex flex-col overflow-hidden rounded-[28px] border border-line bg-ink-900">
-              <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-ember/10 blur-3xl transition-opacity duration-700 group-hover:opacity-100 md:opacity-60" />
-              <div className="relative p-7 md:p-10">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs uppercase tracking-[0.14em] text-ember">{l.tag}</span>
-                  <span className="rounded-full border border-ember/30 bg-ember/10 px-3 py-1 text-xs text-ember-soft">{l.name}</span>
-                </div>
-                <h3 className="mt-8 text-h3 font-medium">{l.title}</h3>
-                <ul className="mt-8 grid gap-3">
-                  {l.symptoms.map((s) => (
-                    <li key={s} className="flex gap-3 text-[0.98rem] text-muted">
-                      <svg viewBox="0 0 16 16" className="mt-1 h-4 w-4 shrink-0 text-ember" aria-hidden>
-                        <path d="M8 3v6M8 12v.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                      </svg>
-                      {s}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="relative mt-auto border-t border-line bg-ink-950/50 p-4 md:p-6">{l.demo}</div>
+            <Reveal
+              key={l.n}
+              delay={i * 0.1}
+              as="article"
+              className={`flex flex-col ${i === 1 ? "lg:border-l lg:border-line lg:pl-14" : "lg:pr-14"}`}
+            >
+              <p className="flex items-baseline gap-4">
+                <span className="font-mono text-sm text-ember">{l.n}</span>
+                <span className="text-sm font-semibold uppercase tracking-[0.12em] text-fg/80">{l.name}</span>
+              </p>
+              <h3 className="mt-6 max-w-[26ch] font-[family-name:var(--font-display)] text-[1.6rem] font-light leading-[1.2] tracking-[-0.025em] text-fg md:text-[1.9rem]">
+                {l.title}
+              </h3>
+              <ul className="mt-8 border-t border-line">
+                {l.symptoms.map((s) => (
+                  <li key={s} className="flex gap-4 border-b border-line py-3 text-[0.97rem] text-muted">
+                    <span aria-hidden className="text-ember/70">—</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-10">{l.demo}</div>
             </Reveal>
           ))}
         </div>

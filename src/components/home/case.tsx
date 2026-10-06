@@ -5,26 +5,24 @@ import { CaseShowcase } from "@/components/sections/case-showcase";
 import { caseModules } from "@/lib/content";
 
 const facts = [
-  ["10", "módulos integrados em uma única plataforma"],
-  ["1", "lugar só para clientes, contratos, cobranças e atendimento"],
-  ["IA", "aplicada ao atendimento por WhatsApp e aos fluxos internos"],
+  ["10", "módulos numa única plataforma, no lugar de planilhas e mensagens soltas"],
+  ["1", "lugar para clientes, contratos, cobranças e atendimento"],
+  ["IA", "respondendo no WhatsApp e organizando fluxos internos"],
 ];
 
 export function Case() {
   return (
-    <section className="relative overflow-hidden border-t border-line py-24 md:py-32" aria-labelledby="case-title">
+    <section className="relative overflow-hidden border-t border-line py-24 md:py-36" aria-labelledby="case-title">
       <div className="container-x">
-        <div className="grid gap-8 lg:grid-cols-12 lg:items-end">
-          <Reveal className="lg:col-span-7">
+        <div className="grid gap-8 lg:grid-cols-12">
+          <Reveal className="lg:col-span-9">
             <SectionLabel index="05" tone="signal">Projeto em destaque</SectionLabel>
-            <h2 id="case-title" className="mt-6 text-h2 font-medium">
-              Uma plataforma de gestão e atendimento, <span className="serif-accent text-muted">construída do zero.</span>
+            <h2 id="case-title" className="mt-8 text-h2 font-semibold">
+              Uma operação inteira que saiu das planilhas.
             </h2>
-          </Reveal>
-          <Reveal delay={0.1} className="lg:col-span-5">
-            <p className="text-lg leading-relaxed text-muted">
-              CRM, portal do cliente, financeiro, pagamentos, contratos, WhatsApp e IA trabalhando juntos. O tipo de sistema que
-              tira uma operação inteira de planilhas e mensagens soltas.
+            <p className="mt-6 max-w-2xl text-[1.05rem] leading-relaxed text-muted">
+              Plataforma de gestão e atendimento construída do zero: {caseModules.slice(0, -1).join(", ").toLowerCase()} e{" "}
+              {caseModules[caseModules.length - 1].toLowerCase()}, trabalhando juntos.
             </p>
           </Reveal>
         </div>
@@ -33,32 +31,19 @@ export function Case() {
           <CaseShowcase />
         </div>
 
-        <div className="mt-14 grid gap-10 lg:grid-cols-12">
-          <Reveal className="lg:col-span-7">
-            <ul className="flex flex-wrap gap-2" aria-label="Módulos da plataforma">
-              {caseModules.map((m) => (
-                <li key={m} className="rounded-full border border-line-strong bg-white/[0.02] px-4 py-2 text-sm text-fg/85">
-                  {m}
-                </li>
-              ))}
-            </ul>
-          </Reveal>
-          <Reveal delay={0.1} className="lg:col-span-5">
-            <dl className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line">
-              {facts.map(([n, t]) => (
-                <div key={t} className="flex items-baseline gap-5 bg-ink-950 p-5">
-                  <dt className="w-16 shrink-0 font-mono text-2xl text-signal">{n}</dt>
-                  <dd className="text-muted">{t}</dd>
-                </div>
-              ))}
-            </dl>
-            <div className="mt-6">
-              <ButtonLink href="/projetos" variant="secondary" arrow>
-                Ver o projeto completo
-              </ButtonLink>
-            </div>
-          </Reveal>
+        <div className="mt-16 grid gap-10 border-t border-line pt-10 md:grid-cols-3 md:gap-8">
+          {facts.map(([n, t], i) => (
+            <Reveal key={t} delay={i * 0.06}>
+              <p className="font-[family-name:var(--font-display)] text-5xl font-light tracking-[-0.04em] text-signal">{n}</p>
+              <p className="mt-3 max-w-[28ch] text-muted">{t}</p>
+            </Reveal>
+          ))}
         </div>
+        <Reveal className="mt-12">
+          <ButtonLink href="/projetos" variant="secondary" arrow>
+            Ver o projeto completo
+          </ButtonLink>
+        </Reveal>
       </div>
     </section>
   );

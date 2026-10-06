@@ -23,7 +23,7 @@ const feed = [
 
 export function DashboardMockup() {
   return (
-    <div className="overflow-hidden rounded-[22px] border border-line-strong bg-ink-900 text-left shadow-[0_60px_120px_-40px_rgb(0_0_0/0.9)]" aria-hidden>
+    <div className="overflow-hidden rounded-[14px] border border-line-strong bg-ink-900 text-left shadow-[0_60px_120px_-40px_rgb(0_0_0/0.9)]" aria-hidden>
       <div className="flex items-center gap-1.5 border-b border-line bg-ink-950/60 px-4 py-2.5">
         <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
         <span className="h-2.5 w-2.5 rounded-full bg-white/15" />
@@ -33,7 +33,7 @@ export function DashboardMockup() {
       <div className="grid grid-cols-12">
         <aside className="col-span-3 hidden border-r border-line p-4 md:block lg:col-span-2">
           <div className="mb-5 flex items-center gap-2 text-[0.75rem] font-semibold">
-            <span className="h-4 w-4 rounded-md bg-signal" /> Plataforma
+            <span className="h-4 w-4 rounded-[4px] bg-royal" /> Plataforma
           </div>
           <ul className="space-y-1">
             {modules.map((m, i) => (
@@ -50,8 +50,8 @@ export function DashboardMockup() {
               <p className="text-sm font-medium">Visão geral da operação</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="hidden rounded-full border border-line px-3 py-1 text-[0.65rem] text-muted sm:inline">Últimos 30 dias</span>
-              <span className="h-7 w-7 rounded-full bg-gradient-to-br from-ice/60 to-signal/50" />
+              <span className="hidden rounded-[6px] border border-line px-3 py-1 text-[0.65rem] text-muted sm:inline">Últimos 30 dias</span>
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-ink-700 text-[0.6rem] font-semibold">RA</span>
             </div>
           </div>
 

@@ -39,7 +39,7 @@ export function ManualCost() {
   const yearly = monthlyHours * cost * 12;
 
   return (
-    <div className="grid overflow-hidden rounded-[28px] border border-line bg-ink-900 lg:grid-cols-2">
+    <div className="grid overflow-hidden rounded-[16px] border border-line bg-ink-900 lg:grid-cols-2">
       <div className="grid gap-8 p-7 md:p-10">
         <Slider label="Pessoas que fazem tarefas repetitivas" value={people} min={1} max={30} step={1} onChange={setPeople} format={(v) => `${v}`} />
         <Slider label="Horas por semana, por pessoa, nessas tarefas" value={hours} min={1} max={30} step={1} onChange={setHours} format={(v) => `${v}h`} />

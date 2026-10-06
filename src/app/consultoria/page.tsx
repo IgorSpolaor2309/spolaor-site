@@ -69,7 +69,7 @@ export default function ConsultoriaPage() {
             title={<>Primeiro o diagnóstico. <span className="serif-accent text-muted">Depois a tecnologia.</span></>}
             text="A recomendação vem do que acontece na sua empresa, não do que temos para vender."
           />
-          <ol className="mt-14 grid gap-px overflow-hidden rounded-[28px] border border-line bg-line md:grid-cols-2 lg:grid-cols-4">
+          <ol className="mt-14 grid gap-px overflow-hidden rounded-[16px] border border-line bg-line md:grid-cols-2 lg:grid-cols-4">
             {how.map(([t, d], i) => (
               <Reveal as="li" key={t} delay={i * 0.06} className="bg-ink-950 p-7">
                 <span className="font-mono text-xs text-signal">0{i + 1}</span>

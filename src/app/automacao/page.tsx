@@ -57,7 +57,7 @@ export default function AutomacaoPage() {
   return (
     <>
       <PageHero
-        aside={<div className="rounded-[28px] border border-line bg-ink-900/80 p-4 backdrop-blur md:p-6"><ManualTasksDemo /></div>}
+        aside={<div className="rounded-[16px] border border-line bg-ink-900/80 p-4 backdrop-blur md:p-6"><ManualTasksDemo /></div>}
         eyebrow="Automação"
         title={
           <>
@@ -126,7 +126,7 @@ export default function AutomacaoPage() {
       <section className="border-t border-line py-24 md:py-32" aria-labelledby="impl-title">
         <div className="container-x">
           <SectionIntro id="impl-title" label={<SectionLabel index="05">Como implantamos</SectionLabel>} title="Do processo atual à rotina automatizada." />
-          <ol className="mt-14 grid gap-px overflow-hidden rounded-[28px] border border-line bg-line md:grid-cols-5">
+          <ol className="mt-14 grid gap-px overflow-hidden rounded-[16px] border border-line bg-line md:grid-cols-5">
             {steps.map(([t, d], i) => (
               <Reveal as="li" key={t} delay={i * 0.06} className="bg-ink-950 p-6">
                 <span className="font-mono text-xs text-signal">0{i + 1}</span>

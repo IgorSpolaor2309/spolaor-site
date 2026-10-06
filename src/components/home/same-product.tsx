@@ -49,8 +49,8 @@ const criteria: { zone: Zone; title: string; a: string; b: string }[] = [
 function zoneClass(active: Zone, zone: Zone, good: boolean) {
   if (active !== zone) return "ring-0";
   return good
-    ? "ring-2 ring-signal/80 ring-offset-2 ring-offset-ink-850 shadow-[0_0_40px_-6px_rgb(34_211_255/0.5)]"
-    : "ring-2 ring-ember/80 ring-offset-2 ring-offset-ink-850 shadow-[0_0_40px_-6px_rgb(255_138_31/0.5)]";
+    ? "ring-2 ring-signal/80 ring-offset-2 ring-offset-ink-850"
+    : "ring-2 ring-ember/80 ring-offset-2 ring-offset-ink-850";
 }
 
 function SiteA({ active }: { active: Zone }) {
@@ -158,8 +158,8 @@ export function SameProduct({ index = "02", label = "Sites", showLink = true }: 
       <div className="container-x">
         <Reveal className="max-w-4xl">
           <SectionLabel index={index} tone="ember">{label}</SectionLabel>
-          <h2 id="same-title" className="mt-6 text-h2 font-medium">
-            Mesmo produto. Mesmo preço. <span className="serif-accent text-signal">O cliente escolheu a outra.</span>
+          <h2 id="same-title" className="mt-8 max-w-[16ch] text-h2 font-semibold">
+            Mesmo produto. Mesmo preço. <span className="text-sky">O cliente escolheu a outra.</span>
           </h2>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted">
             Seu produto pode não ser o problema. Duas empresas com ofertas parecidas raramente perdem pelo que vendem. Perdem
@@ -241,7 +241,7 @@ export function SameProduct({ index = "02", label = "Sites", showLink = true }: 
             )}
           </Reveal>
           <Reveal delay={0.1} className="lg:col-span-5">
-            <aside className="relative overflow-hidden rounded-3xl border border-line bg-ink-900 p-7">
+            <aside className="border-l-2 border-ember pl-6">
               <p className="eyebrow">E o Instagram?</p>
               <p className="mt-4 text-lg leading-relaxed">
                 Ótimo para ser lembrado. Mas o algoritmo decide quem vê, o perfil não é seu, e uma decisão de compra pede mais que

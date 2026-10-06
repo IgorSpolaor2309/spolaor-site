@@ -87,7 +87,7 @@ export function AnalysisForm({ origem = "home" }: { origem?: string }) {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-[28px] border border-line-strong bg-ink-900/90 shadow-[0_40px_120px_-40px_rgb(0_0_0/0.9)] backdrop-blur">
+    <div className="relative overflow-hidden rounded-[16px] border border-line-strong bg-ink-900/90 shadow-[0_40px_120px_-40px_rgb(0_0_0/0.9)] backdrop-blur">
       {step < 3 && (
         <div className="flex items-center gap-3 border-b border-line px-6 py-4 md:px-8">
           <span className="font-mono text-xs text-dim">Passo {step} de 2</span>
@@ -148,7 +148,7 @@ export function AnalysisForm({ origem = "home" }: { origem?: string }) {
                         type="button"
                         aria-pressed={on}
                         onClick={() => toggleImprovement(m)}
-                        className={`rounded-full border px-3.5 py-2 text-sm transition-all duration-300 ${
+                        className={`rounded-[8px] border px-3.5 py-2 text-sm transition-all duration-300 ${
                           on ? "border-signal bg-signal/10 text-signal" : "border-line-strong text-muted hover:border-white/30 hover:text-fg"
                         }`}
                       >

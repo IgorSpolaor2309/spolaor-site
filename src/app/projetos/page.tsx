@@ -67,7 +67,7 @@ export default function ProjetosPage() {
       <section className="border-t border-line py-24 md:py-32">
         <div className="container-x grid gap-5 md:grid-cols-3">
           {story.map((s, i) => (
-            <Reveal key={s.t} delay={i * 0.08} className="rounded-[28px] border border-line bg-ink-900 p-7 md:p-9">
+            <Reveal key={s.t} delay={i * 0.08} className="rounded-[16px] border border-line bg-ink-900 p-7 md:p-9">
               <p className="eyebrow">{String(i + 1).padStart(2, "0")}</p>
               <h2 className="mt-5 text-2xl font-medium tracking-tight">{s.t}</h2>
               <p className="mt-3 leading-relaxed text-muted">{s.d}</p>
@@ -79,7 +79,7 @@ export default function ProjetosPage() {
       <section className="border-t border-line py-24 md:py-32" aria-labelledby="mod-title">
         <div className="container-x">
           <SectionIntro id="mod-title" label={<SectionLabel tone="signal">Módulos</SectionLabel>} title="Tudo o que a plataforma faz." />
-          <dl className="mt-14 grid gap-px overflow-hidden rounded-[28px] border border-line bg-line sm:grid-cols-2">
+          <dl className="mt-14 grid gap-px overflow-hidden rounded-[16px] border border-line bg-line sm:grid-cols-2">
             {modules.map(([t, d], i) => (
               <Reveal key={t} delay={(i % 2) * 0.06} className="flex gap-5 bg-ink-950 p-6 md:p-8">
                 <span className="font-mono text-xs text-signal">{String(i + 1).padStart(2, "0")}</span>

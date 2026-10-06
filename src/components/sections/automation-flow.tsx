@@ -3,65 +3,94 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react";
 
-type Step = { title: string; detail: string; log: string; icon: keyof typeof icons };
+// Demonstração de produto: um contato real atravessando a automação, visto pelas três telas
+// que a empresa usaria (conversa, registro no sistema e histórico). Dados fictícios.
 
-export const flows: Record<string, { label: string; steps: Step[] }> = {
+type Msg = { at: number; from: "them" | "auto"; text: string; time: string };
+type Field = { at: number; label: string; value: string };
+type Flow = {
+  label: string;
+  contact: { name: string; meta: string; initials: string };
+  chat: Msg[];
+  record: { kind: string; title: string; fields: Field[]; stages: string[]; stageAt: number[] };
+  log: string[];
+};
+
+export const flows: Record<string, Flow> = {
   comercial: {
     label: "Comercial",
-    steps: [
-      { title: "Lead entra", detail: "Formulário, anúncio ou WhatsApp", log: "Novo lead: Marina Costa · origem: site", icon: "inbox" },
-      { title: "CRM registra", detail: "Dados organizados, sem digitação", log: "Contato criado no CRM · etapa: novo", icon: "database" },
-      { title: "WhatsApp dispara", detail: "Primeira resposta em segundos", log: "Mensagem de boas-vindas enviada", icon: "chat" },
-      { title: "Responsável avisado", detail: "Quem atende recebe o contexto", log: "Notificação para Rafael (vendas)", icon: "bell" },
-      { title: "Follow-up acontece", detail: "Sem depender de memória", log: "Lembrete agendado: retorno em 2 dias", icon: "clock" },
-      { title: "Oportunidade acompanhada", detail: "Nada fica esquecido", log: "Oportunidade em acompanhamento", icon: "target" },
+    contact: { name: "Marina Costa", meta: "Clínica Vita · veio pelo site", initials: "MC" },
+    chat: [
+      { at: 0, from: "them", text: "Oi! Preenchi o formulário do site, queria um orçamento para 3 unidades.", time: "09:41" },
+      { at: 2, from: "auto", text: "Olá, Marina! Recebemos seu pedido. O Rafael, do comercial, vai te chamar ainda hoje. Para adiantar: qual cidade?", time: "09:41" },
+      { at: 3, from: "them", text: "Campinas.", time: "09:43" },
+      { at: 5, from: "auto", text: "Marina, a proposta foi enviada para o seu e-mail. Posso agendar uma conversa de 15 min amanhã?", time: "dia 14 · 10:00" },
+    ],
+    record: {
+      kind: "Lead",
+      title: "Marina Costa",
+      fields: [
+        { at: 1, label: "Origem", value: "Formulário do site" },
+        { at: 1, label: "Interesse", value: "Orçamento · 3 unidades" },
+        { at: 3, label: "Cidade", value: "Campinas" },
+        { at: 3, label: "Responsável", value: "Rafael (comercial)" },
+        { at: 4, label: "Próximo contato", value: "em 2 dias, automático" },
+      ],
+      stages: ["Novo", "Em atendimento", "Proposta"],
+      stageAt: [1, 3, 5],
+    },
+    log: [
+      "Mensagem recebida · WhatsApp",
+      "Lead criado no CRM · origem: site",
+      "Resposta automática enviada · 3s",
+      "Rafael notificado com o histórico",
+      "Follow-up agendado para dia 14",
+      "Etapa alterada para Proposta",
     ],
   },
   operacao: {
     label: "Operação",
-    steps: [
-      { title: "Cliente envia", detail: "Documento, pedido ou dúvida", log: "Arquivo recebido pelo portal", icon: "inbox" },
-      { title: "Sistema identifica", detail: "Quem enviou e do que se trata", log: "Classificado: nota fiscal · cliente #2041", icon: "scan" },
-      { title: "Organiza", detail: "Salva no lugar certo, com padrão", log: "Arquivado em Clientes/2041/Fiscal", icon: "folder" },
-      { title: "Atualiza status", detail: "Cliente e equipe veem o mesmo", log: "Status: documentação completa", icon: "check" },
-      { title: "Equipe recebe", detail: "Tarefa criada para o responsável", log: "Tarefa atribuída a Ana (fiscal)", icon: "users" },
-      { title: "Cliente informado", detail: "Confirmação automática", log: "Confirmação enviada por WhatsApp", icon: "chat" },
+    contact: { name: "Grupo Orion", meta: "cliente #2041 · portal", initials: "GO" },
+    chat: [
+      { at: 0, from: "them", text: "Segue a nota fiscal de setembro.", time: "14:02" },
+      { at: 3, from: "auto", text: "Recebido! Nota fiscal de setembro arquivada. Sua documentação do mês está completa.", time: "14:02" },
+      { at: 5, from: "auto", text: "A Ana, do fiscal, já está com o seu processo. Previsão de retorno: até sexta.", time: "14:03" },
+    ],
+    record: {
+      kind: "Documento",
+      title: "NF set/2026 · Grupo Orion",
+      fields: [
+        { at: 1, label: "Tipo", value: "Nota fiscal" },
+        { at: 2, label: "Pasta", value: "Clientes/2041/Fiscal" },
+        { at: 3, label: "Status do mês", value: "Documentação completa" },
+        { at: 4, label: "Responsável", value: "Ana (fiscal)" },
+      ],
+      stages: ["Recebido", "Arquivado", "Em análise"],
+      stageAt: [0, 2, 4],
+    },
+    log: [
+      "Arquivo recebido pelo portal",
+      "Classificado: nota fiscal · cliente #2041",
+      "Salvo em Clientes/2041/Fiscal",
+      "Status atualizado para o cliente",
+      "Tarefa criada para Ana (fiscal)",
+      "Confirmação enviada por WhatsApp",
     ],
   },
 };
-
-const icons = {
-  inbox: "M3 13h4l2 3h6l2-3h4M5 5h14l2 8v6H3v-6l2-8Z",
-  database: "M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3Zm0 0v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3",
-  chat: "M4 5h16v11H9l-5 4V5Z",
-  bell: "M6 16V11a6 6 0 1 1 12 0v5l2 2H4l2-2Zm4 4h4",
-  clock: "M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
-  target: "M12 3v3m0 12v3M3 12h3m12 0h3M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z",
-  scan: "M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M4 12h16",
-  folder: "M3 6h6l2 2h10v11H3V6Z",
-  check: "M4 12l5 5L20 6",
-  users: "M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM21 19v-1a4 4 0 0 0-3-3.9M16 4.1a3 3 0 0 1 0 5.8",
-};
-
-function Icon({ name }: { name: keyof typeof icons }) {
-  return (
-    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d={icons[name]} />
-    </svg>
-  );
-}
 
 export function AutomationFlow({ initial = "comercial" }: { initial?: keyof typeof flows }) {
   const [flowKey, setFlowKey] = useState<string>(initial);
   const [step, setStep] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { margin: "-25% 0px -25% 0px" });
+  const inView = useInView(ref, { margin: "-20% 0px -20% 0px" });
   const reduce = useReducedMotion();
   const flow = flows[flowKey];
+  const total = flow.log.length;
 
   useEffect(() => {
     if (reduce) {
-      setStep(flow.steps.length - 1);
+      setStep(total - 1);
       return;
     }
     if (!inView) return;
@@ -70,35 +99,32 @@ export function AutomationFlow({ initial = "comercial" }: { initial?: keyof type
     let timer: ReturnType<typeof setTimeout>;
     const tick = () => {
       i += 1;
-      if (i < flow.steps.length) {
+      if (i < total) {
         setStep(i);
-        timer = setTimeout(tick, 950);
+        timer = setTimeout(tick, 1300);
       } else {
         timer = setTimeout(() => {
           i = -1;
           setStep(-1);
-          timer = setTimeout(tick, 600);
-        }, 3200);
+          timer = setTimeout(tick, 700);
+        }, 4200);
       }
     };
-    timer = setTimeout(tick, 400);
+    timer = setTimeout(tick, 500);
     return () => clearTimeout(timer);
-  }, [inView, flowKey, reduce, flow.steps.length]);
+  }, [inView, flowKey, reduce, total]);
 
-  const logs = flow.steps.slice(0, step + 1);
+  const stage = flow.record.stageAt.filter((a) => a <= step).length - 1;
 
   return (
-    <div ref={ref} className="relative overflow-hidden rounded-[28px] border border-line bg-ink-900">
-      <div aria-hidden className="bg-grid absolute inset-0 opacity-40 [mask-image:linear-gradient(to_bottom,#000,transparent)]" />
-      <div className="relative flex flex-wrap items-center justify-between gap-4 border-b border-line px-5 py-4 md:px-8">
-        <div className="flex items-center gap-3">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-signal opacity-60" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-signal" />
-          </span>
-          <span className="font-mono text-xs uppercase tracking-[0.14em] text-muted">Fluxo automático · executando</span>
-        </div>
-        <div role="tablist" aria-label="Exemplos de fluxo" className="inline-flex rounded-full border border-line bg-ink-950 p-1">
+    <div ref={ref} className="overflow-hidden rounded-[14px] border border-line-strong bg-ink-900">
+      {/* barra da janela */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-ink-950/60 px-4 py-2.5 md:px-5">
+        <p className="flex items-center gap-3 font-mono text-[0.7rem] text-dim">
+          <span className={`h-1.5 w-1.5 rounded-full ${step >= 0 ? "bg-signal" : "bg-white/25"}`} aria-hidden />
+          automação · {flow.label.toLowerCase()} · {Math.max(0, step + 1)}/{total} etapas
+        </p>
+        <div role="tablist" aria-label="Exemplos de fluxo" className="inline-flex rounded-[8px] border border-line bg-ink-950 p-0.5">
           {Object.entries(flows).map(([key, f]) => (
             <button
               key={key}
@@ -106,7 +132,7 @@ export function AutomationFlow({ initial = "comercial" }: { initial?: keyof type
               type="button"
               aria-selected={flowKey === key}
               onClick={() => setFlowKey(key)}
-              className={`rounded-full px-4 py-1.5 text-sm transition-colors ${flowKey === key ? "bg-white/10 text-fg" : "text-muted hover:text-fg"}`}
+              className={`rounded-[6px] px-3 py-1 text-[0.8rem] transition-colors ${flowKey === key ? "bg-white/10 text-fg" : "text-muted hover:text-fg"}`}
             >
               {f.label}
             </button>
@@ -114,66 +140,89 @@ export function AutomationFlow({ initial = "comercial" }: { initial?: keyof type
         </div>
       </div>
 
-      <div className="relative grid gap-0 p-5 md:p-8 lg:grid-cols-12 lg:gap-8">
-        <ol className="relative grid gap-3 lg:col-span-8 lg:grid-cols-3 lg:gap-4" aria-label={`Etapas do fluxo ${flow.label}`}>
-          {flow.steps.map((s, i) => {
-            const done = i < step;
-            const current = i === step;
-            const lit = i <= step;
-            return (
-              <li
-                key={s.title}
-                className={`relative flex items-start gap-4 rounded-2xl border p-4 transition-all duration-500 lg:flex-col lg:gap-5 lg:p-5 ${
-                  current
-                    ? "border-signal/60 bg-signal/[0.06] shadow-[0_0_50px_-12px_rgb(34_211_255/0.45)]"
-                    : lit
-                      ? "border-line-strong bg-white/[0.03]"
-                      : "border-line bg-transparent"
-                }`}
-              >
-                <span
-                  className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition-colors duration-500 ${
-                    lit ? "border-signal/50 bg-signal text-ink-950" : "border-line-strong text-muted"
-                  }`}
-                >
-                  <Icon name={s.icon} />
-                </span>
-                <span className="min-w-0">
-                  <span className="flex items-center gap-2">
-                    <span className="font-mono text-[0.68rem] text-dim">0{i + 1}</span>
-                    {done && <span className="font-mono text-[0.68rem] text-signal">ok</span>}
-                  </span>
-                  <span className={`mt-1 block font-medium transition-colors ${lit ? "text-fg" : "text-fg/60"}`}>{s.title}</span>
-                  <span className="mt-1 block text-sm text-muted">{s.detail}</span>
-                </span>
-              </li>
-            );
-          })}
-        </ol>
-
-        <div className="mt-5 rounded-2xl border border-line bg-ink-950/80 lg:col-span-4 lg:mt-0" aria-live="polite">
-          <div className="flex items-center justify-between border-b border-line px-4 py-3">
-            <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-dim">Registro de eventos</span>
-            <span className="font-mono text-[0.7rem] text-dim">{logs.length}/{flow.steps.length}</span>
+      <div className="grid lg:grid-cols-12">
+        {/* 1. conversa */}
+        <div className="border-b border-line lg:col-span-5 lg:border-b-0 lg:border-r">
+          <div className="flex items-center gap-3 border-b border-line px-4 py-3 md:px-5">
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-ink-700 text-[0.7rem] font-semibold">{flow.contact.initials}</span>
+            <span className="leading-tight">
+              <span className="block text-sm font-semibold">{flow.contact.name}</span>
+              <span className="block text-[0.72rem] text-dim">{flow.contact.meta}</span>
+            </span>
+            <span className="ml-auto font-mono text-[0.65rem] text-dim">WhatsApp</span>
           </div>
-          <ul className="h-[248px] space-y-2 overflow-hidden p-4 font-mono text-[0.74rem] leading-relaxed">
+          <ul className="flex h-[300px] flex-col justify-end gap-2.5 overflow-hidden p-4 md:p-5" aria-label="Conversa">
             <AnimatePresence initial={false}>
-              {logs.map((s, i) => (
-                <motion.li
-                  key={`${flowKey}-${s.title}`}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.35 }}
-                  className="flex gap-3"
-                >
-                  <span className="shrink-0 text-dim">+{(i * 0.9 + 0.2).toFixed(1)}s</span>
-                  <span className={i === step ? "text-signal" : "text-fg/75"}>{s.log}</span>
-                </motion.li>
-              ))}
+              {flow.chat
+                .filter((m) => m.at <= step)
+                .map((m) => (
+                  <motion.li
+                    key={`${flowKey}-${m.text}`}
+                    layout
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.35 }}
+                    className={`max-w-[85%] rounded-[12px] px-3.5 py-2.5 text-[0.84rem] leading-snug ${
+                      m.from === "them" ? "self-start rounded-bl-[4px] bg-ink-700 text-fg/90" : "self-end rounded-br-[4px] bg-[#123a7a] text-fg"
+                    }`}
+                  >
+                    {m.text}
+                    <span className="mt-1 flex justify-end gap-2 font-mono text-[0.6rem] text-fg/45">
+                      {m.from === "auto" && <span className="text-signal/80">automático</span>}
+                      {m.time}
+                    </span>
+                  </motion.li>
+                ))}
             </AnimatePresence>
-            {step < 0 && <li className="text-dim">aguardando evento…</li>}
+            {step < 0 && <li className="self-center font-mono text-[0.7rem] text-dim">aguardando mensagem…</li>}
           </ul>
+        </div>
+
+        {/* 2. registro no sistema */}
+        <div className="border-b border-line p-4 md:p-5 lg:col-span-4 lg:border-b-0 lg:border-r">
+          <p className="font-mono text-[0.65rem] uppercase tracking-[0.14em] text-dim">{flow.record.kind} · CRM</p>
+          <p className={`mt-2 text-lg font-semibold tracking-[-0.02em] transition-opacity duration-500 ${step >= flow.record.fields[0].at ? "opacity-100" : "opacity-25"}`}>
+            {flow.record.title}
+          </p>
+          <ol className="mt-4 grid grid-cols-3 gap-1" aria-label="Etapa">
+            {flow.record.stages.map((s, i) => (
+              <li key={s}>
+                <span className={`block h-[3px] rounded-full transition-colors duration-500 ${i <= stage ? "bg-signal" : "bg-white/10"}`} />
+                <span className={`mt-1.5 block text-[0.68rem] transition-colors duration-500 ${i === stage ? "text-fg" : "text-dim"}`}>{s}</span>
+              </li>
+            ))}
+          </ol>
+          <dl className="mt-5 divide-y divide-line border-y border-line">
+            {flow.record.fields.map((f) => {
+              const on = f.at <= step;
+              return (
+                <div key={f.label} className="flex items-baseline justify-between gap-3 py-2.5 text-[0.82rem]">
+                  <dt className="text-dim">{f.label}</dt>
+                  <dd className={`text-right transition-all duration-500 ${on ? "text-fg" : "text-transparent"}`}>
+                    {on ? f.value : "—"}
+                  </dd>
+                </div>
+              );
+            })}
+          </dl>
+        </div>
+
+        {/* 3. histórico */}
+        <div className="p-4 md:p-5 lg:col-span-3" aria-live="polite">
+          <p className="font-mono text-[0.65rem] uppercase tracking-[0.14em] text-dim">Histórico</p>
+          <ol className="relative mt-4 space-y-3.5 border-l border-line pl-4">
+            {flow.log.map((l, i) => {
+              const on = i <= step;
+              return (
+                <li key={l} className={`relative text-[0.78rem] leading-snug transition-opacity duration-500 ${on ? "opacity-100" : "opacity-0"}`}>
+                  <span aria-hidden className={`absolute -left-[19.5px] top-1.5 h-[7px] w-[7px] rounded-full ${i === step ? "bg-signal" : "bg-ink-600"}`} />
+                  <span className="block font-mono text-[0.62rem] text-dim">+{(i * 0.9 + 0.3).toFixed(1)}s</span>
+                  <span className={i === step ? "text-fg" : "text-muted"}>{l}</span>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       </div>
     </div>

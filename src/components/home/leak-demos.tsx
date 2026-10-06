@@ -29,10 +29,10 @@ function useAutoToggle(interval = 3800) {
 
 function Toggle({ on, set, labels }: { on: boolean; set: (v: boolean) => void; labels: [string, string] }) {
   return (
-    <div role="group" aria-label="Comparar cenários" className="relative inline-grid grid-cols-2 rounded-full border border-line bg-ink-900 p-1 text-[0.8rem]">
+    <div role="group" aria-label="Comparar cenários" className="relative inline-grid grid-cols-2 rounded-[9px] border border-line bg-ink-900 p-1 text-[0.8rem]">
       <span
         aria-hidden
-        className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full transition-all duration-500 ease-out-expo ${
+        className={`absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-[6px] transition-all duration-500 ease-out-expo ${
           on ? "translate-x-full bg-signal" : "translate-x-0 bg-ember/90"
         }`}
       />
@@ -44,7 +44,7 @@ function Toggle({ on, set, labels }: { on: boolean; set: (v: boolean) => void; l
             type="button"
             aria-pressed={active}
             onClick={() => set(i === 1)}
-            className={`relative z-10 rounded-full px-3.5 py-1.5 font-medium transition-colors duration-300 ${active ? "text-ink-950" : "text-muted hover:text-fg"}`}
+            className={`relative z-10 rounded-[6px] px-3.5 py-1.5 font-medium transition-colors duration-300 ${active ? "text-ink-950" : "text-muted hover:text-fg"}`}
           >
             {l}
           </button>
@@ -77,7 +77,7 @@ export function PresenceDemo() {
         <Toggle on={on} set={set} labels={["Como está", "Como poderia ser"]} />
         <Meter value={on ? 87 : 31} on={on} label="Confiança" />
       </div>
-      <div className="relative overflow-hidden rounded-2xl border border-line bg-ink-850">
+      <div className="relative overflow-hidden rounded-[12px] border border-line bg-ink-850">
         <div className="flex items-center gap-1.5 border-b border-line px-3 py-2">
           <span className="h-2 w-2 rounded-full bg-white/15" />
           <span className="h-2 w-2 rounded-full bg-white/15" />
@@ -188,7 +188,7 @@ export function ManualTasksDemo() {
           <span className="text-[0.75rem] text-dim">por mês</span>
         </p>
       </div>
-      <ul className="overflow-hidden rounded-2xl border border-line bg-ink-850">
+      <ul className="overflow-hidden rounded-[12px] border border-line bg-ink-850">
         {tasks.map((t, i) => {
           const hours = on ? t.auto : t.manual;
           return (

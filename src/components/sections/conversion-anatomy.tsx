@@ -21,7 +21,7 @@ export function ConversionAnatomy() {
   return (
     <div className="grid gap-12 lg:grid-cols-12 lg:items-center">
       <Reveal className="relative lg:col-span-7">
-        <div className="relative rounded-[24px] border border-line-strong bg-ink-900 p-5 md:p-8" aria-hidden>
+        <div className="relative rounded-[14px] border border-line-strong bg-ink-900 p-5 md:p-8" aria-hidden>
           <div className="relative flex items-center justify-between">
             <span className="flex items-center gap-2 text-sm font-semibold"><span className="h-4 w-4 rounded-md bg-signal" />Sua empresa</span>
             <span className="flex items-center gap-4">

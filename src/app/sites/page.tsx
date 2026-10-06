@@ -40,7 +40,7 @@ export default function SitesPage() {
   return (
     <>
       <PageHero
-        aside={<div className="rounded-[28px] border border-line bg-ink-900/80 p-4 backdrop-blur md:p-6"><PresenceDemo /></div>}
+        aside={<div className="rounded-[16px] border border-line bg-ink-900/80 p-4 backdrop-blur md:p-6"><PresenceDemo /></div>}
         eyebrow="Sites"
         title={
           <>
@@ -74,7 +74,7 @@ export default function SitesPage() {
             title={<>Instagram é vitrine. <span className="serif-accent text-signal">Site é endereço.</span></>}
             text="O Instagram é importante para ser lembrado. Mas ele não substitui um lugar que é seu, onde o cliente encontra tudo o que precisa para decidir."
           />
-          <Reveal className="mt-14 overflow-x-auto rounded-[28px] border border-line">
+          <Reveal className="mt-14 overflow-x-auto rounded-[16px] border border-line">
             <table className="w-full min-w-[640px] text-left">
               <caption className="sr-only">Comparação entre Instagram e site próprio</caption>
               <thead>
@@ -110,7 +110,7 @@ export default function SitesPage() {
           </div>
 
           <div className="mt-5 grid gap-5 md:grid-cols-2">
-            <Reveal id="ecommerce" className="scroll-mt-28 rounded-[28px] border border-line bg-ink-900 p-7 md:p-9">
+            <Reveal id="ecommerce" className="scroll-mt-28 rounded-[16px] border border-line bg-ink-900 p-7 md:p-9">
               <p className="eyebrow">E-commerce</p>
               <h3 className="mt-5 text-2xl font-medium tracking-tight">Sua loja física também pode vender online.</h3>
               <p className="mt-3 text-muted">
@@ -118,7 +118,7 @@ export default function SitesPage() {
                 catálogo, pagamentos e gestão de pedidos.
               </p>
             </Reveal>
-            <Reveal id="identidade" delay={0.08} className="scroll-mt-28 rounded-[28px] border border-line bg-ink-900 p-7 md:p-9">
+            <Reveal id="identidade" delay={0.08} className="scroll-mt-28 rounded-[16px] border border-line bg-ink-900 p-7 md:p-9">
               <p className="eyebrow">Identidade visual</p>
               <h3 className="mt-5 text-2xl font-medium tracking-tight">Uma marca à altura do que a empresa entrega.</h3>
               <p className="mt-3 text-muted">
@@ -128,7 +128,7 @@ export default function SitesPage() {
             </Reveal>
           </div>
 
-          <Reveal className="mt-5 flex flex-col gap-6 rounded-[28px] border border-line p-7 md:flex-row md:items-center md:justify-between md:p-9">
+          <Reveal className="mt-5 flex flex-col gap-6 rounded-[16px] border border-line p-7 md:flex-row md:items-center md:justify-between md:p-9">
             <div className="max-w-2xl">
               <p className="eyebrow">Depois do lançamento</p>
               <p className="mt-4 text-lg">
