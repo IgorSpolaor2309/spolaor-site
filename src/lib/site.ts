@@ -20,7 +20,7 @@ export const site = {
   whatsapp: whatsappDigits.length >= 12 ? whatsappDigits : null,
   whatsappMessage: "Olá! Quero falar sobre um projeto com a Spolaor Tecnologia.",
   description:
-    "Sites que convertem, automações e sistemas sob medida para empresas que não querem perder clientes nem desperdiçar horas com trabalho manual.",
+    "A Spolaor Tecnologia encontra onde sua empresa perde clientes e tempo (demora na resposta, contatos sem registro, follow-up esquecido, trabalho manual) e resolve com sites, CRM, automações e integrações.",
   locale: "pt_BR",
 };
 
@@ -31,11 +31,11 @@ export const siteBaseUrl = site.url ?? "http://localhost:3000";
 export const isIndexable = site.url !== null;
 
 export const nav = [
-  { href: "/sites", label: "Sites" },
-  { href: "/automacao", label: "Automação" },
-  { href: "/sistemas", label: "Sistemas" },
+  { href: "/corretores", label: "Corretores" },
+  { href: "/clinicas", label: "Clínicas" },
+  { href: "/orcamentos", label: "Orçamentos" },
+  { href: "/#servicos", label: "Serviços" },
   { href: "/projetos", label: "Projetos" },
-  { href: "/consultoria", label: "Consultoria" },
   { href: "/contato", label: "Contato" },
 ];
 

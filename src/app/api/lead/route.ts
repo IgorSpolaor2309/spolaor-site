@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { LIMITS, normalizeUrl, validateLead, type LeadPayload } from "@/lib/leads/schema";
+import { LIMITS, isOrigem, normalizeUrl, origemFromPath, validateLead, type LeadPayload } from "@/lib/leads/schema";
 import { NoLeadDestinationError, processLead } from "@/lib/leads/server/pipeline";
 import type { LeadRecord } from "@/lib/leads/server/types";
 
@@ -19,10 +19,15 @@ export async function POST(req: Request) {
   // Honeypot anti-spam: campo invisível para pessoas
   if (body.website) return NextResponse.json({ ok: true });
 
+  const pagina = str(body.pagina, LIMITS.url);
   const lead: LeadPayload = {
     tipo: body.tipo === "projeto" ? "projeto" : "analise",
-    origem: str(body.origem, LIMITS.curto) || "desconhecida",
-    pagina: str(body.pagina, LIMITS.url),
+    // Origem só aceita os valores conhecidos; senão é deduzida da página do envio.
+    origem: isOrigem(body.origem) ? body.origem : (origemFromPath(pagina) ?? "desconhecida"),
+    pagina,
+    entrada: str(body.entrada, LIMITS.url),
+    segmento: str(body.segmento, LIMITS.curto),
+    problema: str(body.problema, LIMITS.curto),
     nome: str(body.nome, LIMITS.curto) ?? "",
     empresa: str(body.empresa, LIMITS.curto) ?? "",
     whatsapp: str(body.whatsapp, 40) ?? "",

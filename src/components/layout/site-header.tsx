@@ -7,11 +7,14 @@ import { AnimatePresence, motion } from "motion/react";
 import { Logo } from "@/components/ui/logo";
 import { ButtonLink } from "@/components/ui/button";
 import { nav, whatsappLink } from "@/lib/site";
+import { PAGES_WITH_FORM } from "@/lib/segments";
 
 export function SiteHeader() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  // Nas páginas que têm o formulário, o CTA rola até ele (e o lead fica com a origem da página).
+  const ctaHref = PAGES_WITH_FORM.includes(pathname) ? "#analise" : "/analise";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -73,8 +76,8 @@ export function SiteHeader() {
 
           <div className="flex items-center gap-2">
             <span className="hidden sm:block">
-              <ButtonLink href="/analise" arrow>
-                Solicitar análise
+              <ButtonLink href={ctaHref} arrow>
+                Analisar minha empresa
               </ButtonLink>
             </span>
             <button
@@ -113,7 +116,7 @@ export function SiteHeader() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.04 * i, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <Link href={item.href} className="flex items-center justify-between py-4 text-[1.75rem] font-medium tracking-[-0.03em]">
+                    <Link href={item.href} onClick={() => setOpen(false)} className="flex items-center justify-between py-4 text-[1.75rem] font-medium tracking-[-0.03em]">
                       {item.label}
                       <span className="font-mono text-xs text-dim">0{i + 1}</span>
                     </Link>
@@ -122,8 +125,8 @@ export function SiteHeader() {
               </ul>
             </nav>
             <div className="container-x grid gap-3 pb-8 pt-6">
-              <ButtonLink href="/analise" size="lg" arrow>
-                Solicitar análise do meu site
+              <ButtonLink href={ctaHref} size="lg" arrow onClick={() => setOpen(false)}>
+                Analisar minha empresa
               </ButtonLink>
               {whatsappLink() ? (
                 <ButtonLink href={whatsappLink()!} variant="secondary" size="lg" target="_blank" rel="noopener">

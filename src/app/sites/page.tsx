@@ -34,7 +34,25 @@ const insta = [
   ["Transmitir seriedade a empresas", "Depende", "Endereço próprio e profissional"],
 ];
 
-const siteFaq = [homeFaq[0], homeFaq[2], homeFaq[3], homeFaq[4], homeFaq[5]];
+const siteCriteria = [
+  "Primeira impressão e clareza da oferta",
+  "Organização e visual",
+  "Experiência no celular",
+  "Chamadas para ação e formulários",
+  "Credibilidade",
+  "O que acontece com o contato depois que ele chega",
+];
+
+const siteFaq = [
+  homeFaq[0],
+  homeFaq[5],
+  {
+    q: "Meu site é recente. Ainda faz sentido pedir o diagnóstico?",
+    a: "Faz. Um site novo pode ser bonito e ainda assim não gerar contatos, ou gerar contatos que ninguém acompanha. O diagnóstico mostra se ele está cumprindo o papel de trazer oportunidades.",
+  },
+  homeFaq[6],
+  homeFaq[7],
+];
 
 export default function SitesPage() {
   return (
@@ -143,7 +161,19 @@ export default function SitesPage() {
         </div>
       </section>
 
-      <AnalysisBlock index="05" origem="sites" />
+      <AnalysisBlock
+        index="05"
+        origem="sites"
+        label="Análise do site"
+        title={
+          <>
+            Descubra o que seu site está <span className="text-ember">custando</span> para você.
+          </>
+        }
+        text="Olhamos o seu site como um cliente exigente olharia e apontamos o que impede visitas de virarem contatos, e o que acontece com esses contatos depois. Sem custo e sem compromisso."
+        items={siteCriteria}
+        itemsTitle="O que olhamos no seu site"
+      />
       <Faq items={siteFaq} index="06" />
     </>
   );

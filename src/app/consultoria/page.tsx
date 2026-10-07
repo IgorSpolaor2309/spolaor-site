@@ -39,7 +39,7 @@ export default function ConsultoriaPage() {
         }
         text="Para empresas que sentem o problema, mas ainda não sabem o nome da solução. Antes de qualquer projeto, ajudamos você a decidir onde investir."
         primary={{ href: "/contato?interesse=Consultoria", label: "Agendar uma conversa" }}
-        secondary={{ href: "/analise", label: "Começar pela análise gratuita" }}
+        secondary={{ href: "/analise", label: "Começar pelo diagnóstico" }}
       />
 
       <section className="border-t border-line py-24 md:py-32" aria-labelledby="who-title">

@@ -86,3 +86,15 @@ Páginas internas: `/sites`, `/automacao`, `/sistemas`, `/projetos`, `/consultor
 **Captação de leads**: o formulário envia para `/api/lead`, que valida e entrega o lead a conectores plugáveis (`src/lib/leads/server/connectors`). Nenhum destino externo está definido ainda; Supabase, CRM, n8n, Make ou e-mail entram como um conector novo, sem mudar o formulário. Página, origem e UTMs já vão junto, o que prepara a otimização de conversão futura.
 
 **SEO**: HTML semântico, um H1 por página, metadata e Open Graph por rota, imagem OG gerada dinamicamente, `sitemap.xml`, `robots.txt`, dados estruturados (Organization + ProfessionalService).
+
+## 6. Reposicionamento e landings por segmento (outubro/2026)
+
+A home deixou de vender "sites e automação" e passou a vender o resultado: mais oportunidades aproveitadas, menos leads perdidos, menos trabalho manual, mais controle. A tecnologia aparece só como meio.
+
+**Home** (`src/app/page.tsx`): Hero (pergunta "Quantos clientes sua empresa perde sem perceber?" com as fitas do S) → *Um dia comum* (cinco situações reais com relógio e objetos de cena: notificação sem resposta, funil sem medição, canais sem dono, planilha à mão, lembretes esquecidos) → *O que fazemos* (três capacidades, resultado antes da tecnologia) → demonstração da automação → *Por segmento* (ponte para as landings) → comparação "mesmo produto" → projeto em destaque → *Como trabalhamos* (5 etapas: entender, encontrar, propor, construir, acompanhar) → diagnóstico gratuito → perguntas → CTA final.
+
+**Landings** `/corretores`, `/clinicas`, `/orcamentos` (`src/app/<segmento>/page.tsx`): mesma espinha, conteúdo próprio. Hero com cena do segmento (`segment/hero-scenes.tsx`: celular do corretor em visita, recepção da clínica, disputa de orçamento) → dia/semana de situações → frase de posicionamento → jornada do contato (`segment/journey.tsx`: etapas automáticas em azul, a pessoa assume em marinho) + demonstração da conversa e do CRM com dados fictícios → *Quem faz o quê* (automação × pessoas, com ressalva de que nem tudo entra em todo projeto) → diagnóstico com perguntas do segmento → FAQ própria → CTA final.
+
+**Componentes compartilhados** em `src/components/segment`: `SegmentHero`, `SituationsDay` (+ `artifacts.tsx`), `Journey`, `JourneySection`, `Division`, `Statement`. Reaproveitados da base: `AutomationFlow` (agora aceita fluxos próprios e mensagens "human"), `AnalysisBlock`/`AnalysisForm`, `Faq`, `FinalCta`, `Process`, header, footer, barra mobile.
+
+**Leads**: um único formulário de diagnóstico em todas as páginas. Passo 1 pergunta o segmento (fixo nas landings) e o principal problema, na língua da página; passo 2 pede nome, empresa, WhatsApp e e-mail opcional. A `origem` (`home`, `corretores`, `clinicas`, `orcamentos`, `pagina-analise`, `sites`, `contato`) vai com o lead e é validada na API; a página de entrada da visita e as UTMs também vão, para atribuir o lead à landing mesmo quando o envio acontece em outra página. Detalhes em `src/lib/leads/server/connectors/README.md`. O destino dos leads continua em aberto.

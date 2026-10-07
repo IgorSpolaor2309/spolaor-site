@@ -6,9 +6,9 @@ import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/rea
 // Demonstração de produto: um contato real atravessando a automação, visto pelas três telas
 // que a empresa usaria (conversa, registro no sistema e histórico). Dados fictícios.
 
-type Msg = { at: number; from: "them" | "auto"; text: string; time: string };
-type Field = { at: number; label: string; value: string };
-type Flow = {
+export type Msg = { at: number; from: "them" | "auto" | "human"; text: string; time: string };
+export type Field = { at: number; label: string; value: string };
+export type Flow = {
   label: string;
   contact: { name: string; meta: string; initials: string };
   chat: Msg[];
@@ -16,7 +16,7 @@ type Flow = {
   log: string[];
 };
 
-export const flows: Record<string, Flow> = {
+export const defaultFlows: Record<string, Flow> = {
   comercial: {
     label: "Comercial",
     contact: { name: "Marina Costa", meta: "Clínica Vita · veio pelo site", initials: "MC" },
@@ -79,8 +79,8 @@ export const flows: Record<string, Flow> = {
   },
 };
 
-export function AutomationFlow({ initial = "comercial" }: { initial?: keyof typeof flows }) {
-  const [flowKey, setFlowKey] = useState<string>(initial);
+export function AutomationFlow({ flows = defaultFlows, initial, humanLabel = "você assumiu" }: { flows?: Record<string, Flow>; initial?: string; humanLabel?: string }) {
+  const [flowKey, setFlowKey] = useState<string>(initial ?? Object.keys(flows)[0]);
   const [step, setStep] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { margin: "-20% 0px -20% 0px" });
@@ -164,12 +164,13 @@ export function AutomationFlow({ initial = "comercial" }: { initial?: keyof type
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.35 }}
                     className={`max-w-[85%] rounded-[12px] px-3.5 py-2.5 text-[0.84rem] leading-snug ${
-                      m.from === "them" ? "self-start rounded-bl-[4px] bg-ink-700 text-fg/90" : "self-end rounded-br-[4px] bg-[#dce7ff] text-fg"
+                      m.from === "them" ? "self-start rounded-bl-[4px] bg-ink-700 text-fg/90" : m.from === "human" ? "self-end rounded-br-[4px] bg-fg text-white" : "self-end rounded-br-[4px] bg-[#dce7ff] text-fg"
                     }`}
                   >
                     {m.text}
-                    <span className="mt-1 flex justify-end gap-2 font-mono text-[0.6rem] text-fg/65">
+                    <span className={`mt-1 flex justify-end gap-2 font-mono text-[0.6rem] ${m.from === "human" ? "text-white/70" : "text-fg/65"}`}>
                       {m.from === "auto" && <span className="text-signal">automático</span>}
+                      {m.from === "human" && <span className="text-white/80">{humanLabel}</span>}
                       {m.time}
                     </span>
                   </motion.li>

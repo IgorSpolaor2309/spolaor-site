@@ -48,7 +48,7 @@ export default function ContatoPage() {
             <Link href="/analise" className="group flex items-center justify-between rounded-2xl border border-signal/30 bg-signal/[0.05] p-5 transition-colors hover:border-signal/60">
               <span>
                 <span className="block text-sm text-dim">Ainda não sabe o que precisa?</span>
-                <span className="mt-1 block text-lg font-medium text-signal">Comece pela análise gratuita do site</span>
+                <span className="mt-1 block text-lg font-medium text-signal">Comece pelo diagnóstico gratuito</span>
               </span>
               <span aria-hidden className="text-signal transition-transform group-hover:translate-x-1">→</span>
             </Link>

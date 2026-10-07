@@ -1,10 +1,10 @@
 import { Hero } from "@/components/home/hero";
-import { Leaks } from "@/components/home/leaks";
-import { SameProduct } from "@/components/home/same-product";
+import { HomeSituations } from "@/components/home/situations";
+import { Capabilities } from "@/components/home/capabilities";
 import { Automation } from "@/components/home/automation";
-import { Services } from "@/components/home/services";
+import { Segments } from "@/components/home/segments";
+import { SameProduct } from "@/components/home/same-product";
 import { Case } from "@/components/home/case";
-import { Consulting } from "@/components/home/consulting";
 import { HowItWorks } from "@/components/home/how-it-works";
 import { AnalysisBlock } from "@/components/sections/analysis-block";
 import { Faq } from "@/components/sections/faq";
@@ -14,16 +14,16 @@ export default function Home() {
   return (
     <>
       <Hero />
-      <Leaks />
-      <SameProduct />
+      <HomeSituations />
+      <Capabilities />
       <Automation />
-      <Services />
+      <Segments />
+      <SameProduct index="05" />
       <Case />
-      <Consulting />
-      <HowItWorks />
-      <AnalysisBlock />
+      <HowItWorks index="07" />
+      <AnalysisBlock index="08" origem="home" submitLabel="Quero descobrir onde perco clientes" />
       <Faq />
-      <FinalCta />
+      <FinalCta primary={{ href: "#analise", label: "Analisar minha empresa" }} />
     </>
   );
 }

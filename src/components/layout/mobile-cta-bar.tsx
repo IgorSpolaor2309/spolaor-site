@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { whatsappLink } from "@/lib/site";
+import { PAGES_WITH_FORM } from "@/lib/segments";
 
 // Barra fixa de conversão no mobile. Some quando o formulário está visível.
 export function MobileCtaBar() {
@@ -34,10 +35,10 @@ export function MobileCtaBar() {
     >
       <div className="flex items-center gap-2 rounded-[14px] border border-line-strong bg-ink-900/95 p-1.5 shadow-[0_8px_30px_-12px_rgb(20_37_61/0.25)] backdrop-blur">
         <Link
-          href="/analise"
+          href={PAGES_WITH_FORM.includes(pathname) ? "#analise" : "/analise"}
           className="flex h-12 flex-1 items-center justify-center rounded-[10px] bg-royal text-[0.95rem] font-semibold text-white"
         >
-          Solicitar análise do site
+          Analisar minha empresa
         </Link>
         {wa && (
         <a

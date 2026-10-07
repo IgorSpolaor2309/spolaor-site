@@ -6,31 +6,35 @@ export type QA = { q: string; a: string };
 export const homeFaq: QA[] = [
   {
     q: "Quanto custa um projeto?",
-    a: "Cada projeto tem orçamento próprio, definido pela necessidade, pela complexidade e pelo prazo. Por isso não publicamos tabela de preços. A análise gratuita é o melhor ponto de partida para chegar a um valor realista.",
+    a: "Cada projeto tem orçamento próprio, definido pela necessidade, pela complexidade e pelo prazo. Por isso não publicamos tabela de preços. O diagnóstico é o melhor ponto de partida para chegar a um valor realista.",
   },
   {
-    q: "A análise gratuita é mesmo gratuita?",
-    a: "Sim. Você informa o site e recebe os principais pontos de melhoria, sem custo e sem obrigação de contratar nada.",
+    q: "O diagnóstico tem custo?",
+    a: "Não. Você conta como os contatos chegam e o que acontece com eles, e nós mostramos onde estão os principais pontos de perda e o que resolver primeiro. Sem obrigação de contratar nada.",
+  },
+  {
+    q: "Vocês só fazem sites?",
+    a: "Não. O site é uma das peças. Muitas vezes o problema está depois dele: na demora para responder, nos contatos sem registro ou no follow-up que ninguém faz. Por isso também trabalhamos com CRM, automações, integrações e sistemas sob medida, conforme o que o diagnóstico mostrar.",
+  },
+  {
+    q: "Preciso trocar as ferramentas que já uso?",
+    a: "Nem sempre. Sempre que fizer sentido, a solução se integra ao que a empresa já usa. Só propomos trocar algo quando isso resolve um problema real.",
+  },
+  {
+    q: "A automação vai substituir minha equipe?",
+    a: "Não é esse o objetivo. A automação tira da equipe as tarefas repetitivas, como responder o primeiro contato, lembrar de retornar e copiar dados, para que as pessoas fiquem com o que exige gente: atender bem, negociar e decidir.",
   },
   {
     q: "Já tenho Instagram. Preciso mesmo de um site?",
-    a: "O Instagram ajuda a ser lembrado, mas o alcance depende do algoritmo e o perfil não é seu. Um site próprio é onde você controla a mensagem, apresenta a oferta com clareza, reúne provas e transforma interesse em contato.",
-  },
-  {
-    q: "Meu site é recente. Ainda faz sentido pedir a análise?",
-    a: "Faz. Um site novo pode ser bonito e ainda assim não converter. A análise mostra se ele está cumprindo o papel de gerar oportunidades.",
+    a: "O Instagram ajuda a ser lembrado, mas o alcance depende do algoritmo e o perfil não é seu. Um site próprio é onde você controla a mensagem, apresenta a oferta com clareza e transforma interesse em contato.",
   },
   {
     q: "No nome de quem fica o domínio?",
     a: "Sempre no seu. O domínio pertence à sua empresa desde o primeiro dia.",
   },
   {
-    q: "Quem cuida da hospedagem depois que o site fica pronto?",
-    a: "Você escolhe. Pode receber o projeto e cuidar da própria infraestrutura, ou deixar a Spolaor manter tudo no ar por uma mensalidade. O custo do desenvolvimento é sempre separado da hospedagem.",
-  },
-  {
-    q: "A automação com IA vai substituir minha equipe?",
-    a: "Não é esse o objetivo. A automação tira da equipe as tarefas repetitivas para que as pessoas foquem no que exige gente: atender bem, negociar e decidir. É assim que a empresa cresce sem aumentar a estrutura na mesma proporção.",
+    q: "Quem cuida da hospedagem depois que fica pronto?",
+    a: "Você escolhe. Pode receber o projeto e cuidar da própria infraestrutura, ou deixar a Spolaor manter tudo funcionando por uma mensalidade. O custo do desenvolvimento é sempre separado da hospedagem.",
   },
   {
     q: "Vocês desenvolvem aplicativos para celular?",

@@ -3,21 +3,11 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { maskPhone, validateLead, type LeadPayload } from "@/lib/leads/schema";
+import { maskPhone, validateLead, type LeadOrigem, type LeadPayload } from "@/lib/leads/schema";
 import { submitLead } from "@/lib/leads/client";
+import { PROBLEMAS, SEGMENTOS, SEGMENTO_DA_ORIGEM } from "@/lib/segments";
 import { SubmitError } from "./submit-error";
 import { whatsappLink } from "@/lib/site";
-
-const improvements = [
-  "Passar mais confiança",
-  "Gerar mais contatos",
-  "Visual desatualizado",
-  "Funcionar melhor no celular",
-  "Explicar melhor a oferta",
-  "Automatizar o atendimento",
-];
-
-const urgencies = ["Quero resolver logo", "Nos próximos 30 dias", "Nos próximos meses", "Só quero entender"];
 
 type Errors = Partial<Record<keyof LeadPayload, string>>;
 
@@ -29,22 +19,49 @@ function FieldError({ id, msg }: { id: string; msg?: string }) {
   ) : null;
 }
 
-export function AnalysisForm({ origem = "home" }: { origem?: string }) {
+function Choice({ name, value, checked, onChange, children }: { name: string; value: string; checked: boolean; onChange: () => void; children: React.ReactNode }) {
+  return (
+    <label
+      className={`cursor-pointer rounded-xl border px-3.5 py-3 text-sm leading-snug transition-all duration-300 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-signal ${
+        checked ? "border-signal bg-signal/10 text-fg" : "border-line-strong text-muted hover:border-fg/30 hover:text-fg"
+      }`}
+    >
+      <input type="radio" name={name} value={value} className="sr-only" checked={checked} onChange={onChange} />
+      {children}
+    </label>
+  );
+}
+
+/**
+ * Formulário do diagnóstico gratuito, usado na home, nas landings de segmento, em /analise e
+ * em /sites. Passo 1: o problema (e o segmento, quando a página não sabe). Passo 2: contato.
+ * A origem vem da página que renderiza o formulário e segue junto com o lead para /api/lead.
+ */
+export function AnalysisForm({
+  origem = "home",
+  problemas,
+  submitLabel = "Quero meu diagnóstico",
+}: {
+  origem?: LeadOrigem;
+  problemas?: string[];
+  submitLabel?: string;
+}) {
+  const fixedSegment = SEGMENTO_DA_ORIGEM[origem];
+  const options = problemas ?? (origem === "corretores" || origem === "clinicas" || origem === "orcamentos" ? PROBLEMAS[origem] : PROBLEMAS.geral);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
   const [errors, setErrors] = useState<Errors>({});
   const [data, setData] = useState<LeadPayload>({
     tipo: "analise",
+    origem,
+    segmento: fixedSegment ?? "",
+    problema: "",
     nome: "",
     empresa: "",
     whatsapp: "",
     email: "",
     site: "",
-    semSite: false,
-    melhorias: [],
     mensagem: "",
-    urgencia: "",
-    origem,
   });
 
   const set = <K extends keyof LeadPayload>(k: K, v: LeadPayload[K]) => {
@@ -52,12 +69,12 @@ export function AnalysisForm({ origem = "home" }: { origem?: string }) {
     if (errors[k]) setErrors((e) => ({ ...e, [k]: undefined }));
   };
 
-  const toggleImprovement = (v: string) =>
-    set("melhorias", data.melhorias?.includes(v) ? data.melhorias.filter((m) => m !== v) : [...(data.melhorias ?? []), v]);
-
   const next = () => {
-    if (!data.semSite && !data.site?.trim()) {
-      setErrors({ site: "Informe o endereço do site (ou marque que ainda não tem)." });
+    const errs: Errors = {};
+    if (!data.segmento) errs.segmento = "Escolha o segmento da empresa.";
+    if (!data.problema) errs.problema = "Escolha o que mais pesa hoje.";
+    if (Object.keys(errs).length) {
+      setErrors(errs);
       return;
     }
     setStep(2);
@@ -69,6 +86,7 @@ export function AnalysisForm({ origem = "home" }: { origem?: string }) {
     const errs = validateLead(data);
     if (Object.keys(errs).length) {
       setErrors(errs);
+      if (errs.segmento || errs.problema) setStep(1);
       return;
     }
     setStatus("sending");
@@ -86,8 +104,10 @@ export function AnalysisForm({ origem = "home" }: { origem?: string }) {
     }
   };
 
+  const id = (k: string) => `${origem}-${k}`;
+
   return (
-    <div className="relative overflow-hidden rounded-[16px] border border-line-strong bg-ink-900/90 backdrop-blur">
+    <div className="relative overflow-hidden rounded-[16px] border border-line-strong bg-ink-900">
       {step < 3 && (
         <div className="flex items-center gap-3 border-b border-line px-6 py-4 md:px-8">
           <span className="font-mono text-xs text-dim">Passo {step} de 2</span>
@@ -97,70 +117,45 @@ export function AnalysisForm({ origem = "home" }: { origem?: string }) {
         </div>
       )}
 
-      <form onSubmit={submit} noValidate className="p-6 md:p-8" aria-label="Solicitar análise gratuita do site">
+      <form onSubmit={submit} noValidate className="p-6 md:p-8" aria-label="Solicitar diagnóstico gratuito">
         <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
         <AnimatePresence mode="wait" initial={false}>
           {step === 1 && (
             <motion.fieldset key="s1" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.35 }} className="grid gap-6">
-              <legend className="sr-only">Sobre o seu site</legend>
-              <div>
-                <label htmlFor="site" className="mb-2 block text-sm font-medium">
-                  Endereço do site
-                </label>
-                <input
-                  id="site"
-                  type="text"
-                  inputMode="url"
-                  autoComplete="url"
-                  placeholder="suaempresa.com.br"
-                  className="field"
-                  value={data.site}
-                  disabled={data.semSite}
-                  onChange={(e) => set("site", e.target.value)}
-                  aria-invalid={!!errors.site}
-                  aria-describedby={errors.site ? "site-err" : undefined}
-                />
-                <FieldError id="site-err" msg={errors.site} />
-                <label className="mt-3 flex cursor-pointer items-center gap-2.5 text-sm text-muted">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 accent-[#1e5be6]"
-                    checked={data.semSite}
-                    onChange={(e) => {
-                      set("semSite", e.target.checked);
-                      setErrors({});
-                    }}
-                  />
-                  Ainda não tenho site (só Instagram ou nada)
-                </label>
-              </div>
+              <legend className="sr-only">Sobre a sua empresa</legend>
+
+              {!fixedSegment && (
+                <div>
+                  <p id={id("segmento-label")} className="mb-2.5 text-sm font-medium">
+                    Qual é o seu negócio?
+                  </p>
+                  <div role="radiogroup" aria-labelledby={id("segmento-label")} aria-describedby={errors.segmento ? id("segmento-err") : undefined} className="grid grid-cols-2 gap-2">
+                    {SEGMENTOS.map((s) => (
+                      <Choice key={s} name={id("segmento")} value={s} checked={data.segmento === s} onChange={() => set("segmento", s)}>
+                        {s}
+                      </Choice>
+                    ))}
+                  </div>
+                  <FieldError id={id("segmento-err")} msg={errors.segmento} />
+                </div>
+              )}
 
               <div>
-                <p id="melhorias-label" className="mb-2.5 text-sm font-medium">
-                  O que você gostaria de melhorar? <span className="font-normal text-dim">(opcional)</span>
+                <p id={id("problema-label")} className="mb-2.5 text-sm font-medium">
+                  O que mais pesa hoje?
                 </p>
-                <div role="group" aria-labelledby="melhorias-label" className="flex flex-wrap gap-2">
-                  {improvements.map((m) => {
-                    const on = data.melhorias?.includes(m);
-                    return (
-                      <button
-                        key={m}
-                        type="button"
-                        aria-pressed={on}
-                        onClick={() => toggleImprovement(m)}
-                        className={`rounded-[8px] border px-3.5 py-2 text-sm transition-all duration-300 ${
-                          on ? "border-signal bg-signal/10 text-signal" : "border-line-strong text-muted hover:border-fg/30 hover:text-fg"
-                        }`}
-                      >
-                        {m}
-                      </button>
-                    );
-                  })}
+                <div role="radiogroup" aria-labelledby={id("problema-label")} aria-describedby={errors.problema ? id("problema-err") : undefined} className="grid gap-2 sm:grid-cols-2">
+                  {options.map((p) => (
+                    <Choice key={p} name={id("problema")} value={p} checked={data.problema === p} onChange={() => set("problema", p)}>
+                      {p}
+                    </Choice>
+                  ))}
                 </div>
+                <FieldError id={id("problema-err")} msg={errors.problema} />
                 <textarea
                   rows={2}
                   aria-label="Conte mais, se quiser"
-                  placeholder="Conte mais, se quiser"
+                  placeholder="Conte mais, se quiser (opcional)"
                   className="field mt-3 resize-none"
                   value={data.mensagem}
                   onChange={(e) => set("mensagem", e.target.value)}
@@ -168,22 +163,19 @@ export function AnalysisForm({ origem = "home" }: { origem?: string }) {
               </div>
 
               <div>
-                <p id="urgencia-label" className="mb-2.5 text-sm font-medium">
-                  Qual a urgência?
-                </p>
-                <div role="radiogroup" aria-labelledby="urgencia-label" className="grid grid-cols-2 gap-2">
-                  {urgencies.map((u) => (
-                    <label
-                      key={u}
-                      className={`cursor-pointer rounded-xl border px-3.5 py-3 text-sm transition-all duration-300 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-signal ${
-                        data.urgencia === u ? "border-signal bg-signal/10 text-fg" : "border-line-strong text-muted hover:border-fg/30"
-                      }`}
-                    >
-                      <input type="radio" name="urgencia" value={u} className="sr-only" checked={data.urgencia === u} onChange={() => set("urgencia", u)} />
-                      {u}
-                    </label>
-                  ))}
-                </div>
+                <label htmlFor={id("site")} className="mb-2 block text-sm font-medium">
+                  Site <span className="font-normal text-dim">(se tiver)</span>
+                </label>
+                <input
+                  id={id("site")}
+                  type="text"
+                  inputMode="url"
+                  autoComplete="url"
+                  placeholder="suaempresa.com.br"
+                  className="field"
+                  value={data.site}
+                  onChange={(e) => set("site", e.target.value)}
+                />
               </div>
 
               <Button type="submit" size="lg" arrow className="w-full">
@@ -194,22 +186,22 @@ export function AnalysisForm({ origem = "home" }: { origem?: string }) {
 
           {step === 2 && (
             <motion.fieldset key="s2" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.35 }} className="grid gap-5">
-              <legend className="mb-1 text-lg font-medium">Para onde enviamos a análise?</legend>
+              <legend className="mb-1 text-lg font-medium">Com quem falamos sobre o diagnóstico?</legend>
               <div className="grid gap-5 sm:grid-cols-2">
                 {(
                   [
                     ["nome", "Seu nome", "text", "name", "Como podemos te chamar"],
-                    ["empresa", "Empresa", "text", "organization", "Nome da empresa"],
+                    ["empresa", "Empresa", "text", "organization", "Nome da empresa ou o seu"],
                     ["whatsapp", "WhatsApp", "tel", "tel", "(00) 00000-0000"],
-                    ["email", "E-mail", "email", "email", "voce@empresa.com.br"],
+                    ["email", "E-mail (opcional)", "email", "email", "voce@empresa.com.br"],
                   ] as const
                 ).map(([k, label, type, ac, ph]) => (
                   <div key={k}>
-                    <label htmlFor={k} className="mb-2 block text-sm font-medium">
+                    <label htmlFor={id(k)} className="mb-2 block text-sm font-medium">
                       {label}
                     </label>
                     <input
-                      id={k}
+                      id={id(k)}
                       type={type}
                       autoComplete={ac}
                       placeholder={ph}
@@ -217,39 +209,37 @@ export function AnalysisForm({ origem = "home" }: { origem?: string }) {
                       value={data[k]}
                       onChange={(e) => set(k, k === "whatsapp" ? maskPhone(e.target.value) : e.target.value)}
                       aria-invalid={!!errors[k]}
-                      aria-describedby={errors[k] ? `${k}-err` : undefined}
+                      aria-describedby={errors[k] ? id(`${k}-err`) : undefined}
                     />
-                    <FieldError id={`${k}-err`} msg={errors[k]} />
+                    <FieldError id={id(`${k}-err`)} msg={errors[k]} />
                   </div>
                 ))}
               </div>
-              {status === "error" && <SubmitError message="Olá! Quero uma análise gratuita do meu site." />}
+              {status === "error" && <SubmitError message="Olá! Quero o diagnóstico gratuito da Spolaor." />}
               <div className="flex flex-col-reverse gap-3 sm:flex-row">
                 <Button type="button" variant="secondary" size="lg" onClick={() => setStep(1)}>
                   Voltar
                 </Button>
                 <Button type="submit" size="lg" arrow className="flex-1" disabled={status === "sending"}>
-                  {status === "sending" ? "Enviando…" : "Quero minha análise gratuita"}
+                  {status === "sending" ? "Enviando…" : submitLabel}
                 </Button>
               </div>
-              <p className="text-xs text-dim">Usamos seus dados só para enviar a análise e falar sobre ela. Nada de spam.</p>
+              <p className="text-xs text-dim">Usamos seus dados só para falar sobre o diagnóstico. Nada de spam.</p>
             </motion.fieldset>
           )}
 
           {step === 3 && (
             <motion.div key="s3" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }} className="py-6 text-center" role="status">
-              <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-signal text-ink-950">
+              <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-signal text-white">
                 <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
                   <path d="m5 12.5 4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </span>
               <p className="mt-6 text-2xl font-medium tracking-tight">Pedido recebido, {data.nome.split(" ")[0]}.</p>
-              <p className="mx-auto mt-3 max-w-sm text-muted">
-                Vamos analisar {data.semSite ? "a presença digital da sua empresa" : "seu site"} e retornar pelo WhatsApp ou e-mail informado.
-              </p>
+              <p className="mx-auto mt-3 max-w-sm text-muted">Vamos olhar o que você contou e chamar você no WhatsApp informado.</p>
               {whatsappLink() && (
                 <div className="mt-8">
-                  <ButtonLink href={whatsappLink(`Olá! Acabei de pedir a análise gratuita para ${data.empresa}.`)!} variant="secondary" target="_blank" rel="noopener">
+                  <ButtonLink href={whatsappLink(`Olá! Acabei de pedir o diagnóstico para ${data.empresa}.`)!} variant="secondary" target="_blank" rel="noopener">
                     Adiantar a conversa no WhatsApp
                   </ButtonLink>
                 </div>

@@ -16,7 +16,7 @@ export function Case() {
       <div className="container-x">
         <div className="grid gap-8 lg:grid-cols-12">
           <Reveal className="lg:col-span-9">
-            <SectionLabel index="05" tone="signal">Projeto em destaque</SectionLabel>
+            <SectionLabel index="06" tone="signal">Projeto em destaque</SectionLabel>
             <h2 id="case-title" className="mt-8 text-h2 font-semibold">
               Uma operação inteira que saiu das planilhas.
             </h2>

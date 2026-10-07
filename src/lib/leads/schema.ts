@@ -1,13 +1,40 @@
 // Formato e validação de leads, compartilhados entre os formulários (cliente) e a API (servidor).
 
+// analise: diagnóstico gratuito (home, landings de segmento e /analise). projeto: /contato.
 export type LeadTipo = "analise" | "projeto";
+
+/**
+ * Página onde o lead foi gerado. É o campo usado para medir qual página traz mais leads e
+ * vendas. Os formulários informam o valor; a API aceita só os desta lista e, se vier outro,
+ * deduz a partir do caminho da página.
+ */
+export const LEAD_ORIGENS = ["home", "corretores", "clinicas", "orcamentos", "pagina-analise", "sites", "contato"] as const;
+export type LeadOrigem = (typeof LEAD_ORIGENS)[number];
+
+export function isOrigem(v: unknown): v is LeadOrigem {
+  return typeof v === "string" && (LEAD_ORIGENS as readonly string[]).includes(v);
+}
+
+export function origemFromPath(path?: string): LeadOrigem | undefined {
+  if (path === undefined) return undefined;
+  const seg = path.split(/[?#]/)[0].replace(/^\/+|\/+$/g, "");
+  if (seg === "") return "home";
+  if (seg === "analise") return "pagina-analise";
+  return isOrigem(seg) ? seg : undefined;
+}
 
 export type LeadPayload = {
   tipo: LeadTipo;
-  /** Formulário de origem (ex.: home, sites, contato, pagina-analise) */
+  /** Página de origem do lead (veja LEAD_ORIGENS) */
   origem: string;
   /** Caminho da página onde o formulário foi enviado */
   pagina?: string;
+  /** Primeira página vista na visita (porta de entrada), quando diferente da página do envio */
+  entrada?: string;
+  /** Segmento informado pelo visitante (ex.: Corretor de imóveis) */
+  segmento?: string;
+  /** Principal problema escolhido no formulário */
+  problema?: string;
   nome: string;
   empresa: string;
   whatsapp: string;
@@ -34,8 +61,11 @@ export function validateLead(data: Partial<LeadPayload>): LeadErrors {
   if (!data.empresa || data.empresa.trim().length < 2) errors.empresa = "Informe o nome da empresa.";
   const digits = (data.whatsapp ?? "").replace(/\D/g, "");
   if (digits.length < 10 || digits.length > 13) errors.whatsapp = "Informe um WhatsApp com DDD.";
-  if (!data.email || !emailRe.test(data.email.trim())) errors.email = "Informe um e-mail válido.";
-  if (data.tipo === "analise" && !data.semSite && !data.site?.trim()) errors.site = "Informe o endereço do site.";
+  // No diagnóstico o e-mail é opcional (o retorno é pelo WhatsApp); se vier, precisa ser válido.
+  const email = (data.email ?? "").trim();
+  if (data.tipo === "projeto" ? !emailRe.test(email) : email && !emailRe.test(email)) errors.email = "Informe um e-mail válido.";
+  if (data.tipo === "analise" && !data.segmento?.trim()) errors.segmento = "Escolha o segmento da empresa.";
+  if (data.tipo === "analise" && !data.problema?.trim()) errors.problema = "Escolha o principal problema.";
   if ((data.mensagem ?? "").length > LIMITS.mensagem) errors.mensagem = "Mensagem muito longa.";
   return errors;
 }

@@ -17,9 +17,21 @@ Enquanto a lista em `index.ts` estiver vazia:
 2. Leia credenciais e URLs só de variáveis de ambiente em `isConfigured()` e `send()`.
 3. Adicione o conector à lista em `index.ts` e documente as variáveis em `.env.example`.
 
-O `LeadRecord` entregue a cada conector contém: `id`, `createdAt`, `tipo`, `origem` (formulário),
-`pagina`, `nome`, `empresa`, `whatsapp`, `email`, `site`, `semSite`, `mensagem`, `urgencia`,
-`melhorias`, `servicos`, `referrer`, `utm` e `userAgent`.
+O `LeadRecord` entregue a cada conector contém: `id`, `createdAt`, `tipo`, `origem`, `pagina`,
+`entrada`, `segmento`, `problema`, `nome`, `empresa`, `whatsapp`, `email`, `site`, `semSite`,
+`mensagem`, `urgencia`, `melhorias`, `servicos`, `referrer`, `utm` e `userAgent`.
+
+### Origem do lead (para medir qual página converte)
+
+- `origem` é a página que gerou o lead: `home`, `corretores`, `clinicas`, `orcamentos`,
+  `pagina-analise` (/analise), `sites` ou `contato`. O formulário informa o valor; a API só aceita
+  os da lista `LEAD_ORIGENS` (`src/lib/leads/schema.ts`) e, se vier outro, deduz pelo `pagina`.
+- `pagina` é o caminho onde o formulário foi enviado; `entrada` é a primeira página da visita
+  (guardada em `sessionStorage`), preenchida só quando é diferente de `pagina`. Assim um visitante
+  que entrou por `/corretores` e enviou em `/analise` continua atribuído à landing.
+- `utm` traz os parâmetros da URL atual ou, se não houver, os da página de entrada.
+- `segmento` e `problema` são as escolhas do passo 1 do diagnóstico. Nas landings o segmento já
+  vem fixo (`SEGMENTO_DA_ORIGEM` em `src/lib/segments.ts`).
 
 ## Esboço de tabela (se o destino escolhido for um banco Postgres, ex. Supabase)
 
@@ -30,12 +42,15 @@ create table leads (
   id          uuid primary key,
   created_at  timestamptz not null default now(),
   tipo        text not null,          -- analise | projeto
-  origem      text not null,          -- formulário
+  origem      text not null,          -- home | corretores | clinicas | orcamentos | pagina-analise | sites | contato
   pagina      text,
+  entrada     text,                   -- primeira página da visita, se diferente de pagina
+  segmento    text,
+  problema    text,
   nome        text not null,
   empresa     text not null,
   whatsapp    text not null,
-  email       text not null,
+  email       text,                   -- opcional no diagnóstico
   site        text,
   sem_site    boolean not null default false,
   mensagem    text,

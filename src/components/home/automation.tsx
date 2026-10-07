@@ -9,9 +9,9 @@ export function Automation() {
     <section className="relative border-t border-line py-24 md:py-36" aria-labelledby="auto-title">
       <div className="container-x">
         <Reveal>
-          <SectionLabel index="03" tone="signal">Automação</SectionLabel>
+          <SectionLabel index="03" tone="signal">Na prática</SectionLabel>
           <h2 id="auto-title" className="mt-8 max-w-[22ch] text-h2 font-semibold">
-            Antes de aumentar sua equipe, veja o que ainda pode acontecer sozinho.
+            O mesmo pedido de orçamento, com tudo acontecendo na hora certa.
           </h2>
         </Reveal>
 

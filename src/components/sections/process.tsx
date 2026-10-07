@@ -3,8 +3,8 @@
 import { useRef } from "react";
 import { motion, useScroll, useSpring } from "motion/react";
 
-const steps = [
-  ["Análise gratuita ou contato", "Você manda o site ou conta o que precisa."],
+const commercialSteps = [
+  ["Diagnóstico ou contato", "Você conta como a empresa funciona ou o que precisa."],
   ["Diagnóstico", "Avaliamos o cenário e os pontos que mais custam caro."],
   ["Reunião, quando necessário", "Para entender detalhes do negócio e alinhar expectativas."],
   ["Proposta", "Escopo, prazo e investimento definidos para o seu caso."],
@@ -14,7 +14,7 @@ const steps = [
   ["Publicação", "No ar, com o domínio no seu nome."],
 ];
 
-export function Process() {
+export function Process({ steps = commercialSteps }: { steps?: string[][] }) {
   const ref = useRef<HTMLOListElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start 70%", "end 60%"] });
   const scaleY = useSpring(scrollYProgress, { stiffness: 120, damping: 30 });

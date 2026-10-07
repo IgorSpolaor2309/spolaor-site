@@ -28,7 +28,8 @@ ser aceito sem ser guardado. Como ligar Supabase, CRM, n8n, Make ou e-mail está
 
 ## Estrutura
 
-- `src/app` — rotas: `/`, `/sites`, `/automacao`, `/sistemas`, `/projetos`, `/consultoria`, `/contato`, `/analise`, `api/lead`
+- `src/app` — rotas: `/`, landings por segmento `/corretores`, `/clinicas`, `/orcamentos`, serviços `/sites`, `/automacao`, `/sistemas`, `/projetos`, `/consultoria`, `/contato`, `/analise` (diagnóstico), `api/lead`
+- `src/components/segment` — peças compartilhadas pelas landings: hero com cena, dia de situações, jornada do contato, divisão automação × pessoas
 - `src/lib/site.ts` — único lugar com domínio, e-mail e WhatsApp
 - `src/lib/leads` — validação, envio dos formulários e conectores de destino dos leads
 - `src/components/home` — seções da homepage

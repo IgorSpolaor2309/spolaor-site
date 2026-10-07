@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { MobileCtaBar } from "@/components/layout/mobile-cta-bar";
 import { SmoothScroll } from "@/components/layout/smooth-scroll";
+import { LeadAttribution } from "@/components/layout/lead-attribution";
 import { isIndexable, site, siteBaseUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -24,7 +25,7 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   metadataBase: new URL(siteBaseUrl),
   title: {
-    default: "Spolaor Tecnologia · Sites que convertem, automação e sistemas sob medida",
+    default: "Spolaor Tecnologia · Pare de perder clientes sem perceber",
     template: "%s · Spolaor Tecnologia",
   },
   description: site.description,
@@ -38,6 +39,9 @@ export const metadata: Metadata = {
     "CRM personalizado",
     "integração de sistemas",
     "consultoria em tecnologia",
+    "organização de leads",
+    "automação de atendimento",
+    "follow-up automático",
   ],
   openGraph: {
     type: "website",
@@ -80,6 +84,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Pular para o conteúdo
         </a>
         <SmoothScroll />
+        <LeadAttribution />
         <SiteHeader />
         <main id="conteudo">{children}</main>
         <SiteFooter />
