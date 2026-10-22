@@ -65,3 +65,13 @@ create table leads (
 );
 alter table leads enable row level security;  -- escrita só pelo servidor
 ```
+
+## Conector ativo: e-mail (`email.ts`)
+
+Envia cada lead, pelo servidor, para o(s) destinatário(s) em `LEAD_EMAIL_TO` usando a API do Resend.
+Variáveis (Vercel → Settings → Environment Variables; nunca no navegador): `RESEND_API_KEY`,
+`LEAD_EMAIL_TO`, `LEAD_EMAIL_FROM` (remetente aprovado no provedor). Só fica ativo com as três
+definidas, e **precisa de Redeploy** depois de defini-las, porque as páginas avisam "envio sendo
+configurado" a partir do que existia no build. O envio é persistente: o visitante só vê sucesso se o
+provedor aceitar; recusa ou falha vira mensagem de erro. Aceitação pelo provedor não prova chegada
+na caixa de entrada. Teste local sem enviar nada para fora: `scripts/teste-email-local.mjs`.
