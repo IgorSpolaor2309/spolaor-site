@@ -13,7 +13,7 @@ export default function AnalisePage() {
   return (
     <div className="pt-[72px]">
       <AnalysisBlock origem="pagina-analise" headingLevel="h1" />
-      <Faq items={[homeFaq[1], homeFaq[0], homeFaq[2], homeFaq[3]]} index="" title="Antes de enviar." />
+      <Faq items={[homeFaq[1], homeFaq[3], homeFaq[0], homeFaq[2]]} index="" title="Antes de enviar." />
     </div>
   );
 }

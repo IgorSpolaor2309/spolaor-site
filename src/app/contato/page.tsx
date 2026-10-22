@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { ContactForm } from "@/components/forms/contact-form";
+import { leadsAvailable } from "@/lib/leads/server/pipeline";
 import { SectionLabel } from "@/components/ui/section-label";
 import { mailtoLink, site, whatsappLink } from "@/lib/site";
 
@@ -56,7 +57,7 @@ export default function ContatoPage() {
         </div>
         <div className="fade-up lg:col-span-7" style={{ animationDelay: "0.2s" }}>
           <Suspense fallback={<div className="h-[720px] rounded-[16px] border border-line bg-ink-900" />}>
-            <ContactForm />
+            <ContactForm available={leadsAvailable()} />
           </Suspense>
         </div>
       </div>

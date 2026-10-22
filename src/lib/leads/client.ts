@@ -54,7 +54,7 @@ function context(): Pick<LeadPayload, "pagina" | "entrada" | "referrer" | "utm">
   };
 }
 
-export type SubmitResult = { ok: true; id?: string } | { ok: false; errors?: Record<string, string> };
+export type SubmitResult = { ok: true; id?: string } | { ok: false; errors?: Record<string, string>; unavailable?: boolean };
 
 /** Envia o lead para a API própria. Os formulários só conhecem esta função. */
 export async function submitLead(data: LeadPayload, honeypot?: string): Promise<SubmitResult> {
@@ -64,6 +64,7 @@ export async function submitLead(data: LeadPayload, honeypot?: string): Promise<
     body: JSON.stringify({ ...data, ...context(), website: honeypot }),
   });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) return { ok: false, errors: body.errors };
+  // 503: o site está sem destino de leads configurado; nada foi guardado.
+  if (!res.ok) return { ok: false, errors: body.errors, unavailable: res.status === 503 };
   return { ok: true, id: body.id };
 }

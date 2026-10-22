@@ -1,6 +1,7 @@
 // Formato e validação de leads, compartilhados entre os formulários (cliente) e a API (servidor).
 
-// analise: diagnóstico gratuito (home, landings de segmento e /analise). projeto: /contato.
+// analise: diagnóstico gratuito (home, landings de segmento, /automacao e /analise).
+// projeto: pedido direto, sem diagnóstico (/contato e o pedido de orçamento de /sites).
 export type LeadTipo = "analise" | "projeto";
 
 /**
@@ -8,7 +9,7 @@ export type LeadTipo = "analise" | "projeto";
  * vendas. Os formulários informam o valor; a API aceita só os desta lista e, se vier outro,
  * deduz a partir do caminho da página.
  */
-export const LEAD_ORIGENS = ["home", "corretores", "clinicas", "orcamentos", "pagina-analise", "sites", "contato"] as const;
+export const LEAD_ORIGENS = ["home", "corretores", "clinicas", "orcamentos", "pagina-analise", "sites", "automacao", "contato"] as const;
 export type LeadOrigem = (typeof LEAD_ORIGENS)[number];
 
 export function isOrigem(v: unknown): v is LeadOrigem {

@@ -7,14 +7,14 @@ import { AnimatePresence, motion } from "motion/react";
 import { Logo } from "@/components/ui/logo";
 import { ButtonLink } from "@/components/ui/button";
 import { nav, whatsappLink } from "@/lib/site";
-import { PAGES_WITH_FORM } from "@/lib/segments";
+import { pageCta } from "@/lib/segments";
 
 export function SiteHeader() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  // Nas páginas que têm o formulário, o CTA rola até ele (e o lead fica com a origem da página).
-  const ctaHref = PAGES_WITH_FORM.includes(pathname) ? "#analise" : "/analise";
+  // Nas páginas que têm formulário, o CTA rola até ele (e o lead fica com a origem da página).
+  const cta = pageCta(pathname);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -46,23 +46,23 @@ export function SiteHeader() {
             <Logo />
           </Link>
 
-          <nav aria-label="Principal" className="hidden xl:block">
+          <nav aria-label="Principal" className="hidden lg:block">
             <ul className="flex items-center gap-1">
               {nav.map((item) => {
                 const active = pathname.startsWith(item.href);
                 return (
-                  <li key={item.href}>
+                  <li key={item.href} className={"wide" in item ? "hidden xl:block" : undefined}>
                     <Link
                       href={item.href}
                       aria-current={active ? "page" : undefined}
-                      className={`relative rounded-full px-3.5 py-2 text-[0.92rem] transition-colors ${
+                      className={`relative rounded-full px-2.5 py-2 text-[0.92rem] xl:px-3.5 transition-colors ${
                         active ? "text-fg" : "text-muted hover:text-fg"
                       }`}
                     >
                       {active && (
                         <motion.span
                           layoutId="nav-pill"
-                          className="absolute inset-x-3.5 -bottom-0.5 h-[2px] rounded-full bg-ember"
+                          className="absolute inset-x-2.5 -bottom-0.5 xl:inset-x-3.5 h-[2px] rounded-full bg-ember"
                           transition={{ type: "spring", stiffness: 380, damping: 32 }}
                         />
                       )}
@@ -76,8 +76,8 @@ export function SiteHeader() {
 
           <div className="flex items-center gap-2">
             <span className="hidden sm:block">
-              <ButtonLink href={ctaHref} arrow>
-                Analisar minha empresa
+              <ButtonLink href={cta.href} arrow>
+                {cta.label}
               </ButtonLink>
             </span>
             <button
@@ -86,7 +86,7 @@ export function SiteHeader() {
               aria-expanded={open}
               aria-controls="menu-mobile"
               aria-label={open ? "Fechar menu" : "Abrir menu"}
-              className="relative z-10 grid h-11 w-11 place-items-center rounded-full border border-line-strong bg-fg/[0.03] xl:hidden"
+              className="relative z-10 grid h-11 w-11 place-items-center rounded-full border border-line-strong bg-fg/[0.03] lg:hidden"
             >
               <span className="relative block h-3 w-5">
                 <span className={`absolute left-0 h-[1.5px] w-5 bg-fg transition-all duration-300 ${open ? "top-[5px] rotate-45" : "top-0"}`} />
@@ -105,7 +105,7 @@ export function SiteHeader() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 top-[72px] z-40 flex flex-col bg-ink-950/95 backdrop-blur-xl xl:hidden"
+            className="fixed inset-0 top-[72px] z-40 flex flex-col bg-ink-950/95 backdrop-blur-xl lg:hidden"
           >
             <nav aria-label="Menu" className="container-x flex-1 overflow-y-auto pt-6">
               <ul className="divide-y divide-line border-y border-line">
@@ -125,8 +125,8 @@ export function SiteHeader() {
               </ul>
             </nav>
             <div className="container-x grid gap-3 pb-8 pt-6">
-              <ButtonLink href={ctaHref} size="lg" arrow onClick={() => setOpen(false)}>
-                Analisar minha empresa
+              <ButtonLink href={cta.href} size="lg" arrow onClick={() => setOpen(false)}>
+                {cta.label}
               </ButtonLink>
               {whatsappLink() ? (
                 <ButtonLink href={whatsappLink()!} variant="secondary" size="lg" target="_blank" rel="noopener">

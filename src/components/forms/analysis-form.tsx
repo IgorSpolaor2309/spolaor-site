@@ -6,7 +6,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { maskPhone, validateLead, type LeadOrigem, type LeadPayload } from "@/lib/leads/schema";
 import { submitLead } from "@/lib/leads/client";
 import { PROBLEMAS, SEGMENTOS, SEGMENTO_DA_ORIGEM } from "@/lib/segments";
-import { SubmitError } from "./submit-error";
+import { FormUnavailable, SubmitError } from "./submit-error";
 import { whatsappLink } from "@/lib/site";
 
 type Errors = Partial<Record<keyof LeadPayload, string>>;
@@ -34,22 +34,27 @@ function Choice({ name, value, checked, onChange, children }: { name: string; va
 
 /**
  * Formulário do diagnóstico gratuito, usado na home, nas landings de segmento, em /analise e
- * em /sites. Passo 1: o problema (e o segmento, quando a página não sabe). Passo 2: contato.
+ * em /automacao (diagnóstico do processo). Passo 1: o problema (e o segmento, quando a página não sabe). Passo 2: contato.
  * A origem vem da página que renderiza o formulário e segue junto com o lead para /api/lead.
  */
 export function AnalysisForm({
   origem = "home",
   problemas,
   submitLabel = "Quero meu diagnóstico",
+  available = true,
 }: {
   origem?: LeadOrigem;
   problemas?: string[];
   submitLabel?: string;
+  /** false enquanto não há destino de leads: avisa e bloqueia o envio */
+  available?: boolean;
 }) {
   const fixedSegment = SEGMENTO_DA_ORIGEM[origem];
-  const options = problemas ?? (origem === "corretores" || origem === "clinicas" || origem === "orcamentos" ? PROBLEMAS[origem] : PROBLEMAS.geral);
+  const options =
+    problemas ??
+    (origem === "corretores" || origem === "clinicas" || origem === "orcamentos" || origem === "automacao" ? PROBLEMAS[origem] : PROBLEMAS.geral);
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "sending" | "error" | "unavailable">("idle");
   const [errors, setErrors] = useState<Errors>({});
   const [data, setData] = useState<LeadPayload>({
     tipo: "analise",
@@ -83,6 +88,7 @@ export function AnalysisForm({
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (step === 1) return next();
+    if (!available) return;
     const errs = validateLead(data);
     if (Object.keys(errs).length) {
       setErrors(errs);
@@ -95,7 +101,8 @@ export function AnalysisForm({
       const result = await submitLead(data, honeypot);
       if (!result.ok) {
         if (result.errors) setErrors(result.errors);
-        throw new Error();
+        setStatus(result.unavailable ? "unavailable" : "error");
+        return;
       }
       setStep(3);
       setStatus("idle");
@@ -119,6 +126,11 @@ export function AnalysisForm({
 
       <form onSubmit={submit} noValidate className="p-6 md:p-8" aria-label="Solicitar diagnóstico gratuito">
         <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
+        {!available && step < 3 && (
+          <div className="mb-6">
+            <FormUnavailable />
+          </div>
+        )}
         <AnimatePresence mode="wait" initial={false}>
           {step === 1 && (
             <motion.fieldset key="s1" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.35 }} className="grid gap-6">
@@ -215,12 +227,14 @@ export function AnalysisForm({
                   </div>
                 ))}
               </div>
-              {status === "error" && <SubmitError message="Olá! Quero o diagnóstico gratuito da Spolaor." />}
+              {(status === "error" || status === "unavailable") && (
+                <SubmitError message="Olá! Quero o diagnóstico gratuito da Spolaor." unavailable={status === "unavailable"} />
+              )}
               <div className="flex flex-col-reverse gap-3 sm:flex-row">
                 <Button type="button" variant="secondary" size="lg" onClick={() => setStep(1)}>
                   Voltar
                 </Button>
-                <Button type="submit" size="lg" arrow className="flex-1" disabled={status === "sending"}>
+                <Button type="submit" size="lg" arrow className="flex-1" disabled={status === "sending" || !available}>
                   {status === "sending" ? "Enviando…" : submitLabel}
                 </Button>
               </div>

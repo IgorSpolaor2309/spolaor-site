@@ -24,7 +24,8 @@ O `LeadRecord` entregue a cada conector contém: `id`, `createdAt`, `tipo`, `ori
 ### Origem do lead (para medir qual página converte)
 
 - `origem` é a página que gerou o lead: `home`, `corretores`, `clinicas`, `orcamentos`,
-  `pagina-analise` (/analise), `sites` ou `contato`. O formulário informa o valor; a API só aceita
+  `pagina-analise` (/analise), `sites` (pedido de orçamento de site), `automacao` (diagnóstico
+  do processo) ou `contato`. O `tipo` separa diagnóstico (`analise`) de pedido direto (`projeto`). O formulário informa o valor; a API só aceita
   os da lista `LEAD_ORIGENS` (`src/lib/leads/schema.ts`) e, se vier outro, deduz pelo `pagina`.
 - `pagina` é o caminho onde o formulário foi enviado; `entrada` é a primeira página da visita
   (guardada em `sessionStorage`), preenchida só quando é diferente de `pagina`. Assim um visitante
@@ -42,7 +43,7 @@ create table leads (
   id          uuid primary key,
   created_at  timestamptz not null default now(),
   tipo        text not null,          -- analise | projeto
-  origem      text not null,          -- home | corretores | clinicas | orcamentos | pagina-analise | sites | contato
+  origem      text not null,          -- home | corretores | clinicas | orcamentos | pagina-analise | sites | automacao | contato
   pagina      text,
   entrada     text,                   -- primeira página da visita, se diferente de pagina
   segmento    text,

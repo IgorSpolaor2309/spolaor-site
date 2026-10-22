@@ -6,13 +6,16 @@ import { ConversionAnatomy } from "@/components/sections/conversion-anatomy";
 import { FeatureGrid, SectionIntro } from "@/components/sections/feature-grid";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Reveal } from "@/components/ui/reveal";
-import { AnalysisBlock } from "@/components/sections/analysis-block";
+import { Suspense } from "react";
+import Link from "next/link";
+import { ContactForm } from "@/components/forms/contact-form";
+import { leadsAvailable } from "@/lib/leads/server/pipeline";
 import { Faq, homeFaq } from "@/components/sections/faq";
 
 export const metadata: Metadata = {
-  title: "Sites que convertem",
+  title: "Sites e landing pages",
   description:
-    "Sites institucionais, landing pages e redesign pensados para apresentar bem, gerar confiança e transformar visitas em contatos. Solicite uma análise gratuita do seu site.",
+    "Sites institucionais, landing pages e redesign para empresas que precisam apresentar bem seus serviços e facilitar contatos e pedidos de orçamento. Peça um orçamento direto.",
   alternates: { canonical: "/sites" },
 };
 
@@ -22,7 +25,7 @@ const deliver = [
   { title: "Páginas de conversão", text: "Estrutura, texto e chamadas pensados para gerar pedidos de orçamento." },
   { title: "Redesign de sites antigos", text: "Mantemos o que funciona, corrigimos o que afasta clientes." },
   { title: "Responsivo de verdade", text: "Projetado para o celular desde o início, não adaptado no final." },
-  { title: "Captação de leads", text: "Formulários, WhatsApp e integração com CRM para nenhum contato se perder." },
+  { title: "Pedido de orçamento fácil", text: "Formulário e botão de WhatsApp que pedem só o necessário e entregam o contato completo para a equipe." },
 ];
 
 const insta = [
@@ -30,28 +33,25 @@ const insta = [
   ["De quem é o espaço", "Da plataforma", "Da sua empresa"],
   ["Apresentar a oferta completa", "Fragmentado em posts", "Organizado na ordem da decisão"],
   ["Aparecer no Google", "Limitado", "Sim, com SEO"],
-  ["Captar e organizar contatos", "Manual, por direct", "Formulário integrado ao CRM"],
+  ["Receber pedidos de orçamento", "Solto no direct", "Formulário com as informações que você precisa"],
   ["Transmitir seriedade a empresas", "Depende", "Endereço próprio e profissional"],
 ];
 
-const siteCriteria = [
-  "Primeira impressão e clareza da oferta",
-  "Organização e visual",
-  "Experiência no celular",
-  "Chamadas para ação e formulários",
-  "Credibilidade",
-  "O que acontece com o contato depois que ele chega",
-];
+const siteTypes = ["Site institucional", "Landing page", "Refazer o site atual", "Loja virtual", "Ainda não sei"];
 
 const siteFaq = [
   homeFaq[0],
-  homeFaq[5],
   {
-    q: "Meu site é recente. Ainda faz sentido pedir o diagnóstico?",
-    a: "Faz. Um site novo pode ser bonito e ainda assim não gerar contatos, ou gerar contatos que ninguém acompanha. O diagnóstico mostra se ele está cumprindo o papel de trazer oportunidades.",
+    q: "O que vocês precisam saber para fazer o orçamento?",
+    a: "O que a empresa faz, para quem, se já existe site, quantas páginas você imagina e o prazo. Se faltar alguma informação, perguntamos pelo WhatsApp antes de enviar o orçamento.",
   },
   homeFaq[6],
+  {
+    q: "Meu site é recente. Ainda faz sentido mexer nele?",
+    a: "Depende do que ele entrega hoje. Um site novo pode ser bonito e ainda assim não gerar contatos. Se não tiver certeza, comece pelo diagnóstico: olhamos o site e o caminho do contato antes de propor qualquer mudança.",
+  },
   homeFaq[7],
+  homeFaq[8],
 ];
 
 export default function SitesPage() {
@@ -65,7 +65,9 @@ export default function SitesPage() {
             Seu produto pode não ser o problema. <span className="serif-accent text-ember">Talvez seja a forma como ele é apresentado.</span>
           </>
         }
-        text="Antes de conhecer o que você vende, o cliente conhece a forma como sua empresa aparece. Criamos sites que transmitem a qualidade do seu negócio e transformam visita em contato."
+        text="Para empresas que precisam apresentar bem seus serviços e facilitar contatos e pedidos de orçamento. Criamos sites e landing pages que deixam claro o que você faz e tornam fácil o próximo passo do cliente."
+        primary={{ href: "#orcamento", label: "Pedir orçamento de site" }}
+        secondary={{ href: "/analise", label: "Prefiro começar pelo diagnóstico" }}
       />
 
       <SameProduct index="01" label="A escolha" showLink={false} />
@@ -161,19 +163,50 @@ export default function SitesPage() {
         </div>
       </section>
 
-      <AnalysisBlock
-        index="05"
-        origem="sites"
-        label="Análise do site"
-        title={
-          <>
-            Descubra o que seu site está <span className="text-ember">custando</span> para você.
-          </>
-        }
-        text="Olhamos o seu site como um cliente exigente olharia e apontamos o que impede visitas de virarem contatos, e o que acontece com esses contatos depois. Sem custo e sem compromisso."
-        items={siteCriteria}
-        itemsTitle="O que olhamos no seu site"
-      />
+      <section id="orcamento" className="scroll-mt-20 border-t border-line py-24 md:py-32" aria-labelledby="quote-title">
+        <div className="container-x grid gap-14 lg:grid-cols-12">
+          <Reveal className="lg:col-span-5">
+            <SectionLabel index="05" tone="signal">
+              Orçamento
+            </SectionLabel>
+            <h2 id="quote-title" className="mt-8 text-h2 font-semibold">
+              Já sabe que precisa de um site? <span className="text-sky">Peça o orçamento.</span>
+            </h2>
+            <p className="mt-6 text-lg leading-relaxed text-muted">
+              Conte o que a empresa faz e o que você precisa. Respondemos com perguntas, se faltar algo, e depois com escopo, prazo
+              e investimento para o seu caso.
+            </p>
+            <ol className="mt-10 grid border-t border-line-strong text-[0.95rem]">
+              {["Você conta o que precisa", "Tiramos dúvidas pelo WhatsApp, se for preciso", "Você recebe o orçamento com escopo e prazo"].map((t, i) => (
+                <li key={t} className="flex gap-3 border-b border-line py-3">
+                  <span className="font-mono text-[0.72rem] leading-6 text-dim">{String(i + 1).padStart(2, "0")}</span>
+                  {t}
+                </li>
+              ))}
+            </ol>
+            <p className="mt-6 text-sm text-dim">
+              Ainda não sabe se o problema é o site?{" "}
+              <Link href="/analise" className="text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">
+                Comece pelo diagnóstico sem custo
+              </Link>
+              .
+            </p>
+          </Reveal>
+          <Reveal delay={0.12} className="lg:col-span-6 lg:col-start-7">
+            <Suspense fallback={<div className="h-[720px] rounded-[16px] border border-line bg-ink-900" />}>
+              <ContactForm
+                origem="sites"
+                interests={siteTypes}
+                interestsLabel="O que você precisa?"
+                messageLabel="O que a empresa faz e o que o site precisa ter"
+                submitLabel="Pedir orçamento"
+                formLabel="Pedir orçamento de site"
+                available={leadsAvailable()}
+              />
+            </Suspense>
+          </Reveal>
+        </div>
+      </section>
       <Faq items={siteFaq} index="06" />
     </>
   );

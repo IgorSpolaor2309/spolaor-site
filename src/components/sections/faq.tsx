@@ -14,7 +14,11 @@ export const homeFaq: QA[] = [
   },
   {
     q: "Vocês só fazem sites?",
-    a: "Não. O site é uma das peças. Muitas vezes o problema está depois dele: na demora para responder, nos contatos sem registro ou no follow-up que ninguém faz. Por isso também trabalhamos com CRM, automações, integrações e sistemas sob medida, conforme o que o diagnóstico mostrar.",
+    a: "Não. Trabalhamos com duas frentes: sites e landing pages, para apresentar seus serviços e facilitar o contato, e automação de processos, para o contato não ficar esquecido depois que chega (registro, acompanhamento de orçamentos, lembretes, dados preenchidos uma vez só). Você pode contratar uma ou as duas.",
+  },
+  {
+    q: "Preciso fazer o diagnóstico antes de contratar?",
+    a: "Não. Se você já sabe o que quer, peça o orçamento direto: para sites, pelo formulário da página de sites; para automação, contando o que quer automatizar. O diagnóstico é para quem ainda não sabe por onde começar.",
   },
   {
     q: "Preciso trocar as ferramentas que já uso?",

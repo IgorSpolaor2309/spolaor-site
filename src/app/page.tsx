@@ -1,6 +1,6 @@
 import { Hero } from "@/components/home/hero";
 import { HomeSituations } from "@/components/home/situations";
-import { Capabilities } from "@/components/home/capabilities";
+import { Offers } from "@/components/home/offers";
 import { Automation } from "@/components/home/automation";
 import { Segments } from "@/components/home/segments";
 import { SameProduct } from "@/components/home/same-product";
@@ -15,7 +15,7 @@ export default function Home() {
     <>
       <Hero />
       <HomeSituations />
-      <Capabilities />
+      <Offers />
       <Automation />
       <Segments />
       <SameProduct index="05" />

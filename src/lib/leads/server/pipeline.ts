@@ -10,6 +10,14 @@ export class NoLeadDestinationError extends Error {
 }
 
 /**
+ * Há para onde mandar o lead? Lido no build das páginas (são estáticas): os formulários avisam e
+ * não deixam enviar enquanto for false. Depois de ligar um conector na Vercel, faça Redeploy.
+ */
+export function leadsAvailable() {
+  return connectors.some((c) => c.persistent && c.isConfigured()) || devConsoleConnector.isConfigured();
+}
+
+/**
  * Entrega o lead aos conectores ativos.
  * Persistentes são aguardados (se falharem, o envio falha); os demais rodam após a resposta.
  */

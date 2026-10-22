@@ -3,19 +3,40 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { maskPhone, validateLead, type LeadPayload } from "@/lib/leads/schema";
+import { maskPhone, validateLead, type LeadOrigem, type LeadPayload } from "@/lib/leads/schema";
 import { submitLead } from "@/lib/leads/client";
-import { SubmitError } from "./submit-error";
+import { FormUnavailable, SubmitError } from "./submit-error";
 
-const interests = ["Site", "Automação", "Sistema", "E-commerce", "Identidade visual", "Consultoria", "Ainda não sei"];
+const contactInterests = ["Site", "Automação", "Sistema", "E-commerce", "Identidade visual", "Consultoria", "Ainda não sei"];
 const urgencies = ["Quero resolver logo", "Nos próximos 30 dias", "Nos próximos meses", "Só quero entender"];
 
 type Errors = Partial<Record<keyof LeadPayload, string>>;
 
-export function ContactForm() {
+/**
+ * Pedido direto de projeto (tipo "projeto"), sem passar pelo diagnóstico. Usado em /contato e,
+ * com as opções de site, como pedido de orçamento em /sites.
+ */
+export function ContactForm({
+  origem = "contato",
+  interests = contactInterests,
+  interestsLabel = "Sobre o que você quer conversar?",
+  messageLabel = "Conte um pouco sobre o projeto ou o problema",
+  submitLabel = "Enviar mensagem",
+  formLabel = "Falar sobre um projeto",
+  available = true,
+}: {
+  origem?: LeadOrigem;
+  interests?: string[];
+  interestsLabel?: string;
+  messageLabel?: string;
+  submitLabel?: string;
+  formLabel?: string;
+  /** false enquanto não há destino de leads: avisa e bloqueia o envio */
+  available?: boolean;
+}) {
   const params = useSearchParams();
   const [sent, setSent] = useState(false);
-  const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "sending" | "error" | "unavailable">("idle");
   const [errors, setErrors] = useState<Errors>({});
   const [data, setData] = useState<LeadPayload>({
     tipo: "projeto",
@@ -27,13 +48,13 @@ export function ContactForm() {
     servicos: [],
     mensagem: "",
     urgencia: "",
-    origem: "contato",
+    origem,
   });
 
   useEffect(() => {
     const i = params.get("interesse");
     if (i && interests.includes(i)) setData((d) => ({ ...d, servicos: [i] }));
-  }, [params]);
+  }, [params, interests]);
 
   const set = <K extends keyof LeadPayload>(k: K, v: LeadPayload[K]) => {
     setData((d) => ({ ...d, [k]: v }));
@@ -42,6 +63,7 @@ export function ContactForm() {
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!available) return;
     const errs = validateLead(data);
     if (Object.keys(errs).length) {
       setErrors(errs);
@@ -54,7 +76,8 @@ export function ContactForm() {
       const result = await submitLead(data, honeypot);
       if (!result.ok) {
         if (result.errors) setErrors(result.errors);
-        throw new Error();
+        setStatus(result.unavailable ? "unavailable" : "error");
+        return;
       }
       setSent(true);
     } catch {
@@ -83,11 +106,12 @@ export function ContactForm() {
   ] as const;
 
   return (
-    <form onSubmit={submit} noValidate className="grid gap-6 rounded-[16px] border border-line-strong bg-ink-900/90 p-6 md:p-9" aria-label="Falar sobre um projeto">
+    <form onSubmit={submit} noValidate className="grid gap-6 rounded-[16px] border border-line-strong bg-ink-900/90 p-6 md:p-9" aria-label={formLabel}>
       <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
+      {!available && <FormUnavailable />}
       <div>
         <p id="interesse-label" className="mb-2.5 text-sm font-medium">
-          Sobre o que você quer conversar?
+          {interestsLabel}
         </p>
         <div role="group" aria-labelledby="interesse-label" className="flex flex-wrap gap-2">
           {interests.map((m) => {
@@ -142,7 +166,7 @@ export function ContactForm() {
 
       <div>
         <label htmlFor="mensagem" className="mb-2 block text-sm font-medium">
-          Conte um pouco sobre o projeto ou o problema
+          {messageLabel}
         </label>
         <textarea id="mensagem" rows={4} className="field resize-none" value={data.mensagem} onChange={(e) => set("mensagem", e.target.value)} />
       </div>
@@ -161,9 +185,9 @@ export function ContactForm() {
         </div>
       </div>
 
-      {status === "error" && <SubmitError />}
-      <Button type="submit" size="lg" arrow disabled={status === "sending"}>
-        {status === "sending" ? "Enviando…" : "Enviar mensagem"}
+      {(status === "error" || status === "unavailable") && <SubmitError unavailable={status === "unavailable"} />}
+      <Button type="submit" size="lg" arrow disabled={status === "sending" || !available}>
+        {status === "sending" ? "Enviando…" : submitLabel}
       </Button>
     </form>
   );
