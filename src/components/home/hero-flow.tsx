@@ -235,15 +235,20 @@ export function HeroFlow({ className = "" }: { className?: string }) {
         <span className="absolute bottom-[-1%] left-[10%] text-signal">→ CRM · em atendimento</span>
       </div>
 
-      <p className="absolute right-0 top-[calc(100%+14px)] hidden items-baseline gap-3 lg:flex" aria-live="off">
-        <span className="font-[family-name:var(--font-display)] text-[2rem] font-semibold leading-none tracking-[-0.04em] text-fg tabular-nums">
-          {rate}
-        </span>
-        <span className="text-sm leading-snug text-muted">
-          de cada 100 contatos viram conversa
-          <span className="ml-2 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-dim">{live ? "simulação · role a página" : "simulação"}</span>
-        </span>
-      </p>
+      <div className="absolute right-0 top-[calc(100%+14px)] w-full lg:w-auto lg:max-w-[26rem]" aria-live="off">
+        <p className="flex items-baseline gap-3">
+          <span className="font-[family-name:var(--font-display)] text-[2rem] font-semibold leading-none tracking-[-0.04em] text-fg tabular-nums">
+            {rate}
+          </span>
+          <span className="text-sm leading-snug text-muted">de cada 100 contatos viram conversa</span>
+          <span className="ml-auto font-mono text-[0.62rem] uppercase tracking-[0.12em] text-dim">simulação</span>
+        </p>
+        <p className="mt-3 text-[0.82rem] leading-relaxed text-muted">
+          Cada ponto é um contato que chega pelo site, WhatsApp ou formulário. <span className="text-signal">Azul</span>: foi atendido e
+          registrado. <span className="text-ember-soft">Laranja</span>: escapou sem resposta. Role a página para ver o que muda com
+          resposta imediata e follow-up.
+        </p>
+      </div>
     </div>
   );
 }

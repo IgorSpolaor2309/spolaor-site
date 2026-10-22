@@ -46,7 +46,7 @@ export function SiteHeader() {
             <Logo />
           </Link>
 
-          <nav aria-label="Principal" className="hidden lg:block">
+          <nav aria-label="Principal" className="hidden xl:block">
             <ul className="flex items-center gap-1">
               {nav.map((item) => {
                 const active = pathname.startsWith(item.href);
@@ -86,7 +86,7 @@ export function SiteHeader() {
               aria-expanded={open}
               aria-controls="menu-mobile"
               aria-label={open ? "Fechar menu" : "Abrir menu"}
-              className="relative z-10 grid h-11 w-11 place-items-center rounded-full border border-line-strong bg-fg/[0.03] lg:hidden"
+              className="relative z-10 grid h-11 w-11 place-items-center rounded-full border border-line-strong bg-fg/[0.03] xl:hidden"
             >
               <span className="relative block h-3 w-5">
                 <span className={`absolute left-0 h-[1.5px] w-5 bg-fg transition-all duration-300 ${open ? "top-[5px] rotate-45" : "top-0"}`} />
@@ -105,7 +105,7 @@ export function SiteHeader() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 top-[72px] z-40 flex flex-col bg-ink-950/95 backdrop-blur-xl lg:hidden"
+            className="fixed inset-0 top-[72px] z-40 flex flex-col bg-ink-950/95 backdrop-blur-xl xl:hidden"
           >
             <nav aria-label="Menu" className="container-x flex-1 overflow-y-auto pt-6">
               <ul className="divide-y divide-line border-y border-line">

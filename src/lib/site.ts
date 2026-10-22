@@ -31,10 +31,11 @@ export const siteBaseUrl = site.url ?? "http://localhost:3000";
 export const isIndexable = site.url !== null;
 
 export const nav = [
+  { href: "/sites", label: "Sites e landing pages" },
+  { href: "/automacao", label: "Automação" },
   { href: "/corretores", label: "Corretores" },
   { href: "/clinicas", label: "Clínicas" },
   { href: "/orcamentos", label: "Orçamentos" },
-  { href: "/#servicos", label: "Serviços" },
   { href: "/projetos", label: "Projetos" },
   { href: "/contato", label: "Contato" },
 ];

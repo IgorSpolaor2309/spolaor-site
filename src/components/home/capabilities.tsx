@@ -6,21 +6,24 @@ import { SectionLabel } from "@/components/ui/section-label";
 const capabilities = [
   {
     href: "/sites",
+    name: "Sites e landing pages",
     result: "Mais visitas virando conversa.",
     text: "Sites e landing pages que deixam claro, em poucos segundos, o que você faz, para quem e qual é o próximo passo. E que entregam cada contato organizado para a equipe.",
-    how: "sites · landing pages · redesign · captação de contatos",
-  },
-  {
-    href: "/sistemas",
-    result: "Nenhum contato sem dono.",
-    text: "Cada contato registrado num só lugar, com origem, responsável e próximo passo. Você sabe quem está esperando retorno e o que cada canal traz de verdade.",
-    how: "CRM · organização de leads · funil de vendas",
+    how: "sites institucionais · landing pages · redesign · captação de contatos",
   },
   {
     href: "/automacao",
+    name: "Automação de processos",
     result: "Menos gente fazendo trabalho de máquina.",
     text: "Primeira resposta, follow-up, lembretes, cópia de dados e avisos para a equipe acontecendo sozinhos, na hora certa. As pessoas ficam com o que exige gente.",
     how: "automações · WhatsApp · integrações · API",
+  },
+  {
+    href: "/sistemas",
+    name: "CRM e organização de leads",
+    result: "Nenhum contato sem dono.",
+    text: "Cada contato registrado num só lugar, com origem, responsável e próximo passo. Você sabe quem está esperando retorno e o que cada canal traz de verdade.",
+    how: "CRM · organização de leads · funil de vendas",
   },
 ];
 
@@ -49,11 +52,13 @@ export function Capabilities() {
                 <Link href={c.href} className="group grid gap-x-8 gap-y-3 border-b border-line py-9 md:grid-cols-[3rem_1fr_auto] md:py-11">
                   <span className="font-mono text-sm text-dim transition-colors group-hover:text-signal">0{i + 1}</span>
                   <span>
+                    <span className="mb-2 block font-mono text-[0.7rem] uppercase tracking-[0.14em] text-sky">{c.name}</span>
                     <span className="block text-[1.6rem] font-semibold leading-[1.15] tracking-[-0.03em] transition-colors group-hover:text-sky md:text-[2.05rem]">
                       {c.result}
                     </span>
                     <span className="mt-3 block max-w-xl leading-relaxed text-muted">{c.text}</span>
                     <span className="mt-4 block font-mono text-[0.7rem] text-dim">com {c.how}</span>
+                    <span className="mt-4 inline-block text-[0.92rem] font-medium text-sky">Ver {c.name.toLowerCase()} →</span>
                   </span>
                   <span aria-hidden className="hidden self-center text-2xl text-dim transition-all duration-300 group-hover:translate-x-1 group-hover:text-fg md:block">
                     →
