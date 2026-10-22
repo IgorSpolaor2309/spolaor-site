@@ -42,7 +42,10 @@ export function AnalysisForm({
   problemas,
   submitLabel = "Quero meu diagnóstico",
   available = true,
+  siteRequired = false,
 }: {
+  /** Exige o endereço do site (diagnóstico de site existente) */
+  siteRequired?: boolean;
   origem?: LeadOrigem;
   problemas?: string[];
   submitLabel?: string;
@@ -78,6 +81,7 @@ export function AnalysisForm({
     const errs: Errors = {};
     if (!data.segmento) errs.segmento = "Escolha o segmento da empresa.";
     if (!data.problema) errs.problema = "Escolha o que mais pesa hoje.";
+    if (siteRequired && !data.site?.trim()) errs.site = "Informe o endereço do site que vamos analisar.";
     if (Object.keys(errs).length) {
       setErrors(errs);
       return;
@@ -92,7 +96,7 @@ export function AnalysisForm({
     const errs = validateLead(data);
     if (Object.keys(errs).length) {
       setErrors(errs);
-      if (errs.segmento || errs.problema) setStep(1);
+      if (errs.segmento || errs.problema || errs.site) setStep(1);
       return;
     }
     setStatus("sending");
@@ -176,7 +180,8 @@ export function AnalysisForm({
 
               <div>
                 <label htmlFor={id("site")} className="mb-2 block text-sm font-medium">
-                  Site <span className="font-normal text-dim">(se tiver)</span>
+                  {siteRequired ? "Endereço do site que vamos analisar" : "Site"}{" "}
+                  {!siteRequired && <span className="font-normal text-dim">(se tiver)</span>}
                 </label>
                 <input
                   id={id("site")}
@@ -187,7 +192,10 @@ export function AnalysisForm({
                   className="field"
                   value={data.site}
                   onChange={(e) => set("site", e.target.value)}
+                  aria-invalid={!!errors.site}
+                  aria-describedby={errors.site ? id("site-err") : undefined}
                 />
+                <FieldError id={id("site-err")} msg={errors.site} />
               </div>
 
               <Button type="submit" size="lg" arrow className="w-full">

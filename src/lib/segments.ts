@@ -66,11 +66,19 @@ export const SEGMENTO_DA_ORIGEM: Partial<Record<LeadOrigem, string>> = {
 /** Páginas que têm o formulário de diagnóstico (#analise) na própria página. */
 export const PAGES_WITH_FORM = ["/", "/corretores", "/clinicas", "/orcamentos", "/analise", "/automacao"];
 
+/** Páginas de oferta com formulário próprio (id "formulario"). */
+const OFFER_FORMS: Record<string, string> = {
+  "/lojas-virtuais": "Pedir orçamento de loja",
+  "/agendamento-online": "Quero agendamento online",
+  "/diagnostico-site": "Pedir diagnóstico do site",
+};
+
 /**
  * CTA fixo do header e da barra mobile em cada página. Em /sites o caminho é o pedido de
  * orçamento direto; nas páginas com diagnóstico, rola até o formulário; nas demais, leva a /analise.
  */
 export function pageCta(pathname: string): { href: string; target: string | null; label: string } {
+  if (OFFER_FORMS[pathname]) return { href: "#formulario", target: "formulario", label: OFFER_FORMS[pathname] };
   if (pathname === "/sites") return { href: "#orcamento", target: "orcamento", label: "Pedir orçamento" };
   if (pathname === "/automacao") return { href: "#analise", target: "analise", label: "Diagnóstico do processo" };
   if (PAGES_WITH_FORM.includes(pathname)) return { href: "#analise", target: "analise", label: "Analisar minha empresa" };

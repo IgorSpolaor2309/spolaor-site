@@ -9,8 +9,38 @@ export type LeadTipo = "analise" | "projeto";
  * vendas. Os formulários informam o valor; a API aceita só os desta lista e, se vier outro,
  * deduz a partir do caminho da página.
  */
-export const LEAD_ORIGENS = ["home", "corretores", "clinicas", "orcamentos", "pagina-analise", "sites", "automacao", "contato"] as const;
+export const LEAD_ORIGENS = [
+  "home",
+  "corretores",
+  "clinicas",
+  "orcamentos",
+  "pagina-analise",
+  "sites",
+  "automacao",
+  "contato",
+  "lojas-virtuais",
+  "agendamento-online",
+  "diagnostico-site",
+] as const;
 export type LeadOrigem = (typeof LEAD_ORIGENS)[number];
+
+/**
+ * Interesse comercial de cada origem, para diferenciar os leads no e-mail e nos relatórios.
+ * É definido pelo servidor a partir da origem; o navegador não escolhe esse valor.
+ */
+export const INTERESSES: Record<LeadOrigem, string> = {
+  home: "Diagnóstico geral (home)",
+  corretores: "Diagnóstico · corretores de imóveis",
+  clinicas: "Diagnóstico · clínicas e consultórios",
+  orcamentos: "Diagnóstico · empresas que vendem por orçamento",
+  "pagina-analise": "Diagnóstico geral",
+  sites: "Site ou landing page",
+  automacao: "Automação da rotina",
+  contato: "Contato direto",
+  "lojas-virtuais": "Loja virtual",
+  "agendamento-online": "Agendamento online",
+  "diagnostico-site": "Diagnóstico e melhoria de site",
+};
 
 export function isOrigem(v: unknown): v is LeadOrigem {
   return typeof v === "string" && (LEAD_ORIGENS as readonly string[]).includes(v);
@@ -28,6 +58,8 @@ export type LeadPayload = {
   tipo: LeadTipo;
   /** Página de origem do lead (veja LEAD_ORIGENS) */
   origem: string;
+  /** Interesse comercial (veja INTERESSES); preenchido pelo servidor */
+  interesse?: string;
   /** Caminho da página onde o formulário foi enviado */
   pagina?: string;
   /** Primeira página vista na visita (porta de entrada), quando diferente da página do envio */
@@ -67,6 +99,7 @@ export function validateLead(data: Partial<LeadPayload>): LeadErrors {
   if (data.tipo === "projeto" ? !emailRe.test(email) : email && !emailRe.test(email)) errors.email = "Informe um e-mail válido.";
   if (data.tipo === "analise" && !data.segmento?.trim()) errors.segmento = "Escolha o segmento da empresa.";
   if (data.tipo === "analise" && !data.problema?.trim()) errors.problema = "Escolha o principal problema.";
+  if (data.origem === "diagnostico-site" && !data.site?.trim()) errors.site = "Informe o endereço do site que vamos analisar.";
   if ((data.mensagem ?? "").length > LIMITS.mensagem) errors.mensagem = "Mensagem muito longa.";
   return errors;
 }

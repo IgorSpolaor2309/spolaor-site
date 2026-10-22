@@ -16,10 +16,12 @@ const groups = [
     title: "Serviços",
     links: [
       { href: "/sites", label: "Sites e landing pages" },
+      { href: "/lojas-virtuais", label: "Lojas virtuais" },
+      { href: "/agendamento-online", label: "Agendamento online" },
       { href: "/automacao", label: "Automação de processos" },
+      { href: "/diagnostico-site", label: "Diagnóstico de site" },
       { href: "/sistemas", label: "CRM e sistemas sob medida" },
       { href: "/consultoria", label: "Consultoria" },
-      { href: "/sites#ecommerce", label: "E-commerce" },
       { href: "/sites#identidade", label: "Identidade visual" },
     ],
   },

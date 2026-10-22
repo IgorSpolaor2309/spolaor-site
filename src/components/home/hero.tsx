@@ -1,4 +1,5 @@
 import { HeroDemo } from "@/components/home/hero-demo";
+import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
 
 // Headline em duas linhas: a pergunta ("perde" em laranja) e o complemento.
@@ -58,6 +59,18 @@ export function Hero() {
                 Conte como os contatos chegam
               </a>{" "}
               e mostramos onde eles se perdem, sem custo.
+            </p>
+            <p className="fade-up mt-6 border-t border-line pt-5 text-sm text-muted" style={{ animationDelay: "0.88s" }}>
+              <span className="mr-3 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-dim">Também</span>
+              <Link href="/lojas-virtuais" className="mr-4 font-semibold text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">
+                Lojas virtuais
+              </Link>
+              <Link href="/agendamento-online" className="mr-4 font-semibold text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">
+                Agendamento online
+              </Link>
+              <Link href="/diagnostico-site" className="font-semibold text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">
+                Diagnóstico de site
+              </Link>
             </p>
           </div>
 

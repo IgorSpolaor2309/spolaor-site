@@ -75,3 +75,27 @@ definidas, e **precisa de Redeploy** depois de defini-las, porque as páginas av
 configurado" a partir do que existia no build. O envio é persistente: o visitante só vê sucesso se o
 provedor aceitar; recusa ou falha vira mensagem de erro. Aceitação pelo provedor não prova chegada
 na caixa de entrada. Teste local sem enviar nada para fora: `scripts/teste-email-local.mjs`.
+
+## Interesse e atribuição (campanhas)
+
+- `interesse` é definido no servidor a partir da `origem` (`INTERESSES` em `src/lib/leads/schema.ts`) e vai no
+  assunto e no corpo do e-mail: Loja virtual, Agendamento online, Diagnóstico e melhoria de site, Site ou landing
+  page, Automação da rotina, diagnósticos por segmento etc. O navegador não escolhe esse valor.
+- Novas origens: `lojas-virtuais`, `agendamento-online` e `diagnostico-site`. Em `diagnostico-site` o endereço do
+  site é obrigatório.
+- Preservados no e-mail: página do envio, primeira página da visita, UTMs (da URL atual ou da entrada) e "veio de".
+
+## Medição (Meta Pixel; GA4 e Google Ads opcionais)
+
+Implementada em `src/lib/analytics.ts` e `src/components/layout/analytics.tsx`. **Tudo desligado enquanto os IDs
+não existirem.** Variáveis (públicas, definidas na Vercel antes do build): `NEXT_PUBLIC_META_PIXEL_ID`,
+`NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_GOOGLE_ADS_ID` e `NEXT_PUBLIC_GOOGLE_ADS_LEAD_LABEL`.
+
+- `PageView` a cada página vista (uma vez por navegação; interações na página não repetem).
+- `ViewContent` nas páginas de oferta e de segmento (categoria = origem da página).
+- `Lead` **somente depois da resposta 200 de `/api/lead`** (envio aceito), uma vez por lead, com o ID do lead como
+  `eventID`. Falha de envio, validação e cliques não disparam conversão.
+- Nenhum nome, telefone, e-mail, site ou texto de mensagem vai nos eventos: só o nome da oferta e a origem.
+- Pendência legal: não há banner de consentimento (LGPD). Avalie antes de ligar a medição em produção.
+
+Teste local (provedor de e-mail e Pixel simulados, nada sai da máquina): `scripts/teste-ofertas-local.mjs`.

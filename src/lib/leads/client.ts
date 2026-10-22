@@ -1,6 +1,7 @@
 "use client";
 
 import type { LeadPayload } from "./schema";
+import { trackLead } from "../analytics";
 
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "fbclid"];
 const ENTRY_KEY = "spolaor:entrada";
@@ -66,5 +67,7 @@ export async function submitLead(data: LeadPayload, honeypot?: string): Promise<
   const body = await res.json().catch(() => ({}));
   // 503: o site está sem destino de leads configurado; nada foi guardado.
   if (!res.ok) return { ok: false, errors: body.errors, unavailable: res.status === 503 };
+  // Conversão medida só aqui, depois da resposta 200 da API (envio aceito), e uma vez por lead.
+  trackLead(data.origem, body.id);
   return { ok: true, id: body.id };
 }

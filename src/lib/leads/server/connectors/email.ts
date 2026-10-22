@@ -13,6 +13,7 @@ const env = (k: string) => (process.env[k] ?? "").trim();
 const oneLine = (s: string) => s.replace(/[\r\n]+/g, " ").trim();
 
 const rows: [string, (l: LeadRecord) => string | undefined][] = [
+  ["Interesse", (l) => l.interesse],
   ["Nome", (l) => l.nome],
   ["Empresa", (l) => l.empresa],
   ["WhatsApp", (l) => l.whatsapp],
@@ -36,7 +37,7 @@ const rows: [string, (l: LeadRecord) => string | undefined][] = [
 
 export function buildLeadEmail(lead: LeadRecord) {
   const isTest = /^\s*teste\b/i.test(lead.nome);
-  const subject = oneLine(`${isTest ? "TESTE — formulário do site · " : "Novo lead · "}${lead.origem} · ${lead.nome}${lead.empresa ? ` (${lead.empresa})` : ""}`).slice(0, 200);
+  const subject = oneLine(`${isTest ? "TESTE — formulário do site · " : "Novo lead · "}${lead.interesse ?? lead.origem} · ${lead.nome}${lead.empresa ? ` (${lead.empresa})` : ""}`).slice(0, 200);
   const text = rows
     .map(([label, get]) => [label, get(lead)] as const)
     .filter(([, v]) => v && v.trim())

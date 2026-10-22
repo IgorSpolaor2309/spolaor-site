@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { LIMITS, isOrigem, normalizeUrl, origemFromPath, validateLead, type LeadPayload } from "@/lib/leads/schema";
+import { INTERESSES, LIMITS, isOrigem, normalizeUrl, origemFromPath, validateLead, type LeadPayload } from "@/lib/leads/schema";
 import { NoLeadDestinationError, processLead } from "@/lib/leads/server/pipeline";
 import type { LeadRecord } from "@/lib/leads/server/types";
 
@@ -20,10 +20,13 @@ export async function POST(req: Request) {
   if (body.website) return NextResponse.json({ ok: true });
 
   const pagina = str(body.pagina, LIMITS.url);
+  const origem = isOrigem(body.origem) ? body.origem : origemFromPath(pagina);
   const lead: LeadPayload = {
     tipo: body.tipo === "projeto" ? "projeto" : "analise",
     // Origem só aceita os valores conhecidos; senão é deduzida da página do envio.
-    origem: isOrigem(body.origem) ? body.origem : (origemFromPath(pagina) ?? "desconhecida"),
+    origem: origem ?? "desconhecida",
+    // O interesse é definido aqui, pela origem; o navegador não escolhe esse valor.
+    interesse: origem ? INTERESSES[origem] : undefined,
     pagina,
     entrada: str(body.entrada, LIMITS.url),
     segmento: str(body.segmento, LIMITS.curto),

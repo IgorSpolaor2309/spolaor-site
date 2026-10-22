@@ -45,6 +45,8 @@ export function AnalysisBlock({
   itemsTitle = "O que olhamos",
   problemas,
   submitLabel,
+  sectionId = "analise",
+  siteRequired = false,
   note = "Se fizer sentido seguir, preparamos depois uma proposta com escopo, prazo e investimento para o seu caso.",
 }: {
   index?: string;
@@ -57,11 +59,14 @@ export function AnalysisBlock({
   itemsTitle?: string;
   problemas?: string[];
   submitLabel?: string;
+  /** id da seção (alvo dos CTAs da página) */
+  sectionId?: string;
+  siteRequired?: boolean;
   note?: React.ReactNode;
 }) {
   const H = headingLevel;
   return (
-    <section id="analise" className="relative overflow-hidden border-t border-line py-24 md:py-32" aria-labelledby="analysis-title">
+    <section id={sectionId} className="relative overflow-hidden border-t border-line py-24 md:py-32" aria-labelledby="analysis-title">
       <div className="container-x grid gap-14 lg:grid-cols-12">
         <Reveal className="lg:col-span-5">
           <SectionLabel index={index || undefined} tone="signal">
@@ -75,7 +80,7 @@ export function AnalysisBlock({
           <p className="mt-6 text-sm text-dim">{note}</p>
         </Reveal>
         <Reveal delay={0.12} className="lg:col-span-6 lg:col-start-7 lg:pt-10">
-          <AnalysisForm origem={origem} problemas={problemas} submitLabel={submitLabel} available={leadsAvailable()} />
+          <AnalysisForm origem={origem} problemas={problemas} submitLabel={submitLabel} available={leadsAvailable()} siteRequired={siteRequired} />
         </Reveal>
       </div>
     </section>

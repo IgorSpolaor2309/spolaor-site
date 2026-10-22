@@ -8,6 +8,7 @@ export function SegmentHero({
   title,
   text,
   cta,
+  ctaHref = "#analise",
   secondary = { href: "#como-funciona", label: "Ver como funciona" },
   note,
   scene,
@@ -16,6 +17,8 @@ export function SegmentHero({
   title: React.ReactNode;
   text: React.ReactNode;
   cta: string;
+  /** Destino do botão principal; por padrão, o formulário da própria página */
+  ctaHref?: string;
   secondary?: { href: string; label: string } | null;
   note?: string;
   scene: React.ReactNode;
@@ -38,7 +41,7 @@ export function SegmentHero({
             {text}
           </div>
           <div className="fade-up mt-10 flex flex-col gap-3 sm:flex-row sm:items-center" style={{ animationDelay: "0.28s" }}>
-            <ButtonLink href="#analise" size="lg" arrow>
+            <ButtonLink href={ctaHref} size="lg" arrow>
               {cta}
             </ButtonLink>
             {secondary && (

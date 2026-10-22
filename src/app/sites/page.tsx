@@ -137,6 +137,9 @@ export default function SitesPage() {
                 Lojas virtuais para empresas que querem começar a vender pela internet ou organizar uma operação que já existe, com
                 catálogo, pagamentos e gestão de pedidos.
               </p>
+              <Link href="/lojas-virtuais" className="mt-5 inline-block text-[0.95rem] font-medium text-sky">
+                Ver lojas virtuais →
+              </Link>
             </Reveal>
             <Reveal id="identidade" delay={0.08} className="scroll-mt-28 rounded-[16px] border border-line bg-ink-900 p-7 md:p-9">
               <p className="eyebrow">Identidade visual</p>

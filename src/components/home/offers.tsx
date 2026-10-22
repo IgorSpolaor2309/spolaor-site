@@ -48,6 +48,28 @@ const offers = [
   },
 ];
 
+// Ofertas que têm página própria (campanhas e necessidades específicas), além das duas frentes.
+const more = [
+  {
+    href: "/lojas-virtuais",
+    name: "Lojas virtuais",
+    text: "Para quem vende pelo Instagram, pelo WhatsApp ou em loja física e quer catálogo, compra, pagamento e pedidos num lugar só.",
+    cta: "Pedir orçamento de loja",
+  },
+  {
+    href: "/agendamento-online",
+    name: "Agendamento online",
+    text: "O cliente escolhe o serviço e o horário, recebe a confirmação e os lembretes. Para prestadores de serviço, além de clínicas.",
+    cta: "Ver agendamento online",
+  },
+  {
+    href: "/diagnostico-site",
+    name: "Diagnóstico de site",
+    text: "Avaliação gratuita de um site que já existe: clareza, celular, caminho do contato e pontos técnicos. As melhorias são contratadas à parte.",
+    cta: "Pedir diagnóstico do site",
+  },
+];
+
 function List({ title, items, marker }: { title: string; items: string[]; marker: string }) {
   return (
     <div>
@@ -114,6 +136,28 @@ export function Offers() {
           ))}
         </div>
 
+        <div className="mt-20 border-t border-line-strong pt-10">
+          <Reveal>
+            <p className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-dim">Também com página própria</p>
+          </Reveal>
+          <ul className="mt-2">
+            {more.map((m, i) => (
+              <Reveal as="li" key={m.href} delay={i * 0.05}>
+                <Link href={m.href} className="group grid gap-x-8 gap-y-1 border-b border-line py-6 md:grid-cols-[16rem_1fr_auto] md:items-baseline">
+                  <span className="text-[1.15rem] font-semibold tracking-[-0.02em] transition-colors group-hover:text-sky">{m.name}</span>
+                  <span className="max-w-xl leading-relaxed text-muted">{m.text}</span>
+                  <span className="text-[0.92rem] font-medium text-sky">
+                    {m.cta}{" "}
+                    <span aria-hidden className="inline-block transition-transform duration-300 group-hover:translate-x-1">
+                      →
+                    </span>
+                  </span>
+                </Link>
+              </Reveal>
+            ))}
+          </ul>
+        </div>
+
         <Reveal>
           <p className="mt-16 max-w-3xl leading-relaxed text-muted">
             Quando a operação pede mais, desenvolvemos{" "}
@@ -125,7 +169,7 @@ export function Offers() {
               consultoria
             </Link>
             . Também fazemos{" "}
-            <Link href="/sites#ecommerce" className="text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">
+            <Link href="/lojas-virtuais" className="text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">
               lojas virtuais
             </Link>{" "}
             e{" "}

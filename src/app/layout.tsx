@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { MobileCtaBar } from "@/components/layout/mobile-cta-bar";
 import { SmoothScroll } from "@/components/layout/smooth-scroll";
 import { LeadAttribution } from "@/components/layout/lead-attribution";
+import { Analytics } from "@/components/layout/analytics";
 import { isIndexable, site, siteBaseUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -32,6 +33,9 @@ export const metadata: Metadata = {
   applicationName: site.name,
   keywords: [
     "criação de sites",
+    "loja virtual",
+    "agendamento online",
+    "diagnóstico de site",
     "site institucional",
     "landing page",
     "automação de processos",
@@ -85,6 +89,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <SmoothScroll />
         <LeadAttribution />
+        <Analytics />
         <SiteHeader />
         <main id="conteudo">{children}</main>
         <SiteFooter />
