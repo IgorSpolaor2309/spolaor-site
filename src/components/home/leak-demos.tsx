@@ -157,66 +157,76 @@ const tasks = [
   { name: "Fazer follow-up de orçamentos", manual: 8, auto: 1 },
 ];
 
-function Counter({ value }: { value: number }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const prev = useRef(value);
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-    const controls = animate(prev.current, value, {
-      duration: 1.1,
-      ease: [0.16, 1, 0.3, 1],
-      onUpdate: (v) => (node.textContent = Math.round(v).toString()),
-    });
-    prev.current = value;
-    return () => controls.stop();
-  }, [value]);
-  return <span ref={ref}>{value}</span>;
+/**
+ * Horas de cada tarefa no ponto p da transição (0 = feito à mão, 1 = automatizado).
+ * O total é a soma dos valores exibidos, então bate com a lista em qualquer quadro da animação.
+ */
+function hoursAt(p: number) {
+  return tasks.map((t) => Math.round(t.manual + (t.auto - t.manual) * p));
 }
 
 export function ManualTasksDemo() {
   const { ref, on, set } = useAutoToggle(4200);
-  const total = tasks.reduce((s, t) => s + (on ? t.auto : t.manual), 0);
+  const reduce = useReducedMotion();
+  const [p, setP] = useState(0);
+  const pRef = useRef(0);
+
+  useEffect(() => {
+    const target = on ? 1 : 0;
+    if (reduce) {
+      pRef.current = target;
+      setP(target);
+      return;
+    }
+    const controls = animate(pRef.current, target, {
+      duration: 1.1,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (v) => {
+        pRef.current = v;
+        setP(v);
+      },
+    });
+    return () => controls.stop();
+  }, [on, reduce]);
+
+  const hours = hoursAt(p);
+  const total = hours.reduce((s, h) => s + h, 0);
+  const max = Math.max(...tasks.map((t) => t.manual));
   return (
     <div ref={ref}>
+      <p className="mb-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-dim">Exemplo ilustrativo · números fictícios</p>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Toggle on={on} set={set} labels={["Feito à mão", "Automatizado"]} />
         <p className="flex items-baseline gap-1.5">
-          <span className={`font-mono text-2xl font-medium tabular-nums transition-colors duration-500 ${on ? "text-signal" : "text-ember"}`}>
-            <Counter value={total} />h
-          </span>
-          <span className="text-[0.75rem] text-dim">por mês</span>
+          <span className={`font-mono text-2xl font-medium tabular-nums transition-colors duration-500 ${on ? "text-signal" : "text-ember"}`}>{total}h</span>
+          <span className="text-[0.75rem] text-dim">por mês, no total</span>
         </p>
       </div>
       <ul className="overflow-hidden rounded-[12px] border border-line bg-ink-850">
-        {tasks.map((t, i) => {
-          const hours = on ? t.auto : t.manual;
-          return (
-            <li key={t.name} className="flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0">
-              <span
-                className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border transition-all duration-500 ${
-                  on ? "border-signal bg-signal text-ink-950" : "border-fg/20"
-                }`}
-                style={{ transitionDelay: on ? `${i * 90}ms` : "0ms" }}
-                aria-hidden
-              >
-                <svg viewBox="0 0 12 12" className={`h-3 w-3 transition-opacity duration-300 ${on ? "opacity-100" : "opacity-0"}`}>
-                  <path d="M2.5 6.2 5 8.5l4.5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-              <span className={`flex-1 text-[0.86rem] transition-colors duration-500 ${on ? "text-muted" : "text-fg/90"}`}>{t.name}</span>
-              <span className="hidden h-1 w-16 overflow-hidden rounded-full bg-fg/10 sm:block" aria-hidden>
-                <span
-                  className={`block h-full rounded-full transition-all duration-1000 ease-out-expo ${on ? "bg-signal" : "bg-ember"}`}
-                  style={{ width: `${(hours / 22) * 100}%`, transitionDelay: on ? `${i * 90}ms` : "0ms" }}
-                />
-              </span>
-              <span className={`w-9 text-right font-mono text-[0.8rem] tabular-nums ${on ? "text-signal" : "text-ember"}`}>{hours}h</span>
-            </li>
-          );
-        })}
+        {tasks.map((t, i) => (
+          <li key={t.name} className="flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0">
+            <span
+              className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border transition-all duration-500 ${
+                on ? "border-signal bg-signal text-ink-950" : "border-fg/20"
+              }`}
+              aria-hidden
+            >
+              <svg viewBox="0 0 12 12" className={`h-3 w-3 transition-opacity duration-300 ${on ? "opacity-100" : "opacity-0"}`}>
+                <path d="M2.5 6.2 5 8.5l4.5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span className={`flex-1 text-[0.86rem] transition-colors duration-500 ${on ? "text-muted" : "text-fg/90"}`}>{t.name}</span>
+            <span className="hidden h-1 w-16 overflow-hidden rounded-full bg-fg/10 sm:block" aria-hidden>
+              <span className={`block h-full rounded-full ${on ? "bg-signal" : "bg-ember"}`} style={{ width: `${(hours[i] / max) * 100}%` }} />
+            </span>
+            <span className={`w-9 text-right font-mono text-[0.8rem] tabular-nums ${on ? "text-signal" : "text-ember"}`}>{hours[i]}h</span>
+          </li>
+        ))}
       </ul>
-      <p className="mt-3 text-[0.72rem] text-dim">Exemplo ilustrativo de horas mensais em tarefas comuns.</p>
+      <p className="mt-3 text-[0.72rem] leading-snug text-dim">
+        Horas mensais de uma empresa fictícia em tarefas comuns, só para mostrar a ideia. Não é uma promessa de economia: o quanto
+        muda depende do seu processo, e o diagnóstico mostra isso.
+      </p>
     </div>
   );
 }

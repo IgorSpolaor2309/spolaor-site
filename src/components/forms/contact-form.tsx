@@ -7,7 +7,7 @@ import { maskPhone, validateLead, type LeadOrigem, type LeadPayload } from "@/li
 import { submitLead } from "@/lib/leads/client";
 import { FormUnavailable, SubmitError } from "./submit-error";
 
-const contactInterests = ["Site", "Automação", "Sistema", "E-commerce", "Identidade visual", "Consultoria", "Ainda não sei"];
+const contactInterests = ["Site ou landing page", "Automação de processos", "Outro (sistema, loja virtual, consultoria)"];
 const urgencies = ["Quero resolver logo", "Nos próximos 30 dias", "Nos próximos meses", "Só quero entender"];
 
 type Errors = Partial<Record<keyof LeadPayload, string>>;
@@ -53,7 +53,9 @@ export function ContactForm({
 
   useEffect(() => {
     const i = params.get("interesse");
-    if (i && interests.includes(i)) setData((d) => ({ ...d, servicos: [i] }));
+    // ?interesse=Automação, Site, Sistema… marca a opção que contém esse nome
+    const match = i ? interests.find((x) => x.toLowerCase().includes(i.toLowerCase())) : undefined;
+    if (match) setData((d) => ({ ...d, servicos: [match] }));
   }, [params, interests]);
 
   const set = <K extends keyof LeadPayload>(k: K, v: LeadPayload[K]) => {
