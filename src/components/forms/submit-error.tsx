@@ -1,5 +1,35 @@
 import { mailtoLink, whatsappLink } from "@/lib/site";
 
+// Aviso fixo enquanto o site não tem destino de leads: o formulário não aceita envio.
+export function FormUnavailable() {
+  const wa = whatsappLink();
+  const mail = mailtoLink("Contato pelo site");
+  return (
+    <p role="note" className="rounded-xl border border-ember/30 bg-ember/10 px-4 py-3 text-sm text-ember-soft">
+      O envio por este formulário ainda está sendo configurado e os pedidos não estão sendo recebidos.
+      {wa ? (
+        <>
+          {" "}Enquanto isso,{" "}
+          <a className="underline" href={wa} target="_blank" rel="noopener">
+            fale pelo WhatsApp
+          </a>
+          .
+        </>
+      ) : mail ? (
+        <>
+          {" "}Enquanto isso,{" "}
+          <a className="underline" href={mail}>
+            envie um e-mail
+          </a>
+          .
+        </>
+      ) : (
+        " Volte em breve."
+      )}
+    </p>
+  );
+}
+
 // Mensagem de falha no envio. Só oferece canais alternativos que estejam configurados.
 // unavailable: o envio pelo site está desligado (sem destino de leads), então não adianta tentar de novo.
 export function SubmitError({ message, unavailable }: { message?: string; unavailable?: boolean }) {

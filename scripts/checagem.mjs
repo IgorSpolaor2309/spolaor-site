@@ -2,7 +2,7 @@
 // formulários (sem destino: erro honesto; com API simulada: sucesso e origem) e movimento reduzido.
 // Não envia nada para fora: com "next start" sem conector a API responde 503 e nada é guardado.
 import { chromium } from "playwright-core";
-const B = "http://localhost:3100";
+const B = process.env.BASE ?? "http://localhost:3100";
 const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" });
 const out = []; const ok = (c, m) => out.push(`${c ? "OK  " : "FALHA"} ${m}`);
 const pages = ["/", "/sites", "/automacao", "/corretores", "/clinicas", "/orcamentos", "/analise", "/contato", "/sistemas", "/projetos", "/consultoria"];
@@ -63,22 +63,32 @@ async function fillQuote(p) {
   await f.locator('button[type=submit]').click();
 }
 const cases = [["/", (p) => fillDiag(p, "#analise"), "home"], ["/automacao", (p) => fillDiag(p, "#analise"), "automacao"], ["/corretores", (p) => fillDiag(p, "#analise", true), "corretores"], ["/sites", fillQuote, "sites"], ["/contato", fillQuote, "contato"]];
-for (const mock of [false, true]) {
-  for (const [r, fill, origem] of cases) {
-    const p = await b.newPage({ viewport: { width: 1280, height: 900 } });
-    let sent = null; let status = null;
-    if (mock) await p.route("**/api/lead", route => { sent = route.request().postDataJSON(); route.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true,"id":"mock"}' }); });
-    p.on("response", res => res.url().endsWith("/api/lead") && (status = res.status()));
-    p.on("request", req => req.url().endsWith("/api/lead") && !mock && (sent = req.postDataJSON()));
-    await p.goto(B + r, { waitUntil: "networkidle" });
+// Sem destino de leads ("next start" sem conector): cada formulário mostra o aviso e não deixa enviar.
+// Com destino (ex.: "next dev", que usa o conector de terminal): a API simulada devolve 200 e o sucesso aparece.
+const pa = await b.newPage();
+await pa.goto(B + "/", { waitUntil: "networkidle" });
+const semDestino = (await pa.locator("[role=note]", { hasText: "sendo configurado" }).count()) > 0;
+await pa.close();
+for (const [r, fill, origem] of cases) {
+  const p = await b.newPage({ viewport: { width: 1280, height: 900 } });
+  let sent = null; let calls = 0;
+  await p.route("**/api/lead", route => { calls++; sent = route.request().postDataJSON(); route.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true,"id":"mock"}' }); });
+  await p.goto(B + r, { waitUntil: "networkidle" });
+  if (semDestino) {
+    const form = p.locator("form", { has: p.locator("[role=note]") }).first();
+    const note = await form.locator("[role=note]").innerText();
+    try { await fill(p); } catch {}
+    await p.waitForTimeout(800);
+    const disabled = await form.locator("button[type=submit]").last().isDisabled();
+    const success = await p.locator("[role=status]").filter({ hasText: /recebid/ }).count();
+    ok(note.includes("não estão sendo recebidos") && disabled && calls === 0 && success === 0, `${r}: aviso visível, envio bloqueado=${disabled}, chamadas à API=${calls}, sucesso mostrado=${success}`);
+  } else {
     await fill(p);
     await p.waitForTimeout(1500);
-    const alert = await p.locator('[role=alert]').allInnerTexts();
-    const success = await p.locator('[role=status]').filter({ hasText: /recebid/ }).count();
-    if (!mock) ok(status === 503 && success === 0 && alert.some(t => t.includes("temporariamente indisponível")) && sent?.origem === origem, `${r}: API ${status}, sucesso mostrado=${success}, aviso="${(alert[0]||"").slice(0,60)}…", origem=${sent?.origem}`);
-    else ok(success === 1 && sent?.origem === origem, `${r} (API simulada 200): sucesso mostrado=${success}, origem=${sent?.origem}, tipo=${sent?.tipo}`);
-    await p.close();
+    const success = await p.locator("[role=status]").filter({ hasText: /recebid/ }).count();
+    ok(success === 1 && sent?.origem === origem, `${r} (API simulada 200): sucesso mostrado=${success}, origem=${sent?.origem}, tipo=${sent?.tipo}`);
   }
+  await p.close();
 }
 
 // 3) movimento reduzido: demonstração não avança sozinha e não mostra botão de pausa

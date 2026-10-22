@@ -2,6 +2,7 @@ import { Reveal } from "@/components/ui/reveal";
 import { SectionLabel } from "@/components/ui/section-label";
 import { AnalysisForm } from "@/components/forms/analysis-form";
 import type { LeadOrigem } from "@/lib/leads/schema";
+import { leadsAvailable } from "@/lib/leads/server/pipeline";
 
 // O que o diagnóstico gratuito olha, na ordem em que um contato percorre a empresa.
 export const criteria = [
@@ -74,7 +75,7 @@ export function AnalysisBlock({
           <p className="mt-6 text-sm text-dim">{note}</p>
         </Reveal>
         <Reveal delay={0.12} className="lg:col-span-6 lg:col-start-7 lg:pt-10">
-          <AnalysisForm origem={origem} problemas={problemas} submitLabel={submitLabel} />
+          <AnalysisForm origem={origem} problemas={problemas} submitLabel={submitLabel} available={leadsAvailable()} />
         </Reveal>
       </div>
     </section>

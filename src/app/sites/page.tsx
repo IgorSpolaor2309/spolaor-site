@@ -9,6 +9,7 @@ import { Reveal } from "@/components/ui/reveal";
 import { Suspense } from "react";
 import Link from "next/link";
 import { ContactForm } from "@/components/forms/contact-form";
+import { leadsAvailable } from "@/lib/leads/server/pipeline";
 import { Faq, homeFaq } from "@/components/sections/faq";
 
 export const metadata: Metadata = {
@@ -200,6 +201,7 @@ export default function SitesPage() {
                 messageLabel="O que a empresa faz e o que o site precisa ter"
                 submitLabel="Pedir orçamento"
                 formLabel="Pedir orçamento de site"
+                available={leadsAvailable()}
               />
             </Suspense>
           </Reveal>

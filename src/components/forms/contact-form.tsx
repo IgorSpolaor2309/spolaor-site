@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { maskPhone, validateLead, type LeadOrigem, type LeadPayload } from "@/lib/leads/schema";
 import { submitLead } from "@/lib/leads/client";
-import { SubmitError } from "./submit-error";
+import { FormUnavailable, SubmitError } from "./submit-error";
 
 const contactInterests = ["Site", "Automação", "Sistema", "E-commerce", "Identidade visual", "Consultoria", "Ainda não sei"];
 const urgencies = ["Quero resolver logo", "Nos próximos 30 dias", "Nos próximos meses", "Só quero entender"];
@@ -23,6 +23,7 @@ export function ContactForm({
   messageLabel = "Conte um pouco sobre o projeto ou o problema",
   submitLabel = "Enviar mensagem",
   formLabel = "Falar sobre um projeto",
+  available = true,
 }: {
   origem?: LeadOrigem;
   interests?: string[];
@@ -30,6 +31,8 @@ export function ContactForm({
   messageLabel?: string;
   submitLabel?: string;
   formLabel?: string;
+  /** false enquanto não há destino de leads: avisa e bloqueia o envio */
+  available?: boolean;
 }) {
   const params = useSearchParams();
   const [sent, setSent] = useState(false);
@@ -60,6 +63,7 @@ export function ContactForm({
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!available) return;
     const errs = validateLead(data);
     if (Object.keys(errs).length) {
       setErrors(errs);
@@ -104,6 +108,7 @@ export function ContactForm({
   return (
     <form onSubmit={submit} noValidate className="grid gap-6 rounded-[16px] border border-line-strong bg-ink-900/90 p-6 md:p-9" aria-label={formLabel}>
       <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
+      {!available && <FormUnavailable />}
       <div>
         <p id="interesse-label" className="mb-2.5 text-sm font-medium">
           {interestsLabel}
@@ -181,7 +186,7 @@ export function ContactForm({
       </div>
 
       {(status === "error" || status === "unavailable") && <SubmitError unavailable={status === "unavailable"} />}
-      <Button type="submit" size="lg" arrow disabled={status === "sending"}>
+      <Button type="submit" size="lg" arrow disabled={status === "sending" || !available}>
         {status === "sending" ? "Enviando…" : submitLabel}
       </Button>
     </form>
