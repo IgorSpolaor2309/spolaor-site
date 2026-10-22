@@ -20,7 +20,7 @@ export const site = {
   whatsapp: whatsappDigits.length >= 12 ? whatsappDigits : null,
   whatsappMessage: "Olá! Quero falar sobre um projeto com a Spolaor Tecnologia.",
   description:
-    "A Spolaor Tecnologia encontra onde sua empresa perde clientes e tempo (demora na resposta, contatos sem registro, follow-up esquecido, trabalho manual) e resolve com sites, CRM, automações e integrações.",
+    "A Spolaor Tecnologia faz sites e landing pages que facilitam contatos e pedidos de orçamento, e automatiza processos para reduzir tarefas manuais e acompanhar atendimentos e oportunidades comerciais.",
   locale: "pt_BR",
 };
 
@@ -30,12 +30,15 @@ export const siteBaseUrl = site.url ?? "http://localhost:3000";
 /** O site só deve ser indexado quando a URL definitiva estiver configurada. */
 export const isIndexable = site.url !== null;
 
+// Primeiro as duas ofertas (páginas por serviço), depois as páginas por segmento.
 export const nav = [
+  { href: "/sites", label: "Sites" },
+  { href: "/automacao", label: "Automação" },
   { href: "/corretores", label: "Corretores" },
   { href: "/clinicas", label: "Clínicas" },
   { href: "/orcamentos", label: "Orçamentos" },
-  { href: "/#servicos", label: "Serviços" },
-  { href: "/projetos", label: "Projetos" },
+  // Some do menu entre 1024 e 1280 px para caber o CTA; continua no rodapé e no menu mobile.
+  { href: "/projetos", label: "Projetos", wide: true },
   { href: "/contato", label: "Contato" },
 ];
 

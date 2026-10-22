@@ -16,7 +16,7 @@ const groups = [
     title: "Serviços",
     links: [
       { href: "/sites", label: "Sites e landing pages" },
-      { href: "/automacao", label: "Automações e integrações" },
+      { href: "/automacao", label: "Automação de processos" },
       { href: "/sistemas", label: "CRM e sistemas sob medida" },
       { href: "/consultoria", label: "Consultoria" },
       { href: "/sites#ecommerce", label: "E-commerce" },
@@ -42,7 +42,7 @@ export function SiteFooter() {
           <div className="md:col-span-12 lg:col-span-3">
             <Logo />
             <p className="mt-5 max-w-sm text-muted">
-              Encontramos onde sua empresa perde clientes e tempo, e resolvemos com site, CRM, automação e integrações.
+              Sites e landing pages que facilitam o contato, e automação de processos para nenhum atendimento ficar esquecido.
             </p>
             <div className="mt-8 flex flex-wrap gap-3 text-sm">
               {site.email && (

@@ -67,7 +67,7 @@ const orgJsonLd = {
   ...(site.email ? { email: site.email } : {}),
   description: site.description,
   areaServed: "BR",
-  knowsAbout: ["Desenvolvimento de sites", "Automação de processos", "Sistemas web", "Integrações e APIs"],
+  knowsAbout: ["Desenvolvimento de sites", "Landing pages", "Automação de processos", "Sistemas web"],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

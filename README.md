@@ -32,7 +32,7 @@ ser aceito sem ser guardado. Como ligar Supabase, CRM, n8n, Make ou e-mail está
 - `src/components/segment` — peças compartilhadas pelas landings: hero com cena, dia de situações, jornada do contato, divisão automação × pessoas
 - `src/lib/site.ts` — único lugar com domínio, e-mail e WhatsApp
 - `src/lib/leads` — validação, envio dos formulários e conectores de destino dos leads
-- `src/components/home` — seções da homepage
+- `src/components/home` — seções da homepage (ofertas em `offers.tsx`, demonstração do hero em `hero-demo.tsx`)
 - `src/components/sections` — blocos reutilizados entre páginas (fluxo de automação, case, análise, FAQ, CTA final)
 - `src/components/three` — núcleo de partículas do hero (WebGL, carregado sob demanda)
 - `docs/ARQUITETURA.md` — decisões de arquitetura, conteúdo e direção visual
@@ -47,4 +47,5 @@ ser aceito sem ser guardado. Como ligar Supabase, CRM, n8n, Make ou e-mail está
 ## Scripts de prévia
 
 `scripts/tour.mjs`, `scripts/sections.mjs` e `scripts/video.mjs` geram capturas e vídeo com Playwright
-(precisam do servidor rodando em `localhost:3100`).
+(precisam do servidor rodando em `localhost:3100`). `scripts/checagem.mjs` roda a checagem de páginas,
+CTAs e formulários (com a API simulada quando precisa de sucesso; nenhum lead sai da máquina).

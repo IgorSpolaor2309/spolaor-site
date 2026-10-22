@@ -11,7 +11,7 @@ export const SEGMENTOS = [
   "Outro",
 ] as const;
 
-export const PROBLEMAS: Record<"geral" | "corretores" | "clinicas" | "orcamentos", string[]> = {
+export const PROBLEMAS: Record<"geral" | "corretores" | "clinicas" | "orcamentos" | "automacao", string[]> = {
   geral: [
     "Demoramos para responder quem chega",
     "O site recebe visitas, mas gera poucos contatos",
@@ -44,6 +44,14 @@ export const PROBLEMAS: Record<"geral" | "corretores" | "clinicas" | "orcamentos
     "Não sei quantos orçamentos viram venda",
     "Outro",
   ],
+  automacao: [
+    "Orçamentos enviados que ficam sem retorno",
+    "Pedimos as mesmas informações várias vezes no atendimento",
+    "Os mesmos dados são digitados em vários lugares",
+    "Não sei em que etapa está cada atendimento",
+    "A equipe perde horas com tarefas repetitivas",
+    "Outro",
+  ],
 };
 
 export type SegmentKey = "corretores" | "clinicas" | "orcamentos";
@@ -56,7 +64,18 @@ export const SEGMENTO_DA_ORIGEM: Partial<Record<LeadOrigem, string>> = {
 };
 
 /** Páginas que têm o formulário de diagnóstico (#analise) na própria página. */
-export const PAGES_WITH_FORM = ["/", "/corretores", "/clinicas", "/orcamentos", "/analise", "/sites"];
+export const PAGES_WITH_FORM = ["/", "/corretores", "/clinicas", "/orcamentos", "/analise", "/automacao"];
+
+/**
+ * CTA fixo do header e da barra mobile em cada página. Em /sites o caminho é o pedido de
+ * orçamento direto; nas páginas com diagnóstico, rola até o formulário; nas demais, leva a /analise.
+ */
+export function pageCta(pathname: string): { href: string; target: string | null; label: string } {
+  if (pathname === "/sites") return { href: "#orcamento", target: "orcamento", label: "Pedir orçamento" };
+  if (pathname === "/automacao") return { href: "#analise", target: "analise", label: "Diagnóstico do processo" };
+  if (PAGES_WITH_FORM.includes(pathname)) return { href: "#analise", target: "analise", label: "Analisar minha empresa" };
+  return { href: "/analise", target: null, label: "Analisar minha empresa" };
+}
 
 export const segmentPages = [
   {

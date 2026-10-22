@@ -44,6 +44,7 @@ export function AnalysisBlock({
   itemsTitle = "O que olhamos",
   problemas,
   submitLabel,
+  note = "Se fizer sentido seguir, preparamos depois uma proposta com escopo, prazo e investimento para o seu caso.",
 }: {
   index?: string;
   label?: string;
@@ -55,6 +56,7 @@ export function AnalysisBlock({
   itemsTitle?: string;
   problemas?: string[];
   submitLabel?: string;
+  note?: React.ReactNode;
 }) {
   const H = headingLevel;
   return (
@@ -69,9 +71,7 @@ export function AnalysisBlock({
           </H>
           <p className="mt-6 text-lg leading-relaxed text-muted">{text}</p>
           <Criteria items={items} title={itemsTitle} />
-          <p className="mt-6 text-sm text-dim">
-            Se fizer sentido seguir, preparamos depois uma proposta com escopo, prazo e investimento para o seu caso.
-          </p>
+          <p className="mt-6 text-sm text-dim">{note}</p>
         </Reveal>
         <Reveal delay={0.12} className="lg:col-span-6 lg:col-start-7 lg:pt-10">
           <AnalysisForm origem={origem} problemas={problemas} submitLabel={submitLabel} />

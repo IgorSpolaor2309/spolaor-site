@@ -98,3 +98,16 @@ A home deixou de vender "sites e automação" e passou a vender o resultado: mai
 **Componentes compartilhados** em `src/components/segment`: `SegmentHero`, `SituationsDay` (+ `artifacts.tsx`), `Journey`, `JourneySection`, `Division`, `Statement`. Reaproveitados da base: `AutomationFlow` (agora aceita fluxos próprios e mensagens "human"), `AnalysisBlock`/`AnalysisForm`, `Faq`, `FinalCta`, `Process`, header, footer, barra mobile.
 
 **Leads**: um único formulário de diagnóstico em todas as páginas. Passo 1 pergunta o segmento (fixo nas landings) e o principal problema, na língua da página; passo 2 pede nome, empresa, WhatsApp e e-mail opcional. A `origem` (`home`, `corretores`, `clinicas`, `orcamentos`, `pagina-analise`, `sites`, `contato`) vai com o lead e é validada na API; a página de entrada da visita e as UTMs também vão, para atribuir o lead à landing mesmo quando o envio acontece em outra página. Detalhes em `src/lib/leads/server/connectors/README.md`. O destino dos leads continua em aberto.
+
+## 7. Duas ofertas, demonstração no hero e captação (outubro/2026)
+
+**Ofertas.** O site apresenta duas frentes, com a mesma estrutura (para quem é, o que resolve, o que entregamos, próximo passo), na home (`home/offers.tsx`, seção `#servicos`) e nas páginas de serviço:
+
+- **Sites e landing pages** (`/sites`): para apresentar os serviços e facilitar contatos e pedidos de orçamento. O caminho é o **pedido de orçamento direto** (`#orcamento`, `ContactForm` com tipo `projeto` e origem `sites`); o diagnóstico fica como alternativa para quem não sabe se o problema é o site.
+- **Automação de processos** (`/automacao`): para reduzir tarefas manuais, organizar informações e acompanhar atendimentos e oportunidades. O caminho é o **diagnóstico do processo** (`#analise`, origem `automacao`, problemas próprios em `PROBLEMAS.automacao`), sempre com a saída "Já sei o que quero automatizar" para `/contato?interesse=Automação`.
+
+A linguagem fala do que melhora no trabalho (orçamentos sem retorno, informações coletadas no primeiro atendimento, dados preenchidos uma vez só), não de APIs ou ferramentas, e não promete resultado garantido. Menu: Sites · Automação · Corretores · Clínicas · Orçamentos · Projetos · Contato (Projetos some entre 1024 e 1280 px). O CTA do header e da barra mobile depende da página (`pageCta` em `src/lib/segments.ts`).
+
+**Hero.** As fitas animadas do "S" e o contador "de cada 100 contatos" saíram. No lugar, `home/hero-demo.tsx`: um exemplo ilustrativo, com dados fictícios e sem números, de uma entrega em três momentos (o pedido chega, fica registrado com dono e próximo passo, recebe acompanhamento). Azul marca o que está organizado; laranja, o ponto em que o contato se perderia. Avança sozinho só quando visível, pausa com mouse/foco e tem botão Pausar; com `prefers-reduced-motion` não avança e não anima. As três telas ocupam a mesma célula do grid, então a altura não muda. As fitas continuam no CTA final (`SLines`).
+
+**Captação.** Sem destino configurado, `/api/lead` responde 503 e os formulários dizem que o envio está indisponível e que os dados não foram enviados (antes, a mensagem sugeria tentar de novo). Sucesso só aparece com resposta 200, que só sai depois de um conector persistente guardar o lead.
