@@ -87,19 +87,25 @@ export type LeadErrors = Partial<Record<keyof LeadPayload, string>>;
 export const LIMITS = { curto: 200, url: 500, mensagem: 4000, lista: 12 } as const;
 
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// Endereço de site digitado à mão: com ou sem http(s), precisa de um domínio com ponto e sem espaços.
+const siteRe = /^(https?:\/\/)?[^\s/.]+(\.[^\s/.]+)*\.[a-z]{2,}(\/\S*)?$/i;
 
 export function validateLead(data: Partial<LeadPayload>): LeadErrors {
   const errors: LeadErrors = {};
+  // O diagnóstico de site pede só o endereço e um contato: o site já identifica a empresa,
+  // então empresa, segmento e problema são opcionais nessa origem.
+  const diagnosticoSite = data.origem === "diagnostico-site";
   if (!data.nome || data.nome.trim().length < 2) errors.nome = "Informe seu nome.";
-  if (!data.empresa || data.empresa.trim().length < 2) errors.empresa = "Informe o nome da empresa.";
+  if (!diagnosticoSite && (!data.empresa || data.empresa.trim().length < 2)) errors.empresa = "Informe o nome da empresa.";
   const digits = (data.whatsapp ?? "").replace(/\D/g, "");
   if (digits.length < 10 || digits.length > 13) errors.whatsapp = "Informe um WhatsApp com DDD.";
   // No diagnóstico o e-mail é opcional (o retorno é pelo WhatsApp); se vier, precisa ser válido.
   const email = (data.email ?? "").trim();
   if (data.tipo === "projeto" ? !emailRe.test(email) : email && !emailRe.test(email)) errors.email = "Informe um e-mail válido.";
-  if (data.tipo === "analise" && !data.segmento?.trim()) errors.segmento = "Escolha o segmento da empresa.";
-  if (data.tipo === "analise" && !data.problema?.trim()) errors.problema = "Escolha o principal problema.";
-  if (data.origem === "diagnostico-site" && !data.site?.trim()) errors.site = "Informe o endereço do site que vamos analisar.";
+  if (data.tipo === "analise" && !diagnosticoSite && !data.segmento?.trim()) errors.segmento = "Escolha o segmento da empresa.";
+  if (data.tipo === "analise" && !diagnosticoSite && !data.problema?.trim()) errors.problema = "Escolha o principal problema.";
+  if (diagnosticoSite && !data.site?.trim()) errors.site = "Informe o endereço do site que vamos analisar.";
+  else if (diagnosticoSite && !siteRe.test(data.site!.trim())) errors.site = "Confira o endereço. Exemplo: suaempresa.com.br";
   if ((data.mensagem ?? "").length > LIMITS.mensagem) errors.mensagem = "Mensagem muito longa.";
   return errors;
 }
