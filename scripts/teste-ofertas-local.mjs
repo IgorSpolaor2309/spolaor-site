@@ -106,16 +106,13 @@ async function contactForm(p) {
   await f.getByLabel("E-mail").fill("teste@example.com");
   await f.locator("button[type=submit]").click();
 }
-async function diagForm(p) {
+async function siteForm(p) {
   const f = p.locator("#formulario form").first();
   await f.scrollIntoViewIfNeeded();
-  await f.locator("label:has(input[type=radio])").first().click();
-  await f.locator("div[role=radiogroup]").last().locator("label").first().click();
-  await f.getByRole("button", { name: "Continuar" }).click();
-  await p.waitForTimeout(400);
-  await f.getByLabel("Seu nome", { exact: true }).fill(NOME);
-  await f.getByLabel("Empresa", { exact: true }).fill("TESTE Spolaor");
-  await f.getByLabel("WhatsApp").fill("11900000000");
+  await f.getByLabel("Endereço do site").fill("exemplo.com.br");
+  await f.locator("label", { hasText: "Difícil no celular" }).click();
+  await f.getByLabel("Seu nome").fill(NOME);
+  await f.getByLabel("WhatsApp com DDD").fill("11900000000");
   await f.locator("button[type=submit]").click();
 }
 
@@ -133,24 +130,26 @@ async function diagForm(p) {
   ok(msgs >= 3 && calls === 0 && !(await fb(p)).some((a) => a[1] === "Lead"), `/lojas-virtuais: envio vazio → ${msgs} erros de campo, chamadas à API=${calls}, Lead=0`);
   await ctx.close();
 }
-// 3b) diagnóstico exige o site
+// 3b) diagnóstico exige o site (formulário de um passo: site, nome e WhatsApp)
 {
   const { ctx, p } = await newPage();
   await p.goto(B + "/diagnostico-site", { waitUntil: "networkidle" });
+  let calls = 0;
+  p.on("request", (r) => r.url().endsWith("/api/lead") && calls++);
   const f = p.locator("#formulario form").first();
   await f.scrollIntoViewIfNeeded();
-  await f.locator("label:has(input[type=radio])").first().click();
-  await f.locator("div[role=radiogroup]").last().locator("label").first().click();
-  await f.getByRole("button", { name: "Continuar" }).click();
+  await f.getByLabel("Seu nome").fill(NOME);
+  await f.getByLabel("WhatsApp com DDD").fill("11900000000");
+  await f.locator("button[type=submit]").click();
   await p.waitForTimeout(400);
-  ok((await f.getByText("Informe o endereço do site que vamos analisar.").count()) > 0, "/diagnostico-site: sem o endereço do site não avança");
+  ok((await f.getByText("Informe o endereço do site que vamos analisar.").count()) > 0 && calls === 0, `/diagnostico-site: sem o endereço do site não envia (chamadas à API=${calls})`);
   await ctx.close();
 }
 // 3c) sucesso nas 3 páginas novas + atribuição (UTM e entrada) + Meta
 const cases = [
   ["/lojas-virtuais", contactForm, "Loja virtual", "lojas-virtuais"],
   ["/agendamento-online", contactForm, "Agendamento online", "agendamento-online"],
-  ["/diagnostico-site", async (p) => { await p.locator("#formulario form").first().getByLabel("Endereço do site que vamos analisar").fill("exemplo.com.br"); await diagForm(p); }, "Diagnóstico e melhoria de site", "diagnostico-site"],
+  ["/diagnostico-site", siteForm, "Diagnóstico e melhoria de site", "diagnostico-site"],
 ];
 for (const [path, fill, interesse, origem] of cases) {
   const { ctx, p } = await newPage();
@@ -174,6 +173,8 @@ for (const [path, fill, interesse, origem] of cases) {
   const pageViews = calls.filter((a) => a[1] === "PageView").length;
   ok(success === 1 && received.length === before + 1, `${path}: sucesso=${success}, e-mails=${received.length - before}`);
   ok(m.subject.includes(interesse) && m.text.includes(`Interesse: ${interesse}`) && m.text.includes(`Origem do lead: ${origem}`), `${path}: e-mail diferencia o interesse → assunto="${m.subject}"`);
+  if (origem === "diagnostico-site")
+    ok(m.text.includes("Site: https://exemplo.com.br") && m.text.includes("Principal problema: Difícil de usar no celular") && !/^Empresa:/m.test(m.text), `${path}: e-mail traz o site e o incômodo, sem linha de empresa vazia`);
   ok(m.text.includes(`Página do envio: ${path}`) && (path === "/lojas-virtuais" || m.text.includes("Primeira página da visita: /lojas-virtuais")) && m.text.includes("utm_source=meta"), `${path}: atribuição no e-mail (página do envio, entrada e UTM)`);
   ok(leads.length === 1 && leads[0][2]?.content_category === origem, `${path}: Meta Lead disparado ${leads.length}× (categoria=${leads[0]?.[2]?.content_category})`);
   ok(pageViews === (path === "/lojas-virtuais" ? 1 : 2) && views.includes(origem), `${path}: PageView=${pageViews} (1 por página vista), ViewContent=${views.join(",")}`);

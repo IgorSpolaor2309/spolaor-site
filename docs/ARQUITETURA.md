@@ -111,3 +111,14 @@ A linguagem fala do que melhora no trabalho (orçamentos sem retorno, informaç�
 **Hero.** As fitas animadas do "S" e o contador "de cada 100 contatos" saíram. No lugar, `home/hero-demo.tsx`: um exemplo ilustrativo, com dados fictícios e sem números, de uma entrega em três momentos (o pedido chega, fica registrado com dono e próximo passo, recebe acompanhamento). Azul marca o que está organizado; laranja, o ponto em que o contato se perderia. Avança sozinho só quando visível, pausa com mouse/foco e tem botão Pausar; com `prefers-reduced-motion` não avança e não anima. As três telas ocupam a mesma célula do grid, então a altura não muda. As fitas continuam no CTA final (`SLines`).
 
 **Captação.** Sem destino configurado, os formulários mostram desde o início que o envio está sendo configurado e não deixam enviar (`leadsAvailable()`, lido no build: depois de ligar um conector, faça Redeploy). Se ainda assim a API responder 503, a mensagem diz que nada foi enviado. Sucesso só aparece com resposta 200, que só sai depois de um conector persistente guardar o lead.
+
+## 8. Landing de diagnóstico de site (outubro/2026)
+
+`/diagnostico-site` é destino de anúncios e de conteúdo orgânico (inclusive o vídeo dos lápis), então foi refeita para o celular primeiro, com peças próprias em `src/components/diagnostico/` e sem mexer nos componentes compartilhados das outras landings.
+
+- **Primeira tela:** título, uma frase de apoio, um único botão ("Solicitar diagnóstico gratuito") e a nota "Sem custo e sem compromisso. Melhorias contratadas à parte." Sem botão secundário. Abaixo (ao lado no desktop), `priority-report.tsx` mostra o que a pessoa recebe: recomendações em ordem de prioridade, como exemplo ilustrativo.
+- **Na prática (`phone-compare.tsx`):** a mesma página fictícia no celular em duas versões (confusa e mais clara), com marcações numeradas que batem com a lista ao lado. Troca só por clique; sem animação automática.
+- **Como funciona:** três passos.
+- **Formulário (`site-diagnosis-form.tsx`):** um passo só. Obrigatórios: endereço do site, nome e WhatsApp; e-mail e "o que mais incomoda" são opcionais. Todo botão principal da página leva a `#solicitar` (o próprio formulário); header e barra mobile levam a `#formulario` (a seção). Usa o mesmo caminho dos outros formulários (`submitLead` → `/api/lead`, honeypot, aviso sem destino, erros 503/5xx, evento Lead só depois do 200).
+- **Validação:** para a origem `diagnostico-site`, `validateLead` não exige empresa, segmento nem problema (o site já identifica a empresa) e confere o formato do endereço. As demais origens continuam com as mesmas regras. O e-mail do lead omite as linhas vazias.
+- **Além do diagnóstico (`solutions.tsx`):** os serviços como etapas de um caminho (apresentar, vender, agendar, acompanhar, gerenciar), cada um com um fragmento de interface ilustrativo e link para a página do serviço. Fica depois do formulário e não tem botão, para não disputar com o diagnóstico.
