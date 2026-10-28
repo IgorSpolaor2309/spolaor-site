@@ -70,7 +70,7 @@ export const PAGES_WITH_FORM = ["/", "/corretores", "/clinicas", "/orcamentos", 
 const OFFER_FORMS: Record<string, string> = {
   "/lojas-virtuais": "Pedir orçamento de loja",
   "/agendamento-online": "Quero agendamento online",
-  "/diagnostico-site": "Pedir diagnóstico do site",
+  "/diagnostico-site": "Solicitar diagnóstico",
 };
 
 /**
