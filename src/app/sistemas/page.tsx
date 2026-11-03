@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageHero } from "@/components/sections/page-hero";
+import { ServiceIllustration } from "@/components/ui/service-illustration";
 import { CaseShowcase } from "@/components/sections/case-showcase";
 import { FeatureGrid, SectionIntro } from "@/components/sections/feature-grid";
 import { SectionLabel } from "@/components/ui/section-label";
@@ -59,6 +60,16 @@ export default function SistemasPage() {
           </>
         }
         text="Quando planilhas e ferramentas prontas começam a limitar o crescimento, um sistema sob medida organiza a operação, dá visibilidade e abre espaço para automação."
+        aside={
+          <ServiceIllustration
+            name="crm-automacao"
+            preload
+            sizes="(min-width: 1024px) 38vw, (min-width: 640px) 30rem, 90vw"
+            className="mx-auto w-full max-w-[26rem] sm:max-w-[30rem] lg:max-w-none"
+            fadeBottom
+            caption="Exemplo ilustrativo · o que o sistema faz depende do projeto"
+          />
+        }
         primary={{ href: "/contato?interesse=Sistema", label: "Falar sobre meu sistema" }}
         secondary={{ href: "/projetos", label: "Ver projeto em destaque" }}
       />

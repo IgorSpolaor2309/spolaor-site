@@ -24,7 +24,7 @@ export function SegmentHero({
   scene: React.ReactNode;
 }) {
   return (
-    <section className="relative isolate overflow-hidden pb-20 pt-[128px] md:pb-28 md:pt-[160px]" aria-labelledby="segment-title">
+    <section className="relative isolate overflow-hidden pb-20 pt-[104px] md:pb-28 md:pt-[160px]" aria-labelledby="segment-title">
       <div className="container-x grid items-center gap-14 lg:grid-cols-12 lg:gap-10">
         <div className="lg:col-span-7">
           <div className="fade-up">
@@ -32,15 +32,15 @@ export function SegmentHero({
           </div>
           <h1
             id="segment-title"
-            className="fade-up mt-8 max-w-[18ch] text-[clamp(2.3rem,1rem+3.6vw,4.4rem)] font-semibold leading-[1.03] tracking-[-0.045em]"
+            className="fade-up mt-6 max-w-[18ch] md:mt-8 text-[clamp(2.3rem,1rem+3.6vw,4.4rem)] font-semibold leading-[1.03] tracking-[-0.045em]"
             style={{ animationDelay: "0.08s" }}
           >
             {title}
           </h1>
-          <div className="fade-up mt-8 grid max-w-[38rem] gap-4 text-[1.06rem] leading-relaxed text-muted md:text-lg" style={{ animationDelay: "0.18s" }}>
+          <div className="fade-up mt-6 grid max-w-[38rem] md:mt-8 gap-4 text-[1.06rem] leading-relaxed text-muted md:text-lg" style={{ animationDelay: "0.18s" }}>
             {text}
           </div>
-          <div className="fade-up mt-10 flex flex-col gap-3 sm:flex-row sm:items-center" style={{ animationDelay: "0.28s" }}>
+          <div className="fade-up mt-8 flex flex-col gap-3 md:mt-10 sm:flex-row sm:items-center" style={{ animationDelay: "0.28s" }}>
             <ButtonLink href={ctaHref} size="lg" arrow>
               {cta}
             </ButtonLink>

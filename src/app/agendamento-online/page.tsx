@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { SegmentHero } from "@/components/segment/segment-hero";
-import { BookingScene } from "@/components/offers/scenes";
+import { ServiceIllustration } from "@/components/ui/service-illustration";
 import { RequestSection } from "@/components/offers/request-section";
 import { SituationsDay, type Situation } from "@/components/segment/situations-day";
 import { Chat, Reminders, Schedule } from "@/components/segment/artifacts";
@@ -219,7 +219,14 @@ export default function AgendamentoOnlinePage() {
         ctaHref="#formulario"
         secondary={{ href: "#como-funciona", label: "Ver como funciona" }}
         note="Orçamento personalizado, sem tabela de preços. Você conta como agenda hoje e respondemos com escopo e prazo."
-        scene={<BookingScene />}
+        scene={
+          <ServiceIllustration
+            name="agendamento-online"
+            preload
+            sizes="(min-width: 1024px) 38vw, (min-width: 640px) 30rem, 90vw"
+            className="mx-auto w-full max-w-[26rem] sm:max-w-[30rem] lg:max-w-none"
+          />
+        }
       />
 
       <SituationsDay

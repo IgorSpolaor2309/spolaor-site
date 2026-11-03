@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { SegmentHero } from "@/components/segment/segment-hero";
-import { StorefrontScene } from "@/components/offers/scenes";
+import { ServiceIllustration } from "@/components/ui/service-illustration";
 import { RequestSection } from "@/components/offers/request-section";
 import { SituationsDay, type Situation } from "@/components/segment/situations-day";
 import { Chat, Ledger, Reminders } from "@/components/segment/artifacts";
@@ -185,7 +185,14 @@ export default function LojasVirtuaisPage() {
         ctaHref="#formulario"
         secondary={{ href: "#como-funciona", label: "Ver como funciona" }}
         note="Orçamento personalizado, sem tabela de preços. Você conta o que vende e respondemos com escopo, prazo e investimento."
-        scene={<StorefrontScene />}
+        scene={
+          <ServiceIllustration
+            name="loja-virtual"
+            preload
+            sizes="(min-width: 1024px) 38vw, (min-width: 640px) 30rem, 90vw"
+            className="mx-auto w-full max-w-[26rem] sm:max-w-[30rem] lg:max-w-none"
+          />
+        }
       />
 
       <SituationsDay

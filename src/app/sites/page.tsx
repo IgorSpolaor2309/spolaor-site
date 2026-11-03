@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageHero } from "@/components/sections/page-hero";
-import { PresenceDemo } from "@/components/home/leak-demos";
+import { ServiceIllustration } from "@/components/ui/service-illustration";
 import { SameProduct } from "@/components/home/same-product";
 import { ConversionAnatomy } from "@/components/sections/conversion-anatomy";
 import { FeatureGrid, SectionIntro } from "@/components/sections/feature-grid";
@@ -58,7 +58,14 @@ export default function SitesPage() {
   return (
     <>
       <PageHero
-        aside={<div className="rounded-[16px] border border-line bg-ink-900/80 p-4 backdrop-blur md:p-6"><PresenceDemo /></div>}
+        aside={
+          <ServiceIllustration
+            name="sites-responsivos"
+            preload
+            sizes="(min-width: 1024px) 38vw, (min-width: 640px) 30rem, 90vw"
+            className="mx-auto w-full max-w-[26rem] sm:max-w-[30rem] lg:max-w-none"
+          />
+        }
         eyebrow="Sites"
         title={
           <>

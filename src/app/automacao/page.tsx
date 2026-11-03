@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHero } from "@/components/sections/page-hero";
-import { ManualTasksDemo } from "@/components/home/leak-demos";
+import { ServiceIllustration } from "@/components/ui/service-illustration";
 import { AutomationFlow } from "@/components/sections/automation-flow";
 import { HiringVsAutomation } from "@/components/sections/hiring-vs-automation";
 import { ManualCost } from "@/components/sections/manual-cost";
@@ -91,7 +91,15 @@ export default function AutomacaoPage() {
   return (
     <>
       <PageHero
-        aside={<div className="rounded-[16px] border border-line bg-ink-900/80 p-4 backdrop-blur md:p-6"><ManualTasksDemo /></div>}
+        aside={
+          <ServiceIllustration
+            name="crm-automacao"
+            preload
+            sizes="(min-width: 1024px) 38vw, (min-width: 640px) 30rem, 90vw"
+            className="mx-auto w-full max-w-[26rem] sm:max-w-[30rem] lg:max-w-none"
+            fadeBottom
+          />
+        }
         eyebrow="Automação"
         title={
           <>

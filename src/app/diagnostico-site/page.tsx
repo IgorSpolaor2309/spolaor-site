@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/button";
 import { Reveal } from "@/components/ui/reveal";
 import { SectionLabel } from "@/components/ui/section-label";
+import { ServiceIllustration } from "@/components/ui/service-illustration";
 import { PriorityReport } from "@/components/diagnostico/priority-report";
 import { PhoneCompare } from "@/components/diagnostico/phone-compare";
 import { SiteDiagnosisForm } from "@/components/diagnostico/site-diagnosis-form";
@@ -37,11 +38,8 @@ const steps = [
   },
 ];
 
-const receives = [
-  "Os principais problemas encontrados, em linguagem simples",
-  "O que corrigir primeiro, em ordem de prioridade",
-  "Uma recomendação prática para cada ponto",
-];
+// O exemplo de relatório (PriorityReport) mostra o formato; esta frase diz o conteúdo.
+const receives = "Os principais problemas encontrados, em linguagem simples, em ordem de prioridade e com uma recomendação prática para cada ponto.";
 
 const faq: QA[] = [
   {
@@ -97,8 +95,17 @@ export default function DiagnosticoSitePage() {
               <p className="mt-3.5 text-sm text-dim">Sem custo e sem compromisso. Melhorias contratadas à parte.</p>
             </div>
           </div>
+          {/* No celular a ilustração vem depois do botão, com largura contida, para não atrasar o pedido. */}
           <div className="fade-up lg:col-span-5" style={{ animationDelay: "0.3s" }}>
-            <PriorityReport />
+            <ServiceIllustration
+              name="diagnostico-site"
+              preload
+              sizes="(min-width: 1024px) 38vw, (min-width: 640px) 28rem, 88vw"
+              className="mx-auto w-full max-w-[24rem] sm:max-w-[28rem] lg:max-w-none"
+            />
+            <p className="mx-auto mt-3 max-w-[28rem] text-center text-sm leading-snug text-muted lg:max-w-none">
+              Analisamos a clareza da oferta, o uso no celular e o caminho até o contato.
+            </p>
           </div>
         </div>
       </section>
@@ -164,14 +171,10 @@ export default function DiagnosticoSitePage() {
           </div>
           <div className="lg:col-span-5">
             <p className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-dim">O que você recebe</p>
-            <ul className="mt-3 border-t border-line-strong">
-              {receives.map((t) => (
-                <li key={t} className="flex gap-3 border-b border-line py-3.5 leading-snug">
-                  <span aria-hidden className="mt-[0.5em] h-1.5 w-1.5 shrink-0 rounded-full bg-signal" />
-                  {t}
-                </li>
-              ))}
-            </ul>
+            <p className="mt-3 leading-snug">{receives}</p>
+            <div className="mt-5">
+              <PriorityReport />
+            </div>
             <p className="mt-5 text-sm leading-relaxed text-dim">
               Se quiser ajuda para executar, preparamos uma proposta separada. Redesenho, correções, textos, formulários e integrações são
               contratados à parte.

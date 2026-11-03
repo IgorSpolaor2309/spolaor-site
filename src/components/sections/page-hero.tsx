@@ -19,20 +19,20 @@ export function PageHero({
   aside?: React.ReactNode;
 }) {
   return (
-    <section className="relative isolate overflow-hidden pb-20 pt-[150px] md:pb-28 md:pt-[200px]">
+    <section className="relative isolate overflow-hidden pb-20 pt-[112px] md:pb-28 md:pt-[200px]">
       <div className="container-x grid gap-12 lg:grid-cols-12 lg:items-end">
         <div className={aside ? "lg:col-span-7" : "lg:col-span-10"}>
           <div className="fade-up">
             <SectionLabel tone={tone}>{eyebrow}</SectionLabel>
           </div>
-          <h1 className={`fade-up mt-8 font-semibold leading-[0.98] tracking-[-0.045em] ${aside ? "text-[clamp(2.4rem,1.3rem+3.4vw,4.25rem)]" : "text-[clamp(2.5rem,1.4rem+4.6vw,5.5rem)]"}`} style={{ animationDelay: "0.08s" }}>
+          <h1 className={`fade-up mt-6 font-semibold md:mt-8 leading-[0.98] tracking-[-0.045em] ${aside ? "text-[clamp(2.4rem,1.3rem+3.4vw,4.25rem)]" : "text-[clamp(2.5rem,1.4rem+4.6vw,5.5rem)]"}`} style={{ animationDelay: "0.08s" }}>
             {title}
           </h1>
-          <p className="fade-up mt-8 max-w-2xl text-lg leading-relaxed text-muted md:text-xl" style={{ animationDelay: "0.18s" }}>
+          <p className="fade-up mt-6 max-w-2xl md:mt-8 text-lg leading-relaxed text-muted md:text-xl" style={{ animationDelay: "0.18s" }}>
             {text}
           </p>
           {(primary || secondary) && (
-            <div className="fade-up mt-10 flex flex-col gap-3 sm:flex-row" style={{ animationDelay: "0.28s" }}>
+            <div className="fade-up mt-8 flex flex-col gap-3 sm:flex-row md:mt-10" style={{ animationDelay: "0.28s" }}>
               {primary && (
                 <ButtonLink href={primary.href} size="lg" arrow>
                   {primary.label}

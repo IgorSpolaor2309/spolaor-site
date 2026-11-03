@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Reveal } from "@/components/ui/reveal";
 import { SectionLabel } from "@/components/ui/section-label";
 import { ButtonLink } from "@/components/ui/button";
+import { ServiceIllustration, type IllustrationName } from "@/components/ui/service-illustration";
 
 // As duas ofertas principais, lado a lado e com a mesma estrutura: para quem é, o que resolve,
 // o que entregamos e o próximo passo. Sites levam ao pedido de orçamento direto; automação, ao
@@ -49,24 +50,27 @@ const offers = [
 ];
 
 // Ofertas que têm página própria (campanhas e necessidades específicas), além das duas frentes.
-const more = [
+const more: { href: string; name: string; text: string; cta: string; image: IllustrationName }[] = [
   {
     href: "/lojas-virtuais",
     name: "Lojas virtuais",
     text: "Para quem vende pelo Instagram, pelo WhatsApp ou em loja física e quer catálogo, compra, pagamento e pedidos num lugar só.",
     cta: "Pedir orçamento de loja",
+    image: "loja-virtual",
   },
   {
     href: "/agendamento-online",
     name: "Agendamento online",
     text: "O cliente escolhe o serviço e o horário, recebe a confirmação e os lembretes. Para prestadores de serviço, além de clínicas.",
     cta: "Ver agendamento online",
+    image: "agendamento-online",
   },
   {
     href: "/diagnostico-site",
     name: "Diagnóstico de site",
     text: "Avaliação gratuita de um site que já existe: clareza, celular, caminho do contato e pontos técnicos. As melhorias são contratadas à parte.",
     cta: "Pedir diagnóstico do site",
+    image: "diagnostico-site",
   },
 ];
 
@@ -143,7 +147,12 @@ export function Offers() {
           <ul className="mt-2">
             {more.map((m, i) => (
               <Reveal as="li" key={m.href} delay={i * 0.05}>
-                <Link href={m.href} className="group grid gap-x-8 gap-y-1 border-b border-line py-6 md:grid-cols-[16rem_1fr_auto] md:items-baseline">
+                <Link
+                  href={m.href}
+                  className="group grid grid-cols-[5.5rem_1fr] items-start gap-x-5 gap-y-1 border-b border-line py-6 md:grid-cols-[8.5rem_14rem_1fr_auto] md:items-center md:gap-x-8"
+                >
+                  {/* O nome e o texto ao lado já dizem o que é: a imagem só acompanha (alt vazio). */}
+                  <ServiceIllustration name={m.image} decorative sizes="(min-width: 768px) 136px, 88px" className="row-span-3 md:row-span-1" />
                   <span className="text-[1.15rem] font-semibold tracking-[-0.02em] transition-colors group-hover:text-sky">{m.name}</span>
                   <span className="max-w-xl leading-relaxed text-muted">{m.text}</span>
                   <span className="text-[0.92rem] font-medium text-sky">

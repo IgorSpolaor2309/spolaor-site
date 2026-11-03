@@ -1,4 +1,4 @@
-import { HeroDemo } from "@/components/home/hero-demo";
+import { ServiceIllustration } from "@/components/ui/service-illustration";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
 
@@ -74,7 +74,15 @@ export function Hero() {
             </p>
           </div>
 
-          <HeroDemo className="fade-up relative pb-14 lg:col-span-5 lg:pb-0" />
+          {/* Sites como visual principal; automação, loja e agenda aparecem nas seções de cada oferta. */}
+          <div className="fade-up relative pb-14 lg:col-span-5 lg:pb-0" style={{ animationDelay: "0.5s" }}>
+            <ServiceIllustration
+              name="sites-responsivos"
+              preload
+              sizes="(min-width: 1024px) 38vw, (min-width: 640px) 30rem, 90vw"
+              className="mx-auto w-full max-w-[26rem] sm:max-w-[30rem] lg:max-w-none"
+            />
+          </div>
         </div>
       </div>
     </section>
