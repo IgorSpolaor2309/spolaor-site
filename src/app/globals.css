@@ -70,8 +70,9 @@
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
-    scroll-padding-top: 96px;
+    scroll-padding-top: 80px;
   }
+  @media (min-width: 640px) { html { scroll-padding-top: 96px; } }
   html.lenis, html.lenis body { height: auto; }
   .lenis.lenis-smooth { scroll-behavior: auto !important; }
   body {

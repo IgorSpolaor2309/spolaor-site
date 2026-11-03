@@ -21,7 +21,7 @@ export function RequestSection({
   children: React.ReactNode;
 }) {
   return (
-    <section id="formulario" className="scroll-mt-20 border-t border-line py-24 md:py-32" aria-labelledby="request-title">
+    <section id="formulario" className="scroll-mt-20 border-t border-line py-16 md:py-32" aria-labelledby="request-title">
       <div className="container-x grid gap-14 lg:grid-cols-12">
         <Reveal className="lg:col-span-5">
           <SectionLabel index={index} tone="signal">

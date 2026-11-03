@@ -19,9 +19,9 @@ export const metadata: Metadata = {
   openGraph: { title: "Seu site pode estar perdendo clientes. Descubra o que melhorar.", url: "/diagnostico-site" },
 };
 
-// Página de campanha (anúncios e orgânico): a oferta e o botão na primeira tela do celular, uma
-// demonstração do que o diagnóstico encontra, os três passos, o formulário curto e, depois dele,
-// o restante do que a Spolaor faz. Todo botão principal leva aos campos do formulário (#solicitar).
+// Página de campanha (anúncios e orgânico): a oferta, o botão e a ilustração na primeira tela do
+// celular; logo depois os três passos e o formulário curto; em seguida a demonstração do que o
+// diagnóstico encontra e o restante do que a Spolaor faz. Todo botão principal leva aos campos do formulário (#solicitar).
 
 const steps = [
   {
@@ -71,78 +71,57 @@ const faq: QA[] = [
 export default function DiagnosticoSitePage() {
   return (
     <>
-      <section className="relative isolate overflow-hidden pb-16 pt-[96px] md:pb-24 md:pt-[148px]" aria-labelledby="diag-title">
-        <div className="container-x grid gap-12 lg:grid-cols-12 lg:items-center lg:gap-10">
+      <section className="relative isolate overflow-hidden pb-12 pt-[84px] md:pb-24 md:pt-[148px]" aria-labelledby="diag-title">
+        <div className="container-x grid gap-7 md:gap-12 lg:grid-cols-12 lg:items-center lg:gap-10">
           <div className="lg:col-span-7">
             <div className="fade-up">
               <SectionLabel tone="ember">Diagnóstico de site</SectionLabel>
             </div>
             <h1
               id="diag-title"
-              className="fade-up mt-5 max-w-[17ch] text-[clamp(2.1rem,1.15rem+3.9vw,4rem)] font-semibold leading-[1.04] tracking-[-0.045em] md:mt-8 lg:max-w-none lg:text-[clamp(2.75rem,1rem+2.9vw,3.5rem)]"
+              className="fade-up mt-4 max-w-[17ch] text-[clamp(2.1rem,1.15rem+3.9vw,4rem)] font-semibold leading-[1.05] tracking-[-0.045em] md:mt-8 lg:max-w-none lg:text-[clamp(2.75rem,1rem+2.9vw,3.5rem)]"
               style={{ animationDelay: "0.06s" }}
             >
               Seu site pode estar <span className="text-ember">perdendo clientes.</span> <span className="lg:block">Descubra o que melhorar.</span>
             </h1>
-            <p className="fade-up mt-5 max-w-[34rem] text-[1.06rem] leading-relaxed text-muted md:mt-7 md:text-lg" style={{ animationDelay: "0.14s" }}>
-              Analisamos como seu site funciona, o que pode dificultar o contato dos visitantes e quais melhorias merecem prioridade.{" "}
+            <p className="fade-up mt-4 max-w-[34rem] text-[1.06rem] leading-relaxed text-muted md:mt-7 md:text-lg" style={{ animationDelay: "0.14s" }}>
+              Analisamos a clareza da oferta, o uso no celular e o caminho até o contato, e dizemos o que melhorar primeiro.{" "}
               <strong className="font-semibold text-fg">O diagnóstico é gratuito.</strong>
             </p>
-            <div className="fade-up mt-7 md:mt-10" style={{ animationDelay: "0.22s" }}>
-              <ButtonLink href="#solicitar" size="lg" arrow className="w-full sm:w-auto">
+            <div className="fade-up mt-6 md:mt-10" style={{ animationDelay: "0.22s" }}>
+              <ButtonLink href="#solicitar" size="lg" arrow data-hero-cta className="w-full sm:w-auto">
                 Solicitar diagnóstico gratuito
               </ButtonLink>
-              <p className="mt-3.5 text-sm text-dim">Sem custo e sem compromisso. Melhorias contratadas à parte.</p>
+              <p className="mt-3 text-sm text-dim">Sem custo e sem compromisso. Melhorias contratadas à parte.</p>
             </div>
           </div>
-          {/* No celular a ilustração vem depois do botão, com largura contida, para não atrasar o pedido. */}
+          {/* No celular a ilustração vem logo depois do botão, compacta, na mesma composição. */}
           <div className="fade-up lg:col-span-5" style={{ animationDelay: "0.3s" }}>
             <ServiceIllustration
               name="diagnostico-site"
               preload
-              sizes="(min-width: 1024px) 38vw, (min-width: 640px) 28rem, 88vw"
-              className="mx-auto w-full max-w-[24rem] sm:max-w-[28rem] lg:max-w-none"
+              sizes="(min-width: 1024px) 38vw, (min-width: 640px) 24rem, 17rem"
+              className="mx-auto w-full max-w-[17rem] sm:max-w-[24rem] lg:max-w-none"
             />
-            <p className="mx-auto mt-3 max-w-[28rem] text-center text-sm leading-snug text-muted lg:max-w-none">
-              Analisamos a clareza da oferta, o uso no celular e o caminho até o contato.
-            </p>
           </div>
         </div>
       </section>
 
-      <section id="na-pratica" className="relative border-t border-line py-20 md:py-28" aria-labelledby="demo-title">
-        <div className="container-x">
-          <PhoneCompare>
-            <Reveal className="max-w-2xl">
-              <SectionLabel index="01" tone="ember">
-                Na prática
-              </SectionLabel>
-              <h2 id="demo-title" className="mt-6 text-h3 font-semibold md:text-[2.5rem] md:leading-[1.08]">
-                Pequenos detalhes decidem se o visitante chama ou vai embora.
-              </h2>
-              <p className="mt-5 leading-relaxed text-muted md:text-lg">
-                Compare duas versões da mesma página no celular. São pontos como estes que o diagnóstico encontra no seu site.
-              </p>
-            </Reveal>
-          </PhoneCompare>
-        </div>
-      </section>
-
-      <section id="como-funciona" className="relative border-t border-line py-20 md:py-28" aria-labelledby="steps-title">
+      <section id="como-funciona" className="relative border-t border-line py-12 md:py-28" aria-labelledby="steps-title">
         <div className="container-x">
           <Reveal className="max-w-3xl">
-            <SectionLabel index="02">Como funciona</SectionLabel>
-            <h2 id="steps-title" className="mt-6 text-h3 font-semibold md:text-[2.5rem] md:leading-[1.08]">
+            <SectionLabel index="01">Como funciona</SectionLabel>
+            <h2 id="steps-title" className="mt-5 text-h3 font-semibold md:mt-6 md:text-[2.5rem] md:leading-[1.08]">
               Três passos, do endereço do site às prioridades.
             </h2>
           </Reveal>
-          <ol className="mt-8 border-b border-line md:mt-14 md:grid md:grid-cols-3 md:gap-10 md:border-0">
+          <ol className="mt-6 border-b border-line md:mt-14 md:grid md:grid-cols-3 md:gap-10 md:border-0">
             {steps.map((s, i) => (
               <Reveal
                 as="li"
                 key={s.title}
                 delay={i * 0.06}
-                className="grid grid-cols-[2.25rem_1fr] border-t border-line py-6 md:block md:border-t-2 md:border-fg md:pb-0 md:pt-5"
+                className="grid grid-cols-[2.25rem_1fr] border-t border-line py-4 md:block md:border-t-2 md:border-fg md:pb-0 md:pt-5"
               >
                 <span className="pt-1 font-mono text-sm text-sky md:pt-0">{String(i + 1).padStart(2, "0")}</span>
                 <div>
@@ -155,13 +134,13 @@ export default function DiagnosticoSitePage() {
         </div>
       </section>
 
-      <section id="formulario" className="relative border-t border-line py-16 md:py-28" aria-labelledby="form-title">
-        <div className="container-x grid gap-8 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-10">
+      <section id="formulario" className="relative border-t border-line py-12 md:py-28" aria-labelledby="form-title">
+        <div className="container-x grid gap-6 md:gap-8 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-10">
           <div className="lg:col-span-5">
-            <SectionLabel index="03" tone="signal">
+            <SectionLabel index="02" tone="signal">
               Solicitar diagnóstico
             </SectionLabel>
-            <h2 id="form-title" className="mt-6 text-h3 font-semibold md:text-[2.5rem] md:leading-[1.08]">
+            <h2 id="form-title" className="mt-5 text-h3 font-semibold md:mt-6 md:text-[2.5rem] md:leading-[1.08]">
               Solicite seu diagnóstico gratuito.
             </h2>
             <p className="mt-4 leading-relaxed text-muted md:text-lg">Precisamos só do endereço do site e de um contato para enviar o retorno.</p>
@@ -180,6 +159,24 @@ export default function DiagnosticoSitePage() {
               contratados à parte.
             </p>
           </div>
+        </div>
+      </section>
+
+      <section id="na-pratica" className="relative border-t border-line py-12 md:py-28" aria-labelledby="demo-title">
+        <div className="container-x">
+          <PhoneCompare>
+            <Reveal className="max-w-2xl">
+              <SectionLabel index="03" tone="ember">
+                Na prática
+              </SectionLabel>
+              <h2 id="demo-title" className="mt-5 text-h3 font-semibold md:mt-6 md:text-[2.5rem] md:leading-[1.08]">
+                Pequenos detalhes decidem se o visitante chama ou vai embora.
+              </h2>
+              <p className="mt-4 leading-relaxed text-muted md:text-lg">
+                Duas versões da mesma página no celular. São pontos como estes que o diagnóstico encontra.
+              </p>
+            </Reveal>
+          </PhoneCompare>
         </div>
       </section>
 

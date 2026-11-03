@@ -12,7 +12,7 @@ const facts = [
 
 export function Case() {
   return (
-    <section className="relative overflow-hidden border-t border-line py-24 md:py-36" aria-labelledby="case-title">
+    <section className="relative overflow-hidden border-t border-line py-16 md:py-36" aria-labelledby="case-title">
       <div className="container-x">
         <div className="grid gap-8 lg:grid-cols-12">
           <Reveal className="lg:col-span-9">

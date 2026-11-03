@@ -56,16 +56,16 @@ export default function SistemasPage() {
         tone="signal"
         title={
           <>
-            Sistemas feitos para o jeito que sua empresa trabalha. <span className="serif-accent text-muted">Não o contrário.</span>
+            Sistemas sob medida <span className="serif-accent text-muted">para o jeito que sua empresa trabalha.</span>
           </>
         }
-        text="Quando planilhas e ferramentas prontas começam a limitar o crescimento, um sistema sob medida organiza a operação, dá visibilidade e abre espaço para automação."
+        text="Para quando planilhas e ferramentas prontas já não dão conta. Um sistema próprio organiza a operação, com escopo definido em cada projeto."
         aside={
           <ServiceIllustration
             name="crm-automacao"
             preload
-            sizes="(min-width: 1024px) 38vw, (min-width: 640px) 30rem, 90vw"
-            className="mx-auto w-full max-w-[26rem] sm:max-w-[30rem] lg:max-w-none"
+            sizes="(min-width: 1024px) 38vw, (min-width: 640px) 24rem, 18.5rem"
+            className="mx-auto w-full max-w-[18.5rem] sm:max-w-[24rem] lg:max-w-none"
             fadeBottom
             caption="Exemplo ilustrativo · o que o sistema faz depende do projeto"
           />
@@ -74,14 +74,14 @@ export default function SistemasPage() {
         secondary={{ href: "/projetos", label: "Ver projeto em destaque" }}
       />
 
-      <section className="border-t border-line py-24 md:py-32">
+      <section className="border-t border-line py-16 md:py-32">
         <div className="container-x">
           <CaseShowcase />
           <p className="mt-6 text-center text-sm text-dim">Interface demonstrativa de uma plataforma de gestão e atendimento desenvolvida pela Spolaor.</p>
         </div>
       </section>
 
-      <section className="border-t border-line py-24 md:py-32" aria-labelledby="build-title">
+      <section className="border-t border-line py-16 md:py-32" aria-labelledby="build-title">
         <div className="container-x">
           <SectionIntro
             id="build-title"
@@ -94,7 +94,7 @@ export default function SistemasPage() {
         </div>
       </section>
 
-      <section className="border-t border-line py-24 md:py-32" aria-labelledby="signals-title">
+      <section className="border-t border-line py-16 md:py-32" aria-labelledby="signals-title">
         <div className="container-x grid gap-12 lg:grid-cols-12">
           <Reveal className="lg:col-span-5">
             <SectionLabel index="02" tone="ember">Sinais</SectionLabel>

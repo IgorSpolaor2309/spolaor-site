@@ -129,7 +129,7 @@ const solutions = [
 
 export function Solutions({ index }: { index: string }) {
   return (
-    <section id="solucoes" className="relative border-t border-line py-20 md:py-28" aria-labelledby="solutions-title">
+    <section id="solucoes" className="relative border-t border-line py-14 md:py-28" aria-labelledby="solutions-title">
       <div className="container-x grid gap-12 lg:grid-cols-12 lg:gap-x-10">
         <Reveal className="lg:col-span-4">
           <div className="lg:sticky lg:top-28">

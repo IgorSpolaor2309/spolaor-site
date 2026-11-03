@@ -28,7 +28,7 @@ const guarantees = [
 
 export function HowItWorks({ index = "06", guaranteesVisible = true }: { index?: string; guaranteesVisible?: boolean }) {
   return (
-    <section id="metodo" className="relative border-t border-line py-24 md:py-32" aria-labelledby="how-title">
+    <section id="metodo" className="relative border-t border-line py-16 md:py-32" aria-labelledby="how-title">
       <div className="container-x grid gap-16 lg:grid-cols-12">
         <div className="lg:col-span-5">
           <div className="lg:sticky lg:top-32">

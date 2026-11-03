@@ -23,7 +23,7 @@ const rows = [
 
 export function Segments({ index = "04" }: { index?: string }) {
   return (
-    <section id="segmentos" className="relative border-t border-line py-24 md:py-32" aria-labelledby="segments-title">
+    <section id="segmentos" className="relative border-t border-line py-16 md:py-32" aria-labelledby="segments-title">
       <div className="container-x">
         <div className="grid gap-8 lg:grid-cols-12">
           <Reveal className="lg:col-span-7">

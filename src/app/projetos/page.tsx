@@ -57,14 +57,14 @@ export default function ProjetosPage() {
         secondary={null}
       />
 
-      <section className="border-t border-line py-24 md:py-32">
+      <section className="border-t border-line py-16 md:py-32">
         <div className="container-x">
           <CaseShowcase />
           <p className="mt-6 text-center text-sm text-dim">Interface demonstrativa com dados fictícios.</p>
         </div>
       </section>
 
-      <section className="border-t border-line py-24 md:py-32">
+      <section className="border-t border-line py-16 md:py-32">
         <div className="container-x grid gap-5 md:grid-cols-3">
           {story.map((s, i) => (
             <Reveal key={s.t} delay={i * 0.08} className="rounded-[16px] border border-line bg-ink-900 p-7 md:p-9">
@@ -76,7 +76,7 @@ export default function ProjetosPage() {
         </div>
       </section>
 
-      <section className="border-t border-line py-24 md:py-32" aria-labelledby="mod-title">
+      <section className="border-t border-line py-16 md:py-32" aria-labelledby="mod-title">
         <div className="container-x">
           <SectionIntro id="mod-title" label={<SectionLabel tone="signal">Módulos</SectionLabel>} title="Tudo o que a plataforma faz." />
           <dl className="mt-14 grid gap-px overflow-hidden rounded-[16px] border border-line bg-line sm:grid-cols-2">

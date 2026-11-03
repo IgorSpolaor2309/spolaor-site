@@ -95,23 +95,23 @@ export default function AutomacaoPage() {
           <ServiceIllustration
             name="crm-automacao"
             preload
-            sizes="(min-width: 1024px) 38vw, (min-width: 640px) 30rem, 90vw"
-            className="mx-auto w-full max-w-[26rem] sm:max-w-[30rem] lg:max-w-none"
+            sizes="(min-width: 1024px) 38vw, (min-width: 640px) 24rem, 18.5rem"
+            className="mx-auto w-full max-w-[18.5rem] sm:max-w-[24rem] lg:max-w-none"
             fadeBottom
           />
         }
         eyebrow="Automação"
         title={
           <>
-            Menos tarefa manual. <span className="serif-accent text-ember">Mais atendimentos acompanhados até o fim.</span>
+            Menos tarefa manual, <span className="serif-accent text-ember">mais atendimento acompanhado.</span>
           </>
         }
-        text="Para empresas que querem reduzir tarefas manuais, organizar informações e acompanhar atendimentos e oportunidades comerciais. Começamos entendendo o seu processo e automatizamos só o que faz diferença nele."
+        text="Para equipes que anotam, copiam dados e cobram retorno à mão. Automatizamos só o que faz diferença no seu processo."
         primary={{ href: "#analise", label: "Pedir diagnóstico do processo" }}
         secondary={{ href: "/contato?interesse=Automação", label: "Já sei o que quero automatizar" }}
       />
 
-      <section className="border-t border-line py-24 md:py-32" aria-labelledby="flow-title">
+      <section className="border-t border-line py-16 md:py-32" aria-labelledby="flow-title">
         <div className="container-x">
           <SectionIntro
             id="flow-title"
@@ -125,7 +125,7 @@ export default function AutomacaoPage() {
         </div>
       </section>
 
-      <section id="calculadora" className="scroll-mt-24 border-t border-line py-24 md:py-32" aria-labelledby="calc-title">
+      <section id="calculadora" className="scroll-mt-24 border-t border-line py-16 md:py-32" aria-labelledby="calc-title">
         <div className="container-x">
           <SectionIntro
             id="calc-title"
@@ -139,7 +139,7 @@ export default function AutomacaoPage() {
         </div>
       </section>
 
-      <section className="border-t border-line py-24 md:py-32" aria-labelledby="areas-title">
+      <section className="border-t border-line py-16 md:py-32" aria-labelledby="areas-title">
         <div className="container-x">
           <SectionIntro
             id="areas-title"
@@ -152,7 +152,7 @@ export default function AutomacaoPage() {
         </div>
       </section>
 
-      <section className="border-t border-line py-24 md:py-32" aria-labelledby="hire-title">
+      <section className="border-t border-line py-16 md:py-32" aria-labelledby="hire-title">
         <div className="container-x">
           <SectionIntro
             id="hire-title"
@@ -165,7 +165,7 @@ export default function AutomacaoPage() {
         </div>
       </section>
 
-      <section className="border-t border-line py-24 md:py-32" aria-labelledby="impl-title">
+      <section className="border-t border-line py-16 md:py-32" aria-labelledby="impl-title">
         <div className="container-x">
           <SectionIntro id="impl-title" label={<SectionLabel index="05">Como implantamos</SectionLabel>} title="Do processo atual à rotina automatizada." />
           <ol className="mt-14 grid gap-px overflow-hidden rounded-[16px] border border-line bg-line md:grid-cols-5">
