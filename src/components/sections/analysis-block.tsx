@@ -66,7 +66,7 @@ export function AnalysisBlock({
 }) {
   const H = headingLevel;
   return (
-    <section id={sectionId} className="relative overflow-hidden border-t border-line py-24 md:py-32" aria-labelledby="analysis-title">
+    <section id={sectionId} className="relative overflow-hidden border-t border-line py-16 md:py-32" aria-labelledby="analysis-title">
       <div className="container-x grid gap-14 lg:grid-cols-12">
         <Reveal className="lg:col-span-5">
           <SectionLabel index={index || undefined} tone="signal">

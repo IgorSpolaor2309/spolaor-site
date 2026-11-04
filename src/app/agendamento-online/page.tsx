@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { SegmentHero } from "@/components/segment/segment-hero";
-import { BookingScene } from "@/components/offers/scenes";
+import { ServiceIllustration } from "@/components/ui/service-illustration";
 import { RequestSection } from "@/components/offers/request-section";
 import { SituationsDay, type Situation } from "@/components/segment/situations-day";
 import { Chat, Reminders, Schedule } from "@/components/segment/artifacts";
@@ -197,29 +197,30 @@ export default function AgendamentoOnlinePage() {
         eyebrow="Agendamento online"
         title={
           <>
-            Seu cliente quer marcar horário. <span className="text-ember">Quanto tempo ele espera por resposta?</span>
+            Seu cliente <span className="text-ember">escolhe o horário</span> e recebe a confirmação.
           </>
         }
         text={
-          <>
-            <p className="text-fg">
-              Com agendamento online, o cliente escolhe o serviço e o horário livre, recebe a confirmação e os lembretes, e você
-              para de marcar por mensagem.
-            </p>
-            <p>
-              Para profissionais e negócios que atendem com hora marcada, além de clínicas. Para clínicas e consultórios, veja a{" "}
-              <Link href="/clinicas" className="text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">
-                página específica
-              </Link>
-              .
-            </p>
-          </>
+          <p>
+            Para quem atende com hora marcada e ainda combina tudo por mensagem. Tem clínica?{" "}
+            <Link href="/clinicas" className="text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">
+              Veja a página para clínicas
+            </Link>
+            .
+          </p>
         }
         cta="Quero agendamento online"
         ctaHref="#formulario"
         secondary={{ href: "#como-funciona", label: "Ver como funciona" }}
-        note="Orçamento personalizado, sem tabela de preços. Você conta como agenda hoje e respondemos com escopo e prazo."
-        scene={<BookingScene />}
+        note="Orçamento personalizado, sem tabela de preços."
+        scene={
+          <ServiceIllustration
+            name="agendamento-online"
+            preload
+            sizes="(min-width: 1024px) 38vw, (min-width: 640px) 24rem, 16rem"
+            className="mx-auto w-full max-w-[16rem] sm:max-w-[24rem] lg:max-w-none"
+          />
+        }
       />
 
       <SituationsDay

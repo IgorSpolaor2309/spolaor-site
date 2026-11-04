@@ -6,7 +6,7 @@ import { HiringVsAutomation } from "@/components/sections/hiring-vs-automation";
 
 export function Automation() {
   return (
-    <section className="relative border-t border-line py-24 md:py-36" aria-labelledby="auto-title">
+    <section className="relative border-t border-line py-16 md:py-36" aria-labelledby="auto-title">
       <div className="container-x">
         <Reveal>
           <SectionLabel index="03" tone="signal">Na prática</SectionLabel>

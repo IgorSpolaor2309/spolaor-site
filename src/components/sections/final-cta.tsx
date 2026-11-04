@@ -20,7 +20,7 @@ export function FinalCta({
   secondary?: Cta | null;
 }) {
   return (
-    <section className="relative isolate overflow-hidden border-t border-line py-28 md:py-40">
+    <section className="relative isolate overflow-hidden border-t border-line py-20 md:py-40">
       <SLines className="pointer-events-none absolute -right-16 top-1/2 -z-10 hidden h-[115%] -translate-y-1/2 opacity-80 md:block" />
       <div className="container-x">
         <Reveal className="max-w-3xl">

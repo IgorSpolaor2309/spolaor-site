@@ -14,8 +14,8 @@ export default function Home() {
   return (
     <>
       <Hero />
-      <HomeSituations />
       <Offers />
+      <HomeSituations />
       <Automation />
       <Segments />
       <SameProduct index="05" />

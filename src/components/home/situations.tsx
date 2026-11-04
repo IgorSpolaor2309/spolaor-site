@@ -80,16 +80,11 @@ const items: Situation[] = [
 export function HomeSituations() {
   return (
     <SituationsDay
-      index="01"
+      index="02"
       label="Onde se perde"
-      title="Situações que parecem normais. E custam clientes todos os dias."
-      intro="Não é falta de esforço da equipe. É o contato que chega na hora errada, pelo canal errado, e depende de alguém lembrar. Nada disso aparece no relatório."
+      title="Situações que parecem normais, mas custam clientes."
+      intro="O contato chega na hora errada, pelo canal errado, e depende de alguém lembrar."
       items={items}
-      closing={
-        <>
-          O problema raramente é o produto. <span className="text-muted">É o caminho entre o primeiro contato e a venda.</span>
-        </>
-      }
     />
   );
 }

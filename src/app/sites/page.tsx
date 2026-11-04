@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageHero } from "@/components/sections/page-hero";
-import { PresenceDemo } from "@/components/home/leak-demos";
+import { ServiceIllustration } from "@/components/ui/service-illustration";
 import { SameProduct } from "@/components/home/same-product";
 import { ConversionAnatomy } from "@/components/sections/conversion-anatomy";
 import { FeatureGrid, SectionIntro } from "@/components/sections/feature-grid";
@@ -58,21 +58,28 @@ export default function SitesPage() {
   return (
     <>
       <PageHero
-        aside={<div className="rounded-[16px] border border-line bg-ink-900/80 p-4 backdrop-blur md:p-6"><PresenceDemo /></div>}
+        aside={
+          <ServiceIllustration
+            name="sites-responsivos"
+            preload
+            sizes="(min-width: 1024px) 38vw, (min-width: 640px) 24rem, 18.5rem"
+            className="mx-auto w-full max-w-[18.5rem] sm:max-w-[24rem] lg:max-w-none"
+          />
+        }
         eyebrow="Sites"
         title={
           <>
-            Seu produto pode não ser o problema. <span className="serif-accent text-ember">Talvez seja a forma como ele é apresentado.</span>
+            Sites e landing pages que <span className="serif-accent text-sky">deixam claro o que você faz.</span>
           </>
         }
-        text="Para empresas que precisam apresentar bem seus serviços e facilitar contatos e pedidos de orçamento. Criamos sites e landing pages que deixam claro o que você faz e tornam fácil o próximo passo do cliente."
+        text="Para empresas que precisam apresentar os serviços e receber contatos e pedidos de orçamento, no computador e no celular."
         primary={{ href: "#orcamento", label: "Pedir orçamento de site" }}
         secondary={{ href: "/analise", label: "Prefiro começar pelo diagnóstico" }}
       />
 
       <SameProduct index="01" label="A escolha" showLink={false} />
 
-      <section className="border-t border-line py-24 md:py-32" aria-labelledby="anatomy-title">
+      <section className="border-t border-line py-16 md:py-32" aria-labelledby="anatomy-title">
         <div className="container-x">
           <SectionIntro
             id="anatomy-title"
@@ -86,7 +93,7 @@ export default function SitesPage() {
         </div>
       </section>
 
-      <section className="border-t border-line py-24 md:py-32" aria-labelledby="insta-title">
+      <section className="border-t border-line py-16 md:py-32" aria-labelledby="insta-title">
         <div className="container-x">
           <SectionIntro
             id="insta-title"
@@ -118,7 +125,7 @@ export default function SitesPage() {
         </div>
       </section>
 
-      <section className="border-t border-line py-24 md:py-32" aria-labelledby="deliver-title">
+      <section className="border-t border-line py-16 md:py-32" aria-labelledby="deliver-title">
         <div className="container-x">
           <SectionIntro
             id="deliver-title"
@@ -166,7 +173,7 @@ export default function SitesPage() {
         </div>
       </section>
 
-      <section id="orcamento" className="scroll-mt-20 border-t border-line py-24 md:py-32" aria-labelledby="quote-title">
+      <section id="orcamento" className="scroll-mt-20 border-t border-line py-16 md:py-32" aria-labelledby="quote-title">
         <div className="container-x grid gap-14 lg:grid-cols-12">
           <Reveal className="lg:col-span-5">
             <SectionLabel index="05" tone="signal">

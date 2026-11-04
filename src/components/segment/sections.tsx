@@ -6,7 +6,7 @@ import { Journey, type JourneyStep } from "./journey";
 /** Uma pergunta grande, sozinha na tela, e a resposta curta embaixo. Momento de respiro. */
 export function Statement({ kicker, children, answer }: { kicker?: string; children: React.ReactNode; answer?: React.ReactNode }) {
   return (
-    <section className="relative border-t border-line py-28 md:py-40">
+    <section className="relative border-t border-line py-20 md:py-40">
       <div className="container-x">
         {kicker && (
           <Reveal>
@@ -49,7 +49,7 @@ export function JourneySection({
   aside?: React.ReactNode;
 }) {
   return (
-    <section id="como-funciona" className="relative border-t border-line py-24 md:py-32" aria-labelledby="journey-title">
+    <section id="como-funciona" className="relative border-t border-line py-16 md:py-32" aria-labelledby="journey-title">
       <div className="container-x">
         <div className="grid gap-10 lg:grid-cols-12">
           <Reveal className="lg:col-span-7">
@@ -107,7 +107,7 @@ export function Division({
   footnote?: string;
 }) {
   return (
-    <section className="relative border-t border-line py-24 md:py-32" aria-labelledby="division-title">
+    <section className="relative border-t border-line py-16 md:py-32" aria-labelledby="division-title">
       <div className="container-x">
         <Reveal className="max-w-4xl">
           <SectionLabel index={index}>Quem faz o quê</SectionLabel>

@@ -53,7 +53,7 @@ export function Faq({ items = homeFaq, index = "09", title = "O que costumam nos
     mainEntity: items.map((i) => ({ "@type": "Question", name: i.q, acceptedAnswer: { "@type": "Answer", text: i.a } })),
   };
   return (
-    <section id="perguntas" className="relative border-t border-line py-24 md:py-32" aria-labelledby="faq-title">
+    <section id="perguntas" className="relative border-t border-line py-16 md:py-32" aria-labelledby="faq-title">
       <div className="container-x grid gap-12 lg:grid-cols-12">
         <Reveal className="lg:col-span-4">
           <SectionLabel index={index}>Perguntas</SectionLabel>

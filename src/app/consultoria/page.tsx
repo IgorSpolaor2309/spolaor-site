@@ -42,7 +42,7 @@ export default function ConsultoriaPage() {
         secondary={{ href: "/analise", label: "Começar pelo diagnóstico" }}
       />
 
-      <section className="border-t border-line py-24 md:py-32" aria-labelledby="who-title">
+      <section className="border-t border-line py-16 md:py-32" aria-labelledby="who-title">
         <div className="container-x grid gap-12 lg:grid-cols-12">
           <Reveal className="lg:col-span-5">
             <SectionLabel index="01" tone="ember">Para quem é</SectionLabel>
@@ -61,7 +61,7 @@ export default function ConsultoriaPage() {
         </div>
       </section>
 
-      <section className="border-t border-line py-24 md:py-32" aria-labelledby="how-c-title">
+      <section className="border-t border-line py-16 md:py-32" aria-labelledby="how-c-title">
         <div className="container-x">
           <SectionIntro
             id="how-c-title"

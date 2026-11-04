@@ -58,9 +58,9 @@ export function SiteHeader() {
             : "border-b border-transparent"
         }`}
       >
-        <div className="container-x flex h-[72px] items-center justify-between gap-6">
+        <div className="container-x flex h-[60px] items-center justify-between gap-6 sm:h-[72px]">
           <Link href="/" aria-label="Spolaor Tecnologia, página inicial" className="relative z-10 shrink-0">
-            <Logo />
+            <Logo compact />
           </Link>
 
           <nav aria-label="Principal" className="hidden xl:block">
@@ -130,7 +130,7 @@ export function SiteHeader() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 top-[72px] z-40 flex flex-col bg-ink-950/95 backdrop-blur-xl xl:hidden"
+            className="fixed inset-0 top-[60px] z-40 sm:top-[72px] flex flex-col bg-ink-950/95 backdrop-blur-xl xl:hidden"
           >
             <nav aria-label="Menu" className="container-x flex-1 overflow-y-auto pt-6">
               <ul className="divide-y divide-line border-y border-line">

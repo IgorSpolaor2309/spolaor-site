@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { SegmentHero } from "@/components/segment/segment-hero";
-import { StorefrontScene } from "@/components/offers/scenes";
+import { ServiceIllustration } from "@/components/ui/service-illustration";
 import { RequestSection } from "@/components/offers/request-section";
 import { SituationsDay, type Situation } from "@/components/segment/situations-day";
 import { Chat, Ledger, Reminders } from "@/components/segment/artifacts";
@@ -166,26 +166,27 @@ export default function LojasVirtuaisPage() {
         eyebrow="Lojas virtuais"
         title={
           <>
-            Quem vê o produto no Instagram precisa de <span className="text-ember">um lugar para comprar.</span>
+            Sua loja virtual, para vender <span className="text-ember">além do direct.</span>
           </>
         }
         text={
-          <>
-            <p className="text-fg">
-              Se hoje você vende pelo Instagram, pelo WhatsApp ou numa loja física, cada venda começa com uma conversa: preço,
-              tamanho, pagamento, endereço.
-            </p>
-            <p>
-              Uma loja virtual reúne catálogo, informações dos produtos, compra, pagamento e pedidos num endereço seu, aberto a
-              qualquer hora, conforme o escopo de cada projeto.
-            </p>
-          </>
+          <p>
+            Para quem vende pelo Instagram, pelo WhatsApp ou em loja física: catálogo, pagamento e pedidos num endereço seu, conforme
+            o escopo do projeto.
+          </p>
         }
         cta="Pedir orçamento de loja virtual"
         ctaHref="#formulario"
         secondary={{ href: "#como-funciona", label: "Ver como funciona" }}
-        note="Orçamento personalizado, sem tabela de preços. Você conta o que vende e respondemos com escopo, prazo e investimento."
-        scene={<StorefrontScene />}
+        note="Orçamento personalizado, sem tabela de preços."
+        scene={
+          <ServiceIllustration
+            name="loja-virtual"
+            preload
+            sizes="(min-width: 1024px) 38vw, (min-width: 640px) 24rem, 18rem"
+            className="mx-auto w-full max-w-[18rem] sm:max-w-[24rem] lg:max-w-none"
+          />
+        }
       />
 
       <SituationsDay

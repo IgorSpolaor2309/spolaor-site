@@ -73,14 +73,14 @@ export function SituationsDay({
   };
 
   return (
-    <section id={id} className="relative border-t border-line py-24 md:py-32" aria-labelledby={`${id}-title`}>
+    <section id={id} className="relative border-t border-line py-16 md:py-32" aria-labelledby={`${id}-title`}>
       <div className="container-x">
-        <div className="grid gap-10 lg:grid-cols-12">
+        <div className="grid gap-4 md:gap-10 lg:grid-cols-12">
           <Reveal className="lg:col-span-8">
             <SectionLabel index={index} tone="ember">
               {label}
             </SectionLabel>
-            <h2 id={`${id}-title`} className="mt-8 text-h2 font-semibold">
+            <h2 id={`${id}-title`} className="mt-5 text-h2 font-semibold md:mt-8">
               {title}
             </h2>
           </Reveal>
@@ -91,7 +91,7 @@ export function SituationsDay({
           )}
         </div>
 
-        <div className="mt-16 grid gap-10 lg:grid-cols-12 lg:gap-16">
+        <div className="mt-8 grid gap-10 md:mt-16 lg:grid-cols-12 lg:gap-16">
           {/* Relógio do dia: fixo no desktop */}
           <div className="hidden lg:col-span-4 lg:block">
             <div className="sticky top-[22vh]" aria-hidden>
@@ -133,7 +133,7 @@ export function SituationsDay({
                 ref={(el) => {
                   refs.current[i] = el;
                 }}
-                className={`grid gap-6 border-t border-line py-12 transition-opacity duration-500 first:border-t-0 first:pt-0 md:grid-cols-[1fr_auto] md:gap-10 lg:min-h-[40vh] lg:content-center ${
+                className={`grid gap-5 border-t border-line py-8 transition-opacity md:gap-6 md:py-12 duration-500 first:border-t-0 first:pt-0 md:grid-cols-[1fr_auto] md:gap-10 lg:min-h-[40vh] lg:content-center ${
                   active === i ? "lg:opacity-100" : "lg:opacity-40"
                 }`}
               >
@@ -156,7 +156,7 @@ export function SituationsDay({
         </div>
 
         {closing && (
-          <Reveal className="mt-16 border-t border-line-strong pt-10">
+          <Reveal className="mt-8 border-t border-line-strong pt-8 md:mt-16 md:pt-10">
             <p className="max-w-3xl text-h3 font-medium">{closing}</p>
           </Reveal>
         )}

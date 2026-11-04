@@ -154,7 +154,7 @@ export function SameProduct({ index = "02", label = "Sites", showLink = true }: 
   const zone = criteria[active].zone;
 
   return (
-    <section className="relative border-t border-line py-24 md:py-32" aria-labelledby="same-title">
+    <section className="relative border-t border-line py-16 md:py-32" aria-labelledby="same-title">
       <div className="container-x">
         <Reveal className="max-w-4xl">
           <SectionLabel index={index} tone="ember">{label}</SectionLabel>
