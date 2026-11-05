@@ -1,0 +1,28 @@
+# Rotina do atendimento com IA a cada 5 minutos (complementa o cron diário da Vercel, que no plano
+# Hobby só roda uma vez por dia). Confere direto no Mercado Pago as contratações aguardando pagamento,
+# para liberar o acesso mesmo se uma notificação (webhook) não chegar. Sem o segredo IA_CRON_SECRET
+# no repositório, não faz nada. O GitHub pode atrasar execuções agendadas em alguns minutos.
+name: Atendimento IA - rotina
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  rotina:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Chamar a rotina em produção
+        env:
+          CRON_SECRET: ${{ secrets.IA_CRON_SECRET }}
+          URL: ${{ vars.IA_ROTINA_URL || 'https://www.spolaortecnologia.com.br/api/atendimento-ia/cron' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then echo "IA_CRON_SECRET não configurado; nada a fazer."; exit 0; fi
+          code=$(curl -s -o resposta.json -w "%{http_code}" --max-time 120 -H "authorization: Bearer $CRON_SECRET" -H "user-agent: github-actions-rotina" "$URL")
+          echo "HTTP $code"
+          python3 -c "import json;d=json.load(open('resposta.json'));print('ok' if d.get('ok') else 'falha', d.get('skipped') or len(d.get('report') or []), 'itens')" || true
+          [ "$code" = "200" ]

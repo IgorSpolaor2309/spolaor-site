@@ -74,19 +74,49 @@ dados pessoais); conciliação direta com o Mercado Pago (ação `verificar-mp`,
 uma leitura por recurso e nova tentativa no HTTP 429 do Mercado Pago; rotina não falha sem as chaves dos
 fornecedores (produção antes das vendas).
 
+## Diagnóstico do webhook (05/11/2026, tarde)
+
+Ação `{"acao":"webhook","id":"<contratação>"}` do admin (sem segredos na resposta), na prévia:
+
+| Verificação | Resultado |
+|---|---|
+| URL enviada na criação da assinatura | `https://spolaor-site-git-oferta-ia-whatsapp-spolaor.vercel.app/api/atendimento-ia/webhook` com bypass |
+| URL gravada na assinatura pelo Mercado Pago | **Ausente** na resposta de `GET /preapproval/{id}` |
+| Notificações válidas registradas (`ia_eventos`) | **0** desde a criação do banco |
+| Requisições ao webhook nos logs (últimos 30 min; o Hobby só guarda 1 h) | **0** — nem recusadas: uma notificação recusada (401) seria reenviada a cada 15 min |
+| Autoteste assinado com `MP_WEBHOOK_SECRET` → URL pública com bypass | **HTTP 200 em 352 ms**, passou pela proteção da Vercel, pela validação `x-signature` e pelo registro |
+
+Conclusão: do nosso lado a rota funciona de ponta a ponta. O Mercado Pago não enviou nenhuma notificação: o
+campo `notification_url` não faz parte dos campos documentados da criação de assinatura e não aparece na
+assinatura criada, então as notificações de assinatura dependem da URL e dos eventos configurados na aplicação,
+em Suas integrações → Webhooks (com campos separados de "modo teste" e "modo produção"). Esse painel não pôde ser
+conferido porque o Mercado Pago pediu nova verificação da conta.
+
+Correções feitas: o `data.id` alfanumérico entra em minúsculas na validação da assinatura (regra do Mercado
+Pago; o SDK não converte); registro de chegada de cada notificação no log (tipo, data.id e request-id, sem
+cabeçalhos nem query); diagnóstico com autoteste assinado na ação `webhook` do admin.
+
+`MP_WEBHOOK_SECRET` precisa ser a "assinatura secreta" mostrada pelo Mercado Pago na mesma tela de Webhooks da
+aplicação usada nas vendas; um valor diferente faz todas as notificações reais serem recusadas com 401.
+
 ## Checklist de publicação
 
 Bloqueios para abrir as vendas (contratação pública):
 1. **Webhook do Mercado Pago.** Em Suas integrações → aplicação → Webhooks, confirmar a URL e os eventos
    (Pagamentos e Planos e assinaturas). Produção: `https://www.spolaortecnologia.com.br/api/atendimento-ia/webhook`.
-   Teste (opcional): URL da prévia com o segredo de bypass. Validar com "Simular notificação". Enquanto isso, a
-   conciliação direta garante a liberação (página de acompanhamento e rotina).
+   Copiar a assinatura secreta dessa tela para `MP_WEBHOOK_SECRET` (Production). Validar com a simulação de
+   notificação do painel e conferir com a ação `webhook` do admin (`recebidas` sobe; o log mostra
+   "notificação recebida"). Mesmo com o webhook validado, a conciliação direta continua ativa como segurança.
 2. **Credenciais de produção novas** (as anteriores ficaram no chat): `MP_ACCESS_TOKEN` e `MP_WEBHOOK_SECRET` de
    produção, `ZM_API_KEY` `zm_live_` nova — cadastrar em Production (Sensitive).
 3. **Variáveis de Production que ainda faltam:** `IA_MEIOS_PAGAMENTO=cartao` e (para a compra controlada)
    `IA_TOKEN_VALIDACAO` aleatório. A gravação por mim foi bloqueada pela política de permissões da sessão.
-4. **Agendador da rotina:** o cron diário da Vercel já está no `vercel.json`; como o webhook ainda não foi
-   validado, recomenda-se um agendador a cada 1–5 min chamando `/api/atendimento-ia/cron` com `CRON_SECRET`.
+4. **Agendador da rotina:** sem webhook, o acesso é liberado (a) em até ~30 s enquanto o comprador está na
+   página de acompanhamento, para onde o checkout volta; (b) senão, só no cron diário da Vercel (09:00 UTC; o
+   plano Hobby não permite cron mais frequente) — até 24 h de atraso. O workflow
+   `.github/workflows/atendimento-ia-rotina.yml` chama a rotina a cada 5 min (o GitHub pode atrasar alguns
+   minutos; repositório público, sem custo). Ativa-se depois do merge, ao cadastrar no GitHub o segredo
+   `IA_CRON_SECRET` com o mesmo valor do `CRON_SECRET` de Production; sem ele, não faz nada.
 5. **Merge do PR #5** (autorização sua) — a página aparece com o preço e "Quero ser avisado" enquanto
    `IA_CONTRATACAO_ATIVA` não estiver definida em Production.
 6. **Compra controlada em produção** (proposta; exige sua autorização: R$ 297,00 + R$ 97,00) para validar convite
@@ -106,7 +136,7 @@ Bloqueios (sem eles a contratação pública não abre):
 | # | Validação | Onde | Situação |
 |---|---|---|---|
 | 1 | Checkout de assinatura com R$ 297,00 a cada 30 dias aceito (`frequency: 30, frequency_type: days`) | Teste MP | **OK** (05/11) |
-| 2 | Notificações chegam à prévia e passam na validação `x-signature`; repetição pelo painel é ignorada | Teste MP | **Falta** — webhook não chegou; validação x-signature só testada com requisições forjadas (401) |
+| 2 | Notificações chegam à prévia e passam na validação `x-signature`; repetição pelo painel é ignorada | Teste MP | **Falta** — Mercado Pago não enviou (URL da criação ignorada; depende do painel). Nossa rota OK no autoteste assinado (HTTP 200) |
 | 3 | Cartão aprovado, recusado e pendente → aprovado; vínculo pelo `external_reference`; só `payment` chegando | Teste MP | Aprovado **OK** (conciliação); recusado/pendente só no teste simulado |
 | 4 | Meios oferecidos no checkout = meios validados (`IA_MEIOS_PAGAMENTO`); Pix: como a renovação é cobrada | Teste MP | **OK** cartão; Pix não oferecido no checkout |
 | 5 | Criação do cliente no ZappMillion (modo teste) com o plano correto; falha e nova tentativa | Teste ZM | **OK** (modo teste) |
