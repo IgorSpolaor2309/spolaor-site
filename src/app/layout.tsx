@@ -7,6 +7,7 @@ import { MobileCtaBar } from "@/components/layout/mobile-cta-bar";
 import { SmoothScroll } from "@/components/layout/smooth-scroll";
 import { LeadAttribution } from "@/components/layout/lead-attribution";
 import { Analytics } from "@/components/layout/analytics";
+import { RevealReady } from "@/components/layout/reveal-ready";
 import { isIndexable, site, siteBaseUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -79,7 +80,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="pt-BR"
       className={`${sora.variable} ${manrope.variable} ${GeistMono.variable}`}
+      // O script abaixo acrescenta "js" (e a hidratação, "reveal-ready") à classe antes do React.
+      suppressHydrationWarning
     >
+      <head>
+        {/* Marca que há JavaScript antes da primeira pintura: sem ele, as entradas [data-reveal]
+            aparecem direto (globals.css). */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+      </head>
       <body className="min-h-dvh overflow-x-clip">
         <a
           href="#conteudo"
@@ -87,6 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Pular para o conteúdo
         </a>
+        <RevealReady />
         <SmoothScroll />
         <LeadAttribution />
         <Analytics />
