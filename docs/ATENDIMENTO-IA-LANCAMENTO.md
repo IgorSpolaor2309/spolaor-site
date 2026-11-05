@@ -99,6 +99,26 @@ cabeçalhos nem query); diagnóstico com autoteste assinado na ação `webhook` 
 `MP_WEBHOOK_SECRET` precisa ser a "assinatura secreta" mostrada pelo Mercado Pago na mesma tela de Webhooks da
 aplicação usada nas vendas; um valor diferente faz todas as notificações reais serem recusadas com 401.
 
+## Tempo até a liberação e proteções (05/11/2026, noite)
+
+Medido no teste de 05/11 (ação `tempos` do admin): aprovação no Mercado Pago 16:48:39 UTC → confirmação no banco
+17:00:47 UTC (**729 s**, sem webhook; confirmada pela conferência manual `verificar-mp`) → acesso no ZappMillion
+17:00:49 UTC (**2 s** depois da confirmação).
+
+Causa do atraso: (1) nenhuma notificação do Mercado Pago (a conta usada é um **vendedor de teste**, credenciais
+APP_USR de usuário de teste: o webhook tem de ser configurado na aplicação dessa conta, no campo de produção);
+(2) a conferência pela página de acompanhamento ainda não estava publicada naquele momento.
+
+| Proteção | Situação |
+|---|---|
+| Webhook real do Mercado Pago (pagamento, assinatura, cobrança recorrente) | **Não validado** — depende da configuração no painel da conta vendedora de teste |
+| Página de acompanhamento confere no Mercado Pago a cada ~25–30 s enquanto pendente (reserva atômica no banco, entre instâncias) | **Validado** no teste simulado (4 consultas → 1 leitura; acesso liberado sem webhook) e na tela (localhost) |
+| Rotina confere pendentes e libera sem página aberta | **Validado** no teste simulado; chamada na prévia como o workflow faz: HTTP 200 em 3,3 s |
+| Rotina a cada 5 min em produção (GitHub Actions) | **Implementada, não operacional** — só roda depois do merge e do segredo `IA_CRON_SECRET` |
+| Retomada de execução interrompida (aprovação marcada sem gravação; pago sem acesso) | **Implementada**, sem teste de falha real |
+| Medição e canal da confirmação (`pagamento_confirmado_em`, `acesso_liberado_em`, `confirmado_por`) | **Validado** no teste simulado (webhook, acompanhamento, rotina) |
+| Tela de confirmação: aviso "Conferindo…", última conferência, Verificar agora, mensagem após 3 min | **Validado** em 375 px (localhost, Mercado Pago simulado) |
+
 ## Checklist de publicação
 
 Bloqueios para abrir as vendas (contratação pública):
