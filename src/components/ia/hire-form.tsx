@@ -1,5 +1,6 @@
 "use client";
 
+import { Price, PriceNote } from "@/components/ia/price";
 import { useState } from "react";
 import { context } from "@/lib/leads/client";
 import { methodsSentence, renewalTerms, type Meio } from "@/lib/ia/terms";
@@ -84,10 +85,14 @@ export function HireForm({ price, replyLimit, cycle, methods, acesso = null }: {
   return (
     <form onSubmit={submit} noValidate aria-label="Contratar atendimento com IA no WhatsApp" className="grid gap-5 rounded-[16px] border border-line-strong bg-ink-900 p-5 sm:p-8">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-line pb-4">
-        <p className="text-[1.6rem] font-semibold tracking-[-0.03em]">
-          {brl}
-          <span className="text-base font-normal text-muted"> {cycle}</span>
-        </p>
+        <div>
+          <p>
+            <Price price={price} className="text-[2rem] text-[#c95a06]" unitClassName="text-[0.95rem] text-muted" />
+          </p>
+          <p className="mt-1.5 text-xs text-dim">
+            <PriceNote cycle={cycle} />
+          </p>
+        </div>
         <p className="text-sm text-muted">Até {replyLimit.toLocaleString("pt-BR")} respostas do agente por ciclo</p>
       </div>
       <Field name="empresa" label="Nome da empresa" autoComplete="organization" required error={errors.empresa} />
