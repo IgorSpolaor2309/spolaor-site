@@ -56,6 +56,10 @@ export type Contratacao = {
   confirmadoPor?: string | null;
   /** última conferência direta no Mercado Pago */
   mpConferidoEm?: string | null;
+  /** chave do pedido gerada no navegador: evita assinatura duplicada em clique duplo ou recarga */
+  chavePedido?: string | null;
+  /** link do checkout do Mercado Pago, para reutilizar no mesmo pedido */
+  mpCheckoutUrl?: string | null;
   criadoEm: string;
   atualizadoEm: string;
 };
@@ -93,6 +97,7 @@ export interface Store {
   create(c: Omit<Contratacao, "id" | "externalId" | "tokenHash" | "criadoEm" | "atualizadoEm">): Promise<{ contratacao: Contratacao; token: string }>;
   get(id: string): Promise<Contratacao | null>;
   byPreapproval(preapprovalId: string): Promise<Contratacao | null>;
+  byOrderKey(chave: string): Promise<Contratacao | null>;
   update(id: string, patch: Partial<Contratacao>): Promise<Contratacao>;
   list(filter: { etapas?: Etapa[] }): Promise<Contratacao[]>;
   upsertCobranca(c: Cobranca): Promise<{ previous: Cobranca | null }>;
@@ -149,9 +154,13 @@ const mem = (): Mem => (g.__iaMem ??= { c: new Map(), cob: new Map(), ev: new Se
 
 const memoryStore: Store = {
   async create(c) {
+    if (c.chavePedido && [...mem().c.values()].some((x) => x.chavePedido === c.chavePedido)) throw new Error("duplicate key chave_pedido");
     const r = newRecord(c);
     mem().c.set(r.contratacao.id, r.contratacao);
     return r;
+  },
+  async byOrderKey(chave) {
+    return [...mem().c.values()].find((x) => x.chavePedido === chave) ?? null;
   },
   async get(id) {
     return mem().c.get(id) ?? null;
@@ -286,6 +295,11 @@ const pgStore: Store = {
   async get(id) {
     const db = await sql();
     const [row] = await db`select * from ia_contratacoes where id = ${id}`;
+    return row ? fromRow<Contratacao>(row) : null;
+  },
+  async byOrderKey(chave) {
+    const db = await sql();
+    const [row] = await db`select * from ia_contratacoes where chave_pedido = ${chave}`;
     return row ? fromRow<Contratacao>(row) : null;
   },
   async byPreapproval(pid) {
