@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { iaConfig, readiness } from "@/lib/ia/config";
 import { bearerOk } from "@/lib/ia/access";
 import { dbHealth, store } from "@/lib/ia/store";
-import { provision, reactivateKeepingPaid, reconcile, refreshFromZm, syncPreapproval } from "@/lib/ia/process";
+import { provision, reactivateKeepingPaid, reconcile, reconcileWithMp, refreshFromZm, syncPreapproval } from "@/lib/ia/process";
 import { zm } from "@/lib/ia/zappmillion";
 
 // Ações da operação (Authorization: Bearer IA_ADMIN_TOKEN):
@@ -36,6 +36,9 @@ export async function POST(req: Request) {
       if (!c.zmStatus) return NextResponse.json({ ok: false, error: "acesso_nao_criado" }, { status: 409 });
       await refreshFromZm(c);
       return NextResponse.json({ ok: true });
+    case "verificar-mp":
+      // Conferência direta no Mercado Pago (assinatura e cobranças), aplicando o estado real.
+      return NextResponse.json({ ok: true, ...(await reconcileWithMp(c)), contratacao: await s.get(c.id).then((x) => ({ etapa: x?.etapa, zmStatus: x?.zmStatus, pagoAte: x?.pagoAte })) });
     case "reativar":
       // Só para quem tem período pago e foi suspenso pelo fornecedor (não pelo site).
       if (c.etapa === "suspensa" || c.zmStatus === "ACTIVE") return NextResponse.json({ ok: false, error: "nao_aplicavel" }, { status: 409 });

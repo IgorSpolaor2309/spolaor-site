@@ -329,6 +329,17 @@ export async function runCron(now = new Date()) {
   for (const c of await s.list({ etapas: ["ativacao_pendente", "pagamento_confirmado"] })) {
     if (c.proximaTentativa && new Date(c.proximaTentativa).getTime() <= t) report.push(`${c.id}: nova tentativa → ${JSON.stringify(await provision(c))}`);
   }
+  // Rede de segurança: contratações aguardando pagamento nos últimos 3 dias são conferidas direto no
+  // Mercado Pago (caso uma notificação se perca).
+  for (const c of await s.list({ etapas: ["aguardando_pagamento", "assinatura_autorizada"] })) {
+    if (!c.mpPreapprovalId || t - new Date(c.criadoEm).getTime() > 3 * 86_400_000) continue;
+    try {
+      const r = await reconcileWithMp(c);
+      if (r.cobrancas.length) report.push(`${c.id}: conferida no Mercado Pago (${r.cobrancas.length} cobrança(s))`);
+    } catch (e) {
+      report.push(`${c.id}: falha ao conferir no Mercado Pago (${(e as Error).message})`);
+    }
+  }
   for (const c of await s.list({ etapas: ["acesso_criado", "cancelada"] })) {
     if (c.zmStatus !== "ACTIVE" || !c.pagoAte) continue;
     const paid = new Date(c.pagoAte).getTime();
@@ -438,4 +449,21 @@ export async function reconcile() {
   }
   if (problemas.length) await notifyOps(`Conciliação: ${problemas.length} divergência(s)`, problemas.join("\n"));
   return problemas;
+}
+
+/**
+ * Conciliação direta com o Mercado Pago (não depende do webhook): relê a assinatura e as cobranças dela e
+ * aplica o estado real com as mesmas regras idempotentes das notificações. Devolve só status e valores.
+ */
+export async function reconcileWithMp(c: Contratacao) {
+  if (!c.mpPreapprovalId) return { assinatura: null, cobrancas: [] as unknown[] };
+  const pre = await mp.getPreapproval(c.mpPreapprovalId);
+  await syncPreapproval(c.mpPreapprovalId);
+  const aps = await mp.searchAuthorizedPayments(c.mpPreapprovalId);
+  const cobrancas = [];
+  for (const ap of aps) {
+    await syncAuthorizedPayment(String(ap.id));
+    cobrancas.push({ id: String(ap.id), status: ap.status, pagamento: ap.payment?.status ?? null, detalhe: ap.payment?.status_detail ?? null, valor: ap.transaction_amount, moeda: ap.currency_id, debito: ap.debit_date ?? null });
+  }
+  return { assinatura: { status: pre.status, proximaCobranca: pre.next_payment_date ?? null }, cobrancas };
 }
