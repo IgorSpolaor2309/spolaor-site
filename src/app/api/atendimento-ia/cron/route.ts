@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { iaConfig } from "@/lib/ia/config";
 import { bearerOk } from "@/lib/ia/access";
+import { healthReport, mpAccount } from "@/lib/ia/health";
 import { comCanal, reconcile, runCron } from "@/lib/ia/process";
 
 // Rotina periódica (Vercel Cron envia Authorization: Bearer CRON_SECRET): novas tentativas de
@@ -8,6 +9,12 @@ import { comCanal, reconcile, runCron } from "@/lib/ia/process";
 // Veja docs/ATENDIMENTO-IA.md.
 export async function GET(req: Request) {
   if (!bearerOk(req, iaConfig.cronSecret())) return NextResponse.json({ ok: false }, { status: 401 });
+  // ?saude=1: diagnóstico só de leitura, gravado no log privado da Vercel (nunca na resposta, pois a rotina
+  // roda em repositório público); não executa a rotina.
+  if (new URL(req.url).searchParams.get("saude") === "1") {
+    console.info(`[atendimento-ia] saude ${JSON.stringify({ ...(await healthReport()), contaMp: await mpAccount().catch((e: Error) => ({ erro: e.message })) })}`);
+    return NextResponse.json({ ok: true, saude: "registrada no log" });
+  }
   if (!process.env.DATABASE_URL && process.env.IA_STORE !== "memory") return NextResponse.json({ ok: true, skipped: "sem banco" });
   // Sem as chaves dos fornecedores (ex.: produção antes de abrir as vendas), não há o que conferir.
   if (!iaConfig.zmKey() || !iaConfig.mpToken()) return NextResponse.json({ ok: true, skipped: "sem chaves dos fornecedores" });
