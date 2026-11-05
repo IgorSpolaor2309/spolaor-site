@@ -178,7 +178,7 @@ const c1 = await contratar("Empresa Um", "um@exemplo.test");
 const cr = mp.creates[0];
 ok(c1.body.checkoutUrl?.startsWith("https://mp.simulado/"), "contratação devolve o checkout do Mercado Pago");
 ok(cr?.auto_recurring?.transaction_amount === 297 && cr.auto_recurring.frequency === 30 && cr.auto_recurring.frequency_type === "days" && cr.status === "pending", "assinatura: 297,00 BRL a cada 30 dias (preço do servidor; o navegador mandou 1)");
-ok(/297,00 a cada 30 dias/.test(cr?.reason ?? ""), "descrição do checkout mostra R$ 297,00 a cada 30 dias");
+ok(/297,00 a cada 30 dias/.test(cr?.reason ?? "") && (cr?.reason ?? "").length <= 60, "descrição do checkout: R$ 297,00 a cada 30 dias, até 60 caracteres (limite do Mercado Pago)");
 
 ok(!(await status(c1)).pagamentoConfirmado, "retorno do checkout não confirma nada");
 ok((await json(`/api/atendimento-ia/status?c=${c1.id}&t=errado`)).status === 404, "token errado → 404");

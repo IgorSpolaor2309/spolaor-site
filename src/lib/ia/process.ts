@@ -70,7 +70,8 @@ export async function startContratacao(input: { empresa: string; responsavel: st
   const backUrl = `${iaConfig.siteUrl()}/atendimento-ia/acompanhar?c=${contratacao.id}&t=${token}`;
   const valor = price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const pre = await mp.createPreapproval({
-    reason: `Spolaor · Atendimento com IA no WhatsApp · ${valor} ${cycleLabel()}`,
+    // O Mercado Pago aceita no máximo 60 caracteres em reason (erro 400 acima disso).
+    reason: `Atendimento IA WhatsApp · ${valor} ${cycleLabel()}`.slice(0, 60),
     externalReference: contratacao.id,
     payerEmail: input.email,
     amount: price,
