@@ -83,6 +83,8 @@ export interface Store {
   /** Registra o evento; false se já tinha sido processado (notificação repetida). */
   markEvent(key: string): Promise<boolean>;
   unmarkEvent(key: string): Promise<void>;
+  /** Quantas notificações válidas do Mercado Pago (sem os autotestes) já foram registradas e a mais recente (diagnóstico do webhook). */
+  eventStats(): Promise<{ total: number; ultima: string | null }>;
 }
 
 export const hashToken = (t: string) => createHash("sha256").update(t).digest("hex");
@@ -147,6 +149,9 @@ const memoryStore: Store = {
   },
   async unmarkEvent(key) {
     mem().ev.delete(key);
+  },
+  async eventStats() {
+    return { total: [...mem().ev].filter((k) => !k.startsWith("autoteste:")).length, ultima: null };
   },
 };
 
@@ -256,6 +261,11 @@ const pgStore: Store = {
   async unmarkEvent(key) {
     const db = await sql();
     await db`delete from ia_eventos where chave = ${key}`;
+  },
+  async eventStats() {
+    const db = await sql();
+    const [r] = await db`select count(*)::int as total, max(recebido_em) as ultima from ia_eventos where chave not like 'autoteste:%'`;
+    return { total: Number(r?.total ?? 0), ultima: r?.ultima ? new Date(r.ultima as string).toISOString() : null };
   },
 };
 

@@ -19,13 +19,16 @@ export async function POST(req: Request) {
   const dataId = url.searchParams.get("data.id") ?? (body.data?.id != null ? String(body.data.id) : null);
   const type = body.type ?? url.searchParams.get("type") ?? url.searchParams.get("topic") ?? "";
   const requestId = req.headers.get("x-request-id") ?? "";
+  // Registro mínimo de chegada (sem cabeçalhos nem query: a URL da prévia leva o segredo de bypass).
+  console.info(`[atendimento-ia] notificação recebida type=${type || "?"} data.id=${dataId ?? "?"} request-id=${requestId || "?"}`);
 
   if (!iaConfig.mpWebhookSecret()) return NextResponse.json({ ok: false }, { status: 503 });
   try {
     WebhookSignatureValidator.validate({
       xSignature: req.headers.get("x-signature") ?? undefined,
       xRequestId: requestId || undefined,
-      dataId: dataId ?? undefined,
+      // O Mercado Pago assina o data.id alfanumérico em minúsculas (documentação de Webhooks).
+      dataId: dataId ? dataId.toLowerCase() : undefined,
       secret: iaConfig.mpWebhookSecret(),
       toleranceSeconds: 300,
     });

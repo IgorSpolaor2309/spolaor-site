@@ -129,7 +129,7 @@ const json = async (path, opts = {}) => {
 let rid = 1;
 function notify(type, dataId, { sign = true, requestId = `req-${rid++}` } = {}) {
   const ts = Math.floor(Date.now() / 1000);
-  const sig = createHmac("sha256", sign ? SECRET : "outro-segredo").update(`id:${dataId};request-id:${requestId};ts:${ts};`).digest("hex");
+  const sig = createHmac("sha256", sign ? SECRET : "outro-segredo").update(`id:${String(dataId).toLowerCase()};request-id:${requestId};ts:${ts};`).digest("hex");
   return json(`/api/atendimento-ia/webhook?data.id=${encodeURIComponent(dataId)}&type=${type}`, {
     method: "POST",
     headers: { "x-signature": `ts=${ts},v1=${sig}`, "x-request-id": requestId },
@@ -184,6 +184,11 @@ ok(!(await status(c1)).pagamentoConfirmado, "retorno do checkout não confirma n
 ok((await json(`/api/atendimento-ia/status?c=${c1.id}&t=errado`)).status === 404, "token errado → 404");
 ok((await notify("subscription_preapproval", preOf(c1).id, { sign: false })).status === 401, "assinatura x-signature inválida → 401");
 ok((await json(`/api/atendimento-ia/webhook?data.id=x&type=payment`, { method: "POST", body: "{}" })).status === 401, "sem x-signature → 401");
+{
+  const d = (await json("/api/atendimento-ia/admin", { method: "POST", headers: { authorization: "Bearer admin-teste" }, body: JSON.stringify({ acao: "webhook" }) })).body;
+  ok(d.autoteste?.http === 200 && d.autoteste?.resposta?.result?.ignored === "tipo autoteste" && !JSON.stringify(d).includes("segredo-teste"), "diagnóstico do webhook: autoteste assinado passa pela rota, sem expor o segredo");
+}
+ok((await notify("subscription_preapproval", "ABCdef123", { requestId: "req-maiusc" })).status !== 401, "x-signature com data.id alfanumérico assinado em minúsculas → aceito");
 
 preOf(c1).status = "authorized";
 await notify("subscription_preapproval", preOf(c1).id);
