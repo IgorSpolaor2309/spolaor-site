@@ -87,6 +87,7 @@ export const iaConfig = {
    * ao servidor): ninguém digita nem copia o segredo. Nunca registrar esta URL em logs.
    */
   mpNotificationUrl: (): string | null => {
+    if (env("IA_MP_NOTIFICATION_URL") === "off") return null; // usar só a URL configurada no painel do Mercado Pago
     if (env("IA_MP_NOTIFICATION_URL")) return env("IA_MP_NOTIFICATION_URL");
     const bypass = env("VERCEL_AUTOMATION_BYPASS_SECRET");
     if (env("VERCEL_ENV") === "preview" && bypass && env("VERCEL_BRANCH_URL")) {
