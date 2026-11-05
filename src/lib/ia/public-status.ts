@@ -96,6 +96,14 @@ export function publicStatus(c: Contratacao, reembolso: Reembolso | null = null)
             : "Pagamento confirmado. Estamos liberando o seu acesso.";
 
   const cancelada = c.etapa === "cancelada";
+  // Arrependimento concluído: o contrato acabou, sem pendência para o comprador nem tarefas no painel.
+  const passos =
+    reembolso?.status === "concluido"
+      ? [
+          { id: "pagamento", titulo: "Pagamento estornado", status: "feito" as const, detalhe: "O Mercado Pago confirmou o estorno do valor integral." },
+          { id: "acesso", titulo: "Acesso encerrado", status: "feito" as const, detalhe: "A contratação foi encerrada pelo direito de arrependimento." },
+        ]
+      : [pagamento, acessoPasso, agente, wpp];
   return {
     empresa: c.empresa,
     valor: c.precoMensal,
@@ -121,6 +129,6 @@ export function publicStatus(c: Contratacao, reembolso: Reembolso | null = null)
       solicitadoEm: reembolso?.solicitadoEm ?? null,
       concluidoEm: reembolso?.confirmadoEm ?? null,
     },
-    passos: [pagamento, acessoPasso, agente, wpp],
+    passos,
   };
 }

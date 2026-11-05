@@ -424,6 +424,7 @@ ok((await json("/api/atendimento-ia/configuracao", { method: "POST", body: "{}" 
   const s2 = await status(a1);
   ok(s2.arrependimento.status === "concluido" && !!s2.arrependimento.concluidoEm, "provedor confirmou (refunded): reembolso concluído");
   ok(zm.suspends.filter((x) => x === ext(a1)).length === 1 && !s2.acessoLiberado, "estorno confirmado encerra o acesso uma única vez");
+  ok(s2.passos.length === 2 && s2.passos[1].titulo === "Acesso encerrado" && !JSON.stringify(s2.passos).includes("regularizar"), "reembolso concluído: sem pendência nem tarefas no painel");
   ok(new Set(mp.refunds.map((x) => x.key)).size === 1 && mp.refunds[0].key === `arrependimento-${a1.id}`, "toda tentativa de estorno usa a mesma chave de idempotência");
   const qtd = mp.refunds.length;
   await admin("reembolsar", a1.id);
