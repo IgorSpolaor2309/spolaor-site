@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { iaConfig, cycleLabel } from "./config";
 import { mp, type AuthorizedPayment } from "./mercadopago";
 import { zm, ZmError, type ZmClient } from "./zappmillion";
@@ -15,6 +16,11 @@ import { notifyOps } from "./notify";
 // passa a ser o fim dele. Nada é suspenso antes de pagoAte.
 
 const nowIso = () => new Date().toISOString();
+
+// Por onde chegou a confirmação (webhook, página de acompanhamento, rotina ou admin): gravado em
+// confirmadoPor para medir se o webhook está funcionando e quanto a conciliação está cobrindo.
+const canalAtual = new AsyncLocalStorage<string>();
+export const comCanal = <T>(canal: string, fn: () => Promise<T>) => canalAtual.run(canal, fn);
 const isCancelled = (s?: string | null) => !!s && /^cancel+ed$/.test(s);
 const sameAmount = (a: number, b: number) => Math.abs(a - b) < 0.005;
 
@@ -139,11 +145,13 @@ async function applyCharge(c: Contratacao, ap: AuthorizedPayment) {
   });
   if (payStatus === "approved") {
     // Cobrança efetivamente aprovada (assinatura autorizada não basta). Só quem marca primeiro aplica.
-    if (!(await s.claimApproval(String(ap.id)))) return { ok: true, already: true };
+    if (!(await s.claimApproval(String(ap.id)))) return resumeIfInterrupted(c.id, String(ap.id), ap);
     const cur = (await s.get(c.id))!;
     if (!cur.primeiroPagamentoEm) {
       const updated = await s.update(c.id, {
         primeiroPagamentoEm: ap.debit_date ?? nowIso(),
+        pagamentoConfirmadoEm: nowIso(),
+        confirmadoPor: canalAtual.getStore() ?? "desconhecido",
         ...(cur.etapa === "aguardando_pagamento" || cur.etapa === "assinatura_autorizada" || cur.etapa === "cancelada" ? { etapa: "pagamento_confirmado" as const } : {}),
       });
       return provision(updated);
@@ -156,6 +164,30 @@ async function applyCharge(c: Contratacao, ap: AuthorizedPayment) {
   }
   if (payStatus && ["refunded", "charged_back", "in_mediation"].includes(payStatus)) return applyReversal(c, payStatus);
   return { ok: true, status: ap.status, payment: payStatus };
+}
+
+/**
+ * A aprovação já foi marcada (claimApproval) por outra execução. Se essa execução parou no meio (função
+ * encerrada entre a marcação e a gravação, ou antes de criar o acesso), retoma depois de 60 s — tempo de
+ * sobra para uma execução normal terminar —, para nenhuma contratação paga ficar parada.
+ */
+async function resumeIfInterrupted(contratacaoId: string, cobrancaId: string, ap: AuthorizedPayment) {
+  const s = store();
+  const cur = await s.get(contratacaoId);
+  const cob = (await s.cobrancas(contratacaoId)).find((x) => x.id === cobrancaId);
+  const stale = !!cob?.aprovadaEm && Date.now() - new Date(cob.aprovadaEm).getTime() > 60_000;
+  if (!cur || !stale) return { ok: true, already: true };
+  if (!cur.primeiroPagamentoEm && ["aguardando_pagamento", "assinatura_autorizada", "cancelada"].includes(cur.etapa)) {
+    const updated = await s.update(cur.id, {
+      primeiroPagamentoEm: ap.debit_date ?? cob.aprovadaEm,
+      pagamentoConfirmadoEm: nowIso(),
+      confirmadoPor: `${canalAtual.getStore() ?? "desconhecido"} (retomada)`,
+      etapa: "pagamento_confirmado",
+    });
+    return provision(updated);
+  }
+  if (cur.primeiroPagamentoEm && cur.etapa === "pagamento_confirmado" && !cur.zmStatus) return provision(cur);
+  return { ok: true, already: true };
 }
 
 export async function syncAuthorizedPayment(id: string) {
@@ -255,7 +287,7 @@ export async function provision(c: Contratacao) {
     });
     // O período pago começa com o acesso: termina junto com o período do fornecedor.
     const pagoAte = cli.subscription?.currentPeriodEnd ?? addCycle(nowIso());
-    await s.update(c.id, { ...syncedFields(cli), pagoAte, etapa: "acesso_criado", ultimoErro: null, tentativas: 0, proximaTentativa: null });
+    await s.update(c.id, { ...syncedFields(cli), pagoAte, etapa: "acesso_criado", acessoLiberadoEm: nowIso(), ultimoErro: null, tentativas: 0, proximaTentativa: null });
     return { ok: true, created: true };
   } catch (e) {
     const err = e instanceof ZmError ? e : new ZmError(500, "Unknown", (e as Error).message);
@@ -332,6 +364,9 @@ export async function runCron(now = new Date()) {
 
   for (const c of await s.list({ etapas: ["ativacao_pendente", "pagamento_confirmado"] })) {
     if (c.proximaTentativa && new Date(c.proximaTentativa).getTime() <= t) report.push(`${c.id}: nova tentativa → ${JSON.stringify(await provision(c))}`);
+    // Pago e sem acesso, sem tentativa agendada (execução interrompida antes de criar o acesso).
+    else if (c.etapa === "pagamento_confirmado" && !c.zmStatus && !c.proximaTentativa && t - new Date(c.atualizadoEm).getTime() > 120_000)
+      report.push(`${c.id}: retomada da ativação → ${JSON.stringify(await provision(c))}`);
   }
   // Rede de segurança: contratações aguardando pagamento nos últimos 3 dias são conferidas direto no
   // Mercado Pago (caso uma notificação se perca).
@@ -463,6 +498,7 @@ export async function reconcileWithMp(c: Contratacao) {
   if (!c.mpPreapprovalId) return { assinatura: null, cobrancas: [] as unknown[] };
   // Uma leitura da assinatura e uma busca das cobranças; cada cobrança é aplicada com os dados da busca
   // (sem nova consulta), para não esbarrar no limite de requisições do Mercado Pago.
+  await store().update(c.id, { mpConferidoEm: nowIso() });
   const pre = (await syncPreapproval(c.mpPreapprovalId)) as { status?: string; proximaCobranca?: string | null };
   const aps = await mp.searchAuthorizedPayments(c.mpPreapprovalId);
   const cobrancas = [];

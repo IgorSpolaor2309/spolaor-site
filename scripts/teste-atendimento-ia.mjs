@@ -45,6 +45,7 @@ http
         return send(201, pre);
       }
       if ((m = u.pathname.match(/^\/preapproval\/(.+)$/))) {
+        if (req.method === "GET") mp.gets = (mp.gets ?? 0) + 1;
         const pre = mp.pre.get(m[1]);
         if (!pre) return send(404, {});
         if (req.method === "PUT") {
@@ -192,7 +193,10 @@ ok((await notify("subscription_preapproval", "ABCdef123", { requestId: "req-maiu
 
 preOf(c1).status = "authorized";
 await notify("subscription_preapproval", preOf(c1).id);
-ok((await status(c1)).passos[0].titulo === "Pagamento em processamento", "assinatura autorizada ≠ pagamento aprovado");
+{
+  const s1 = await status(c1);
+  ok(s1.passos[0].titulo === "Pagamento em processamento" && s1.confirmando === true && s1.liberando === false, "assinatura autorizada ≠ pagamento aprovado; página indica que está conferindo");
+}
 await notify("subscription_authorized_payment", charge(c1, { status: "rejected" }).id);
 await notify("subscription_authorized_payment", charge(c1, { amount: 197 }).id);
 ok(zm.creates.length === 0, "cobrança recusada ou com valor divergente não cria nada");
@@ -205,6 +209,11 @@ const results = await Promise.all(
 ok(results.every((r) => r.status === 200), "entregas simultâneas e repetidas respondem 200");
 ok(new Set(zm.creates.map((x) => x.externalId)).size === 1 && zm.clients.size === 1, "simultâneas: um único cliente no ZappMillion (externalId estável)");
 let r1 = await row(c1);
+ok(r1.confirmadoPor === "webhook", "canal da confirmação registrado: webhook");
+{
+  const t = (await admin("tempos", c1.id)).body;
+  ok(t.confirmadoNoBanco && t.acessoNoZappMillion && t.segundos?.bancoAteAcesso != null && t.segundos.bancoAteAcesso >= 0, "linha do tempo: confirmação no banco → acesso no ZappMillion medida");
+}
 const zm1 = zm.clients.get(ext(c1)).subscription.currentPeriodEnd;
 ok(r1.pagoAte === zm1, "período pago termina exatamente na renovação do fornecedor (acesso + 30 dias)");
 let st = await status(c1);
@@ -339,6 +348,29 @@ else {
 
 ok((await json("/api/atendimento-ia/admin", { method: "POST", body: JSON.stringify({ acao: "listar" }) })).status === 401 && (await json("/api/atendimento-ia/cron")).status === 401, "rotas internas exigem token");
 ok((await json("/api/atendimento-ia/configuracao", { method: "POST", body: "{}" })).status === 404, "sem briefing obrigatório");
+
+// Sem nenhuma notificação: só a página de acompanhamento aberta libera o acesso, com no máximo uma
+// leitura no Mercado Pago a cada 25 s mesmo com várias consultas seguidas.
+{
+  const c9 = await contratar("Empresa Nove", "nove@exemplo.test");
+  preOf(c9).status = "authorized";
+  charge(c9);
+  const before = mp.gets ?? 0;
+  const [a9] = await Promise.all([status(c9), status(c9), status(c9)]);
+  const b9 = await status(c9);
+  const lidas = (mp.gets ?? 0) - before;
+  ok((a9.acessoLiberado || b9.acessoLiberado) && lidas === 1, `sem webhook: página de acompanhamento confirma e libera sozinha (${lidas} leitura no Mercado Pago para 4 consultas)`);
+  ok((await row(c9)).confirmadoPor === "acompanhamento" && b9.confirmando === false && !!b9.conferidoEm, "canal registrado: acompanhamento; página deixa de mostrar 'conferindo'");
+}
+// Sem notificação e com a página fechada: a rotina confere e libera.
+{
+  const c10 = await contratar("Empresa Dez", "dez@exemplo.test");
+  preOf(c10).status = "authorized";
+  charge(c10);
+  await cron();
+  const r10 = await row(c10);
+  ok(r10.zmStatus === "ACTIVE" && r10.confirmadoPor === "rotina", "sem webhook e sem página aberta: a rotina confirma e libera (canal: rotina)");
+}
 
 console.log(out.join("\n"));
 console.log(`\n${out.filter((l) => l.startsWith("OK")).length} OK, ${out.filter((l) => l.startsWith("FALHA")).length} falhas`);

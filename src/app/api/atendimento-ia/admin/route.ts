@@ -2,8 +2,8 @@ import { createHmac, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { iaConfig, readiness } from "@/lib/ia/config";
 import { bearerOk } from "@/lib/ia/access";
-import { dbHealth, store } from "@/lib/ia/store";
-import { provision, reactivateKeepingPaid, reconcile, reconcileWithMp, refreshFromZm, syncPreapproval } from "@/lib/ia/process";
+import { dbHealth, store, type Contratacao } from "@/lib/ia/store";
+import { comCanal, provision, reactivateKeepingPaid, reconcile, reconcileWithMp, refreshFromZm, syncPreapproval } from "@/lib/ia/process";
 import { zm } from "@/lib/ia/zappmillion";
 import { mp } from "@/lib/ia/mercadopago";
 
@@ -15,6 +15,8 @@ import { mp } from "@/lib/ia/mercadopago";
 //   { "acao": "atualizar", "id": "..." }                 → relê o cliente no ZappMillion (período, WhatsApp)
 //   { "acao": "webhook", "id"?: "..." }                 → URL de notificação (sem segredo), notificações recebidas,
 //                                                          URL gravada na assinatura e autoteste assinado de ponta a ponta
+//   { "acao": "tempos", "id": "..." }                   → aprovação no Mercado Pago → confirmação no banco → acesso no
+//                                                          ZappMillion, com os intervalos e o canal que confirmou
 //   { "acao": "saude" }                                  → o que falta, banco, notificação e modo das chaves (sem valores)
 export async function POST(req: Request) {
   if (!bearerOk(req, iaConfig.adminToken())) return NextResponse.json({ ok: false }, { status: 401 });
@@ -27,7 +29,7 @@ export async function POST(req: Request) {
     const all = await s.list({});
     return NextResponse.json({
       ok: true,
-      contratacoes: all.map((c) => ({ id: c.id, empresa: c.empresa, etapa: c.etapa, mpStatus: c.mpStatus, zmStatus: c.zmStatus, pagoAte: c.pagoAte, whatsapp: c.whatsappStatus, ultimoErro: c.ultimoErro, preAvisoPara: c.preAvisoPara, avisoFornecedorPara: c.avisoFornecedorPara })),
+      contratacoes: all.map((c) => ({ id: c.id, empresa: c.empresa, etapa: c.etapa, mpStatus: c.mpStatus, zmStatus: c.zmStatus, pagoAte: c.pagoAte, whatsapp: c.whatsappStatus, confirmadoPor: c.confirmadoPor ?? null, ultimoErro: c.ultimoErro, preAvisoPara: c.preAvisoPara, avisoFornecedorPara: c.avisoFornecedorPara })),
     });
   }
   const c = body.id ? await s.get(body.id) : null;
@@ -36,14 +38,16 @@ export async function POST(req: Request) {
     case "retentar":
       return NextResponse.json({ ok: true, result: await provision({ ...c, tentativas: c.tentativas }) });
     case "sincronizar":
-      return NextResponse.json({ ok: true, result: c.mpPreapprovalId ? await syncPreapproval(c.mpPreapprovalId) : "sem assinatura" });
+      return NextResponse.json({ ok: true, result: c.mpPreapprovalId ? await comCanal("admin", () => syncPreapproval(c.mpPreapprovalId!)) : "sem assinatura" });
     case "atualizar":
       if (!c.zmStatus) return NextResponse.json({ ok: false, error: "acesso_nao_criado" }, { status: 409 });
       await refreshFromZm(c);
       return NextResponse.json({ ok: true });
     case "verificar-mp":
       // Conferência direta no Mercado Pago (assinatura e cobranças), aplicando o estado real.
-      return NextResponse.json({ ok: true, ...(await reconcileWithMp(c)), contratacao: await s.get(c.id).then((x) => ({ etapa: x?.etapa, zmStatus: x?.zmStatus, pagoAte: x?.pagoAte })) });
+      return NextResponse.json({ ok: true, ...(await comCanal("admin", () => reconcileWithMp(c))), contratacao: await s.get(c.id).then((x) => ({ etapa: x?.etapa, zmStatus: x?.zmStatus, pagoAte: x?.pagoAte })) });
+    case "tempos":
+      return NextResponse.json({ ok: true, ...(await timeline(c)) });
     case "reativar":
       // Só para quem tem período pago e foi suspenso pelo fornecedor (não pelo site).
       if (c.etapa === "suspensa" || c.zmStatus === "ACTIVE") return NextResponse.json({ ok: false, error: "nao_aplicavel" }, { status: 409 });
@@ -143,4 +147,22 @@ async function webhookDiagnostics(id?: string) {
       .catch((e: Error) => ({ erro: e.message }));
   }
   return { url: describeUrl(url), segredo: !!secret, recebidas, naAssinatura, autoteste };
+}
+
+/** Linha do tempo da primeira cobrança, com os intervalos em segundos. */
+async function timeline(c: Contratacao) {
+  const cob = (await store().cobrancas(c.id)).filter((x) => x.aprovadaEm).sort((a, b) => a.aprovadaEm!.localeCompare(b.aprovadaEm!))[0];
+  const aprovadoMp = cob?.pagamentoId ? await mp.getPayment(cob.pagamentoId).then((p) => p.date_approved ?? null).catch(() => null) : null;
+  const confirmadoBanco = c.pagamentoConfirmadoEm ?? cob?.aprovadaEm ?? null;
+  const acesso = c.acessoLiberadoEm ?? (c.zmStatus ? await zm.getClient(c.externalId).then((x) => x.createdAt).catch(() => null) : null);
+  const sec = (a?: string | null, b?: string | null) => (a && b ? Math.round((new Date(b).getTime() - new Date(a).getTime()) / 1000) : null);
+  return {
+    criadoEm: c.criadoEm,
+    aprovadoNoMercadoPago: aprovadoMp,
+    confirmadoNoBanco: confirmadoBanco,
+    acessoNoZappMillion: acesso,
+    confirmadoPor: c.confirmadoPor ?? "não registrado (contratação anterior à medição)",
+    origemDosTempos: { banco: c.pagamentoConfirmadoEm ? "pagamento_confirmado_em" : "aprovada_em da cobrança", acesso: c.acessoLiberadoEm ? "acesso_liberado_em" : "createdAt do cliente no ZappMillion" },
+    segundos: { aprovacaoAteBanco: sec(aprovadoMp, confirmadoBanco), bancoAteAcesso: sec(confirmadoBanco, acesso), aprovacaoAteAcesso: sec(aprovadoMp, acesso) },
+  };
 }

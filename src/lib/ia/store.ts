@@ -48,6 +48,14 @@ export type Contratacao = {
   preAvisoPara: string | null;
   /** fim de período para o qual a operação já foi avisada de que o fornecedor renovou sem recebimento */
   avisoFornecedorPara: string | null;
+  /** quando o site confirmou a primeira cobrança aprovada (gravado no banco) */
+  pagamentoConfirmadoEm?: string | null;
+  /** quando o cliente foi criado no ZappMillion (acesso liberado) */
+  acessoLiberadoEm?: string | null;
+  /** por onde a primeira cobrança foi confirmada: webhook | acompanhamento | rotina | admin */
+  confirmadoPor?: string | null;
+  /** última conferência direta no Mercado Pago */
+  mpConferidoEm?: string | null;
   criadoEm: string;
   atualizadoEm: string;
 };
@@ -85,6 +93,8 @@ export interface Store {
   unmarkEvent(key: string): Promise<void>;
   /** Quantas notificações válidas do Mercado Pago (sem os autotestes) já foram registradas e a mais recente (diagnóstico do webhook). */
   eventStats(): Promise<{ total: number; ultima: string | null }>;
+  /** Reserva a conferência no Mercado Pago (no máximo uma a cada `seconds`, entre instâncias). */
+  claimMpCheck(id: string, seconds: number): Promise<boolean>;
 }
 
 export const hashToken = (t: string) => createHash("sha256").update(t).digest("hex");
@@ -149,6 +159,13 @@ const memoryStore: Store = {
   },
   async unmarkEvent(key) {
     mem().ev.delete(key);
+  },
+  async claimMpCheck(id, seconds) {
+    const c = mem().c.get(id);
+    if (!c) return false;
+    if (c.mpConferidoEm && Date.now() - new Date(c.mpConferidoEm).getTime() < seconds * 1000) return false;
+    c.mpConferidoEm = now();
+    return true;
   },
   async eventStats() {
     return { total: [...mem().ev].filter((k) => !k.startsWith("autoteste:")).length, ultima: null };
@@ -261,6 +278,11 @@ const pgStore: Store = {
   async unmarkEvent(key) {
     const db = await sql();
     await db`delete from ia_eventos where chave = ${key}`;
+  },
+  async claimMpCheck(id, seconds) {
+    const db = await sql();
+    const res = await db`update ia_contratacoes set mp_conferido_em = now() where id = ${id} and (mp_conferido_em is null or mp_conferido_em < now() - make_interval(secs => ${seconds})) returning id`;
+    return res.length > 0;
   },
   async eventStats() {
     const db = await sql();

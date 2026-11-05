@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { InvalidWebhookSignatureError, WebhookSignatureValidator } from "mercadopago";
 import { iaConfig } from "@/lib/ia/config";
 import { store } from "@/lib/ia/store";
-import { syncAuthorizedPayment, syncChargeback, syncPayment, syncPreapproval } from "@/lib/ia/process";
+import { comCanal, syncAuthorizedPayment, syncChargeback, syncPayment, syncPreapproval } from "@/lib/ia/process";
 
 // Notificações do Mercado Pago (Webhooks). Ordem: (1) valida a assinatura x-signature com o
 // validador oficial do SDK (HMAC-SHA256 de "id:<data.id>;request-id:<x-request-id>;ts:<ts>;",
@@ -43,12 +43,13 @@ export async function POST(req: Request) {
   const key = `${type}:${dataId}:${requestId}`;
   if (!(await s.markEvent(key))) return NextResponse.json({ ok: true, duplicate: true });
   try {
-    let result: unknown;
-    if (type === "subscription_preapproval") result = await syncPreapproval(dataId);
-    else if (type === "subscription_authorized_payment") result = await syncAuthorizedPayment(dataId);
-    else if (type === "payment") result = await syncPayment(dataId);
-    else if (type === "topic_chargebacks_wh" || type === "chargebacks") result = await syncChargeback(dataId);
-    else result = { ignored: `tipo ${type}` };
+    const result: unknown = await comCanal("webhook", async () => {
+      if (type === "subscription_preapproval") return syncPreapproval(dataId);
+      if (type === "subscription_authorized_payment") return syncAuthorizedPayment(dataId);
+      if (type === "payment") return syncPayment(dataId);
+      if (type === "topic_chargebacks_wh" || type === "chargebacks") return syncChargeback(dataId);
+      return { ignored: `tipo ${type}` };
+    });
     return NextResponse.json({ ok: true, result });
   } catch (e) {
     // Libera a chave para que a nova tentativa do Mercado Pago seja processada.

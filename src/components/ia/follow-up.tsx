@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { StatusPublico } from "@/lib/ia/public-status";
 import { trackPurchase } from "@/lib/analytics";
 
@@ -23,8 +23,11 @@ export function FollowUp({ id, token }: { id: string; token: string }) {
   const [notFound, setNotFound] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [cancelState, setCancelState] = useState<"idle" | "sending" | "error">("idle");
-
-
+  const [polling, setPolling] = useState(true);
+  const [checking, setChecking] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const openedAt = useRef(Date.now());
+  const lastStatus = useRef<StatusPublico | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -32,6 +35,7 @@ export function FollowUp({ id, token }: { id: string; token: string }) {
       if (res.status === 404) return setNotFound(true);
       if (!res.ok) return;
       const data = await res.json();
+      lastStatus.current = data.status;
       setStatus(data.status);
       setPainelUrl(data.painelUrl);
     } catch {
@@ -51,15 +55,43 @@ export function FollowUp({ id, token }: { id: string; token: string }) {
       setCancelState("error");
     }
   }
+  // Atualização automática: a cada 5 s enquanto o pagamento é confirmado ou o acesso é criado (o servidor
+  // só consulta o Mercado Pago a cada 30 s); a cada 20 s depois disso. Pausa após 30 min (botão retoma)
+  // e confere de novo ao voltar para a aba.
   useEffect(() => {
-    load();
-    const t = setInterval(load, 6000);
-    const stop = setTimeout(() => clearInterval(t), 20 * 60_000);
-    return () => {
-      clearInterval(t);
-      clearTimeout(stop);
+    if (!polling) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const started = Date.now();
+    const tick = async () => {
+      await load();
+      if (Date.now() - started > 30 * 60_000) return setPolling(false);
+      const s = lastStatus.current;
+      timer = setTimeout(tick, !s || s.confirmando || s.liberando ? 5000 : 20000);
     };
-  }, [load]);
+    tick();
+    const onVisible = () => document.visibilityState === "visible" && load();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [load, polling]);
+
+  useEffect(() => {
+    if (!status?.confirmando && !status?.liberando) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [status?.confirmando, status?.liberando]);
+
+  async function checkNow() {
+    setChecking(true);
+    await load();
+    setChecking(false);
+    if (!polling) {
+      openedAt.current = Date.now();
+      setPolling(true);
+    }
+  }
 
   // Conversão de compra só com o primeiro pagamento confirmado pelo servidor; uma vez por contratação.
   useEffect(() => {
@@ -87,6 +119,37 @@ export function FollowUp({ id, token }: { id: string; token: string }) {
           {status.resumo}
         </p>
       </div>
+
+      {(status.confirmando || status.liberando) && (
+        <div className="grid gap-3 rounded-[14px] border border-line-strong bg-ink-900 p-5" aria-live="polite">
+          <p className="flex items-center gap-3 font-semibold">
+            <span aria-hidden className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#f07a12] opacity-60 motion-reduce:animate-none" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#f07a12]" />
+            </span>
+            {status.confirmando ? "Conferindo o pagamento com o Mercado Pago" : "Criando o seu acesso na plataforma"}
+          </p>
+          <p className="text-sm leading-relaxed text-muted">
+            {status.confirmando
+              ? `Pagamentos com cartão costumam ser confirmados em até 1 minuto. Esta página confere sozinha${
+                  status.conferidoEm ? ` — última conferência há ${Math.max(0, Math.round((now - new Date(status.conferidoEm).getTime()) / 1000))} s` : ""
+                }.`
+              : "Isso leva poucos segundos. Esta página atualiza sozinha."}
+          </p>
+          {status.confirmando && now - openedAt.current > 3 * 60_000 && (
+            <p className="text-sm leading-relaxed">
+              Está levando mais que o normal. Se você concluiu o pagamento, não precisa fazer nada: o acesso é liberado automaticamente
+              e o convite chega no e-mail da contratação, mesmo com esta página fechada. Se não concluiu, volte ao checkout do Mercado Pago.
+            </p>
+          )}
+          {!polling && <p className="text-sm text-muted">A atualização automática foi pausada.</p>}
+          <div>
+            <button type="button" onClick={checkNow} disabled={checking} className="min-h-11 rounded-[10px] border border-line-strong px-4 text-[0.95rem] font-medium disabled:opacity-60">
+              {checking ? "Verificando…" : "Verificar agora"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <ol className="border-t border-line-strong">
         {status.passos.map((p) => (

@@ -62,3 +62,7 @@ alter table ia_eventos enable row level security;
 alter table ia_cobrancas add column if not exists aprovada_em timestamptz;
 alter table ia_contratacoes add column if not exists pre_aviso_para timestamptz;
 alter table ia_contratacoes add column if not exists aviso_fornecedor_para timestamptz;
+alter table ia_contratacoes add column if not exists pagamento_confirmado_em timestamptz;
+alter table ia_contratacoes add column if not exists acesso_liberado_em timestamptz;
+alter table ia_contratacoes add column if not exists confirmado_por text;
+alter table ia_contratacoes add column if not exists mp_conferido_em timestamptz;

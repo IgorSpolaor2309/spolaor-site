@@ -20,6 +20,12 @@ export type StatusPublico = {
   podeCancelar: boolean;
   /** compra de validação interna (link com token): não conta como conversão */
   interna: boolean;
+  /** pagamento ainda não confirmado: a página confere no Mercado Pago (no máx. a cada 30 s) */
+  confirmando: boolean;
+  /** pago, com o acesso sendo criado */
+  liberando: boolean;
+  /** última conferência direta no Mercado Pago */
+  conferidoEm: string | null;
   passos: Passo[];
 };
 
@@ -97,6 +103,9 @@ export function publicStatus(c: Contratacao): StatusPublico {
     cancelada,
     podeCancelar: !cancelada && !suspensa && !!c.mpPreapprovalId,
     interna: c.utm?.validacao === "interna",
+    confirmando: !pago && (c.etapa === "aguardando_pagamento" || c.etapa === "assinatura_autorizada"),
+    liberando: pago && !acesso && c.etapa === "pagamento_confirmado",
+    conferidoEm: c.mpConferidoEm ?? null,
     passos: [pagamento, acessoPasso, agente, wpp],
   };
 }
