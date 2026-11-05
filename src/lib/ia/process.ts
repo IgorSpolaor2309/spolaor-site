@@ -308,8 +308,9 @@ const fmt = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "
  * período. (4) No fim do período pago — NUNCA antes:
  *   - cancelada → suspende;
  *   - renovação não paga e o fornecedor ainda não renovou → suspende (evita a cobrança do fornecedor);
- *   - renovação não paga e o fornecedor JÁ renovou → avisa a operação NESSE momento (custo de um ciclo do
- *     plano já ocorrido) e mantém o acesso por IA_CARENCIA_DIAS (decisão pendente; 0 se não definida).
+ *   - renovação não paga e a cobrança do novo ciclo do fornecedor CONFIRMADA (charges: PAID) → avisa a
+ *     operação NESSE momento e mantém o acesso por IA_CARENCIA_DIAS (10); ao terminar sem pagamento,
+ *     suspende. Sem cobrança do fornecedor confirmada → suspende no fim do período pago.
  */
 export async function runCron(now = new Date()) {
   const s = store();
@@ -353,17 +354,27 @@ export async function runCron(now = new Date()) {
     if (cur.zmStatus !== "ACTIVE" || !cur.pagoAte) continue;
     if (t < paid) continue; // período pago em curso: nunca suspende antes do fim
 
+    // O fornecedor só conta como renovado com a cobrança do novo ciclo CONFIRMADA (status PAID, período
+    // começando no fim do período pago ou depois). A mudança de currentPeriodEnd sozinha não basta.
     const zmEnd = cur.zmPeriodoFim ? new Date(cur.zmPeriodoFim).getTime() : 0;
-    const fornecedorRenovou = zmEnd > paid; // o ZappMillion já abriu (e cobrou) um ciclo além do período pago
+    let fornecedorRenovou = false;
+    if (zmEnd > paid) {
+      try {
+        fornecedorRenovou = (await zm.charges(cur.externalId)).some((ch) => ch.status === "PAID" && new Date(ch.periodEnd).getTime() > paid && new Date(ch.periodStart).getTime() >= paid - 3_600_000);
+      } catch (e) {
+        report.push(`${c.id}: não foi possível consultar as cobranças do fornecedor (${(e as Error).message}); nova verificação na próxima execução`);
+        continue;
+      }
+    }
     const graceEnd = paid + iaConfig.graceDays() * 86_400_000;
     let motivo: string | null = null;
-    if (cur.etapa === "cancelada") motivo = "cancelamento";
+    if (cur.etapa === "cancelada") motivo = "cancelamento"; // cancelamento: sem carência, só o período quitado
     else if (!fornecedorRenovou || t >= graceEnd) motivo = "inadimplencia";
 
     if (fornecedorRenovou && cur.avisoFornecedorPara !== cur.pagoAte) {
       await notifyOps(
         `Fornecedor renovou sem recebimento · ${cur.empresa}`,
-        `Contratação ${cur.id}: o período pago terminou em ${fmt(cur.pagoAte)} e o ZappMillion já renovou até ${fmt(cur.zmPeriodoFim!)} (custo ${await cost(cur.zmPlanId)}). ${
+        `Contratação ${cur.id}: o período pago terminou em ${fmt(cur.pagoAte)} e a cobrança do novo ciclo do ZappMillion está confirmada (paga, até ${fmt(cur.zmPeriodoFim!)}; custo ${await cost(cur.zmPlanId)}). ${
           motivo ? `O acesso está sendo suspenso (${motivo}).` : `O cliente entrou em carência até ${fmt(new Date(graceEnd).toISOString())} enquanto o Mercado Pago tenta a cobrança.`
         }`,
       );
@@ -374,7 +385,10 @@ export async function runCron(now = new Date()) {
       continue;
     }
     await suspend(cur, motivo);
-    report.push(`${c.id}: suspensa (${motivo}) no fim do período pago ${cur.pagoAte}${fornecedorRenovou ? " — fornecedor já tinha renovado" : ""}`);
+    if (fornecedorRenovou && cur.avisoFornecedorPara === cur.pagoAte && t >= graceEnd) {
+      await notifyOps(`Carência terminou sem pagamento · ${cur.empresa}`, `Contratação ${cur.id}: a carência terminou em ${fmt(new Date(graceEnd).toISOString())} sem cobrança aprovada no Mercado Pago. O acesso foi suspenso.`);
+    }
+    report.push(`${c.id}: suspensa (${motivo}) ${fornecedorRenovou && t >= graceEnd ? "ao fim da carência" : "no fim do período pago"} ${cur.pagoAte}`);
   }
   return report;
 }

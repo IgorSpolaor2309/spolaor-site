@@ -5,7 +5,7 @@
 // Antes: npm run build e, com as variáveis abaixo, `node node_modules/next/dist/bin/next start --port 3210`:
 //   IA_STORE=memory IA_PRECO_MENSAL=297.00 IA_ZM_PLAN_ID=plan_teste IA_LIMITE_RESPOSTAS=2000
 //   IA_CONTRATACAO_ATIVA=true NEXT_PUBLIC_SITE_URL=http://localhost:3210 IA_PAINEL_URL=https://painel.exemplo.test
-//   IA_CARENCIA_DIAS=10 IA_MEIOS_PAGAMENTO=cartao
+//   IA_MEIOS_PAGAMENTO=cartao   (IA_CARENCIA_DIAS no padrão decidido: 10)
 //   MP_ACCESS_TOKEN=teste-local MP_WEBHOOK_SECRET=segredo-teste MP_API_URL=http://localhost:4020
 //   ZM_API_KEY=zm_test_local ZM_API_URL=http://localhost:4021 IA_ADMIN_TOKEN=admin-teste CRON_SECRET=cron-teste
 // Uso: node scripts/teste-atendimento-ia.mjs
@@ -62,7 +62,12 @@ http
   .listen(4020);
 
 /* ─────────────── ZappMillion simulado ─────────────── */
-const zm = { clients: new Map(), creates: [], suspends: [], reactivates: [], failCreate: 0 };
+const zm = { clients: new Map(), charges: new Map(), creates: [], suspends: [], reactivates: [], failCreate: 0 };
+const zmCharge = (extId, start, status = "PAID") => {
+  const list = zm.charges.get(extId) ?? [];
+  list.unshift({ id: `ch_${seq++}`, status, amount: 97, currency: "BRL", planId: "plan_teste", periodStart: iso(start), periodEnd: iso(start + 30 * DAY), failureReason: null, createdAt: iso(start), paidAt: status === "PAID" ? iso(start) : null });
+  zm.charges.set(extId, list);
+};
 const sub = (start) => ({ status: "ACTIVE", planId: "plan_teste", amount: 97, currency: "BRL", currentPeriodStart: iso(start), currentPeriodEnd: iso(start + 30 * DAY), scheduledPlanId: null });
 http
   .createServer((req, res) => {
@@ -86,9 +91,11 @@ http
         if (zm.clients.has(body.externalId)) return send(200, zm.clients.get(body.externalId));
         const c = { externalId: body.externalId, name: body.name, status: "ACTIVE", organizationId: "org_1", workspaceId: "ws_1", userId: "usr_1", subscription: sub(Date.now()), messagingAccount: null, createdAt: iso(Date.now()) };
         zm.clients.set(body.externalId, c);
+        zmCharge(body.externalId, Date.parse(c.subscription.currentPeriodStart));
         return send(201, c);
       }
       let m;
+      if ((m = u.pathname.match(/^\/clients\/([^/]+)\/charges$/))) return send(200, { data: zm.charges.get(decodeURIComponent(m[1])) ?? [], total: 0, limit: 20, offset: 0 });
       if ((m = u.pathname.match(/^\/clients\/([^/]+)$/)) && req.method === "GET") {
         const c = zm.clients.get(decodeURIComponent(m[1]));
         return c ? send(200, c) : send(404, { type: "ProvisionedClientNotFound" });
@@ -209,6 +216,7 @@ r1 = await row(c1);
 ok(new Date(r1.pagoAte).getTime() === paid1 + 30 * DAY, "renovação paga: soma exatamente um ciclo, mesmo com entregas simultâneas");
 ok(zm.creates.length === new Set(zm.creates.map((x) => x.externalId)).size && zm.reactivates.length === 0, "renovação não cria cliente nem reativa (sem cobrança extra do fornecedor)");
 zm.clients.get(ext(c1)).subscription = sub(paid1); // o fornecedor renova no fim do 1º período
+zmCharge(ext(c1), paid1);
 await cron(paid1);
 ok(!zm.suspends.includes(ext(c1)), "com o próximo período pago, nada é suspenso na renovação do fornecedor");
 
@@ -249,10 +257,33 @@ const c3 = await contratar("Empresa Três", "tres@exemplo.test");
 await notify("subscription_authorized_payment", charge(c3).id);
 const end3 = new Date((await row(c3)).pagoAte).getTime();
 zm.clients.get(ext(c3)).subscription = sub(end3); // o ZappMillion cobrou o novo ciclo
+zmCharge(ext(c3), end3, "PAID");
 await cron(end3 + DAY);
 ok(!zm.suspends.includes(ext(c3)) && (await row(c3)).avisoFornecedorPara === iso(end3), "fornecedor já renovou: operação avisada AO ENTRAR na carência, acesso mantido");
+await cron(end3 + 10 * DAY - 1);
+ok(!zm.suspends.includes(ext(c3)), "carência: 1 ms antes do fim dos 10 dias, acesso mantido");
 await cron(end3 + 10 * DAY);
-ok(zm.suspends.includes(ext(c3)), "fim da tolerância sem pagamento: suspende");
+ok(zm.suspends.includes(ext(c3)), "fim da carência de 10 dias sem pagamento: suspende");
+
+// currentPeriodEnd mudou, mas a cobrança do fornecedor está PENDENTE: não conta como renovado → sem carência
+const c7 = await contratar("Empresa Sete", "sete@exemplo.test");
+await notify("subscription_authorized_payment", charge(c7).id);
+const end7 = new Date((await row(c7)).pagoAte).getTime();
+zm.clients.get(ext(c7)).subscription = sub(end7);
+zmCharge(ext(c7), end7, "PENDING");
+await cron(end7);
+ok(zm.suspends.includes(ext(c7)) && !(await row(c7)).avisoFornecedorPara, "período do fornecedor avançou com cobrança pendente: sem carência, suspende no fim do período pago");
+
+// Cancelada com o fornecedor já renovado e pago: sem carência
+const c8 = await contratar("Empresa Oito", "oito@exemplo.test");
+await notify("subscription_authorized_payment", charge(c8).id);
+const end8 = new Date((await row(c8)).pagoAte).getTime();
+preOf(c8).status = "cancelled";
+await notify("subscription_preapproval", preOf(c8).id);
+zm.clients.get(ext(c8)).subscription = sub(end8);
+zmCharge(ext(c8), end8, "PAID");
+await cron(end8 + 60_000);
+ok(zm.suspends.includes(ext(c8)) && (await row(c8)).avisoFornecedorPara === iso(end8), "cancelada: sem carência mesmo com o fornecedor renovado; operação avisada do custo");
 
 // Estorno e contestação
 const c4 = await contratar("Empresa Quatro", "quatro@exemplo.test");

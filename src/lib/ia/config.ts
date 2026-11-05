@@ -49,16 +49,15 @@ export const iaConfig = {
     return { frequency: Number.isInteger(frequency) && frequency > 0 ? frequency : 1, frequencyType: t === "days" ? "days" : "months" };
   },
   /**
-   * DECISÃO PENDENTE (IA_CARENCIA_DIAS): dias de acesso além do período pago quando a renovação não
-   * foi paga mas o ZappMillion JÁ renovou (o ciclo do fornecedor já está pago). Sem valor definido,
-   * a contratação não abre (readiness) e a rotina usa 0. Nunca encurta um período pago.
+   * Carência (decidida em 05/11/2026: 10 dias): só para renovação NÃO PAGA pelo cliente quando a
+   * cobrança do novo ciclo do ZappMillion já está confirmada como paga (GET /clients/{id}/charges).
+   * Não vale para cancelamento, estorno ou contestação, e nunca encurta um período pago.
    */
   graceDays: () => {
     const raw = env("IA_CARENCIA_DIAS");
     const v = Number(raw);
-    return raw !== "" && Number.isFinite(v) && v >= 0 ? v : 0;
+    return raw !== "" && Number.isFinite(v) && v >= 0 ? v : 10;
   },
-  graceDecided: () => env("IA_CARENCIA_DIAS") !== "" && Number.isFinite(Number(env("IA_CARENCIA_DIAS"))),
   /** Meios de pagamento VALIDADOS no ambiente de teste do Mercado Pago: "cartao", "pix" ou ambos. */
   paymentMethods: (): ("cartao" | "pix")[] =>
     [...new Set(env("IA_MEIOS_PAGAMENTO").split(",").map((s) => s.trim().toLowerCase()))].filter((m): m is "cartao" | "pix" => m === "cartao" || m === "pix"),
@@ -91,7 +90,6 @@ export function readiness(): { ready: boolean; missing: string[] } {
   if (!process.env.DATABASE_URL && process.env.IA_STORE !== "memory") missing.push("DATABASE_URL");
   if (process.env.IA_STORE === "memory" && process.env.VERCEL) missing.push("DATABASE_URL (memória só serve para teste local)");
   if (!iaConfig.siteUrl()) missing.push("NEXT_PUBLIC_SITE_URL");
-  if (!iaConfig.graceDecided()) missing.push("IA_CARENCIA_DIAS (decisão pendente)");
   if (!iaConfig.paymentMethods().length) missing.push("IA_MEIOS_PAGAMENTO (meios validados no teste)");
   if (!iaConfig.enabledFlag()) missing.push("IA_CONTRATACAO_ATIVA=true");
   return { ready: missing.length === 0, missing };

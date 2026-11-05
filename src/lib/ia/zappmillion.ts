@@ -18,6 +18,8 @@ export type ZmClient = {
   createdAt: string;
 };
 
+export type ZmCharge = { id: string; status: "PENDING" | "PAID" | "FAILED" | "REFUNDED"; amount: number; currency: string; planId: string; periodStart: string; periodEnd: string; failureReason: string | null; createdAt: string; paidAt: string | null };
+
 export class ZmError extends Error {
   constructor(public status: number, public type: string, message: string) {
     super(message);
@@ -67,4 +69,6 @@ export const zm = {
   suspend: (externalId: string) => call<ZmClient>("POST", `${ext(externalId)}/suspend`),
   reactivate: (externalId: string, planId?: string) => call<ZmClient>("POST", `${ext(externalId)}/reactivate`, planId ? { planId } : {}),
   resendInvite: (externalId: string) => call<void>("POST", `${ext(externalId)}/resend-invite`),
+  /** Cobranças do cliente no cartão da agência, da mais recente para a mais antiga. */
+  charges: (externalId: string) => call<{ data: ZmCharge[] }>("GET", `${ext(externalId)}/charges?limit=20`).then((r) => r.data),
 };

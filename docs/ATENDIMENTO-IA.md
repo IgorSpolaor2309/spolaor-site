@@ -76,9 +76,9 @@ o valor. A regra:
 | Situação no fim do período pago | O que acontece |
 |---|---|
 | Renovação aprovada antes | Soma 30 dias; o fornecedor renova (pago pelo cliente) |
-| Cancelada | Suspende no fim do período (sem novas cobranças nossas) |
-| Cobrança não aprovada e o fornecedor ainda não renovou | Suspende no fim do período (evita a cobrança do fornecedor); volta com reativação quando o pagamento for aprovado |
-| Cobrança não aprovada e o fornecedor já renovou | Avisa a operação **nesse momento** (custo de um ciclo já ocorrido) e mantém o acesso por `IA_CARENCIA_DIAS` (**decisão pendente**; sem valor, a contratação não abre e a rotina usa 0); se aprovar, segue sem custo extra; se não, suspende |
+| Cancelada | Suspende no fim do período quitado, **sem carência** (mesmo se o fornecedor já tiver renovado; a operação é avisada do custo) |
+| Cobrança não aprovada e a cobrança do novo ciclo do fornecedor **não** está confirmada como paga | Suspende no fim do período pago (nunca provoca uma renovação); volta com reativação quando o pagamento for aprovado |
+| Cobrança não aprovada e a cobrança do novo ciclo do fornecedor **confirmada como paga** (`GET /clients/{externalId}/charges`, `status: PAID`, período a partir do fim do período pago) | Avisa a operação ao entrar na carência e mantém o acesso por `IA_CARENCIA_DIAS` (**10 dias**, decidido em 05/11/2026); se o Mercado Pago aprovar, segue sem custo extra; ao terminar sem pagamento, suspende e avisa |
 | Estorno ou contestação | Suspende na hora |
 
 **Cancelamento agendado no fornecedor: não existe.** A documentação do ZappMillion (API e painel) não tem
@@ -97,12 +97,11 @@ receita:
 A operação recebe um pré-aviso 24 h antes do fim de uma assinatura cancelada e um aviso no momento em que a
 rotina encontra uma renovação do fornecedor sem recebimento (antes de suspender ou ao entrar na carência).
 
-**Por que existe a carência (IA_CARENCIA_DIAS) e por que ela não está decidida:** ela só vale quando o
-fornecedor JÁ cobrou o novo ciclo. Nesse caso suspender não devolve os R$ 97,00 e, se o cliente pagar depois,
-a reativação cobraria **outros** R$ 97,00. Manter o acesso enquanto o Mercado Pago tenta a cobrança (o
-Mercado Pago informa novas tentativas por até cerca de 10 dias, número a confirmar no teste) evita esse
-segundo custo; em troca, o cliente usa dias que ainda não pagou. Opções: 0 (suspende no fim do período pago;
-pagamento tardio reativa com novo custo de R$ 97,00), ou N dias. A decisão é comercial e está pendente.
+**Carência (IA_CARENCIA_DIAS=10, decidida):** só para renovação não paga pelo cliente quando a cobrança do novo
+ciclo do ZappMillion já está **confirmada como paga** na lista de cobranças do cliente — a mudança de
+`currentPeriodEnd` sozinha não basta (cobrança `PENDING` não conta). Motivo: nesse caso suspender não devolve
+os R$ 97,00 e uma reativação depois cobraria outros R$ 97,00. Não vale para cancelamento, estorno ou
+contestação, e a rotina nunca provoca uma renovação para conceder a carência.
 
 ## Agendador
 
