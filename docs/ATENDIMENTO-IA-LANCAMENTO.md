@@ -46,15 +46,58 @@ No painel do Mercado Pago, se as notificações de assinatura não chegarem pela
 teste em Suas integrações → Webhooks precisaria do segredo: nesse caso copie o segredo direto da Vercel para o
 campo do Mercado Pago, sem passar por chat ou arquivo.
 
-## Situação da prévia (branch oferta-ia-whatsapp, 05/11/2026)
+## Resultado do teste nos fornecedores (05/11/2026, prévia do branch oferta-ia-whatsapp)
 
-- Variáveis do Preview (só deste branch): preço, limite, meio (cartão), URL do painel, plano, contratação ativa só na prévia, IA_ADMIN_TOKEN e CRON_SECRET aleatórios, ZM_API_KEY (modo teste) e MP_WEBHOOK_SECRET.
-- Banco Neon de teste (plano Free, região gru1) conectado só ao Preview; esquema criado automaticamente (ia_cobrancas, ia_contratacoes, ia_eventos).
-- Bypass da Vercel ativo; URL de notificação montada no servidor.
-- Diagnóstico: ZappMillion em modo teste com o plano PRO (R$ 97,00, 2.000 respostas, 30 dias).
-- Rota de notificação recusa requisição sem assinatura e com assinatura falsa (401).
-- **Falta:** MP_ACCESS_TOKEN de teste. Sem ele, a prévia mostra "Quero ser avisado" e o checkout não abre.
-- O pagamento no checkout de teste é feito por uma pessoa com a conta de comprador de teste (não automatizado).
+Ambiente: credenciais de TESTE do Mercado Pago (conta test_user) e chave zm_test_ do ZappMillion; banco Neon de
+teste. Nenhuma cobrança real.
+
+| Validação | Resultado |
+|---|---|
+| Criação da assinatura (R$ 297,00, frequency 30 / days) | OK — aceita pelo Mercado Pago |
+| Descrição no checkout | OK — "Atendimento IA WhatsApp · R$ 297,00 a cada 30 dias" (limite de 60 caracteres corrigido) |
+| Meios no checkout | Só cartão de crédito (Pix não apareceu) |
+| Pagamento com o comprador de teste | OK — cobrança `processed` / `approved` (`accredited`), R$ 297,00 BRL, 05/11 13:48 (Brasília) |
+| Confirmação pelo provedor | OK — conferida na API (assinatura `authorized`, próxima cobrança 05/12 13:48) |
+| Webhook do Mercado Pago | **Não chegou** à prévia (nenhuma requisição registrada na Vercel) — ver pendências |
+| Conciliação direta (sem webhook) | OK — aplicou o pagamento e liberou o acesso |
+| Banco Neon | OK — contratação gravada; período pago até 05/12 14:00 (Brasília) |
+| ZappMillion (modo teste) | OK — cliente ACTIVE com o plano PRO; convite por e-mail não é enviado no modo teste |
+| Duplicidade | OK — conferências repetidas não estenderam o período nem recriaram o acesso |
+| Página de acompanhamento | OK — "Pagamento confirmado e acesso liberado"; agente e WhatsApp como tarefas do painel |
+| Cancelamento pela página | OK — `cancelled` no Mercado Pago; acesso mantido até 05/12 14:00; rotina não suspendeu |
+| Rotina e conciliação com o ZappMillion | OK — sem divergências |
+| Alinhamento dos ciclos | Próxima cobrança do cliente 12 min antes do fim do período/renovação do fornecedor |
+| Conversão Purchase | Não enviada (Pixel só existe em Production) |
+
+Correções feitas durante o teste: descrição dentro de 60 caracteres; motivo dos erros do Mercado Pago no log (sem
+dados pessoais); conciliação direta com o Mercado Pago (ação `verificar-mp`, rotina e página de acompanhamento);
+uma leitura por recurso e nova tentativa no HTTP 429 do Mercado Pago; rotina não falha sem as chaves dos
+fornecedores (produção antes das vendas).
+
+## Checklist de publicação
+
+Bloqueios para abrir as vendas (contratação pública):
+1. **Webhook do Mercado Pago.** Em Suas integrações → aplicação → Webhooks, confirmar a URL e os eventos
+   (Pagamentos e Planos e assinaturas). Produção: `https://www.spolaortecnologia.com.br/api/atendimento-ia/webhook`.
+   Teste (opcional): URL da prévia com o segredo de bypass. Validar com "Simular notificação". Enquanto isso, a
+   conciliação direta garante a liberação (página de acompanhamento e rotina).
+2. **Credenciais de produção novas** (as anteriores ficaram no chat): `MP_ACCESS_TOKEN` e `MP_WEBHOOK_SECRET` de
+   produção, `ZM_API_KEY` `zm_live_` nova — cadastrar em Production (Sensitive).
+3. **Variáveis de Production que ainda faltam:** `IA_MEIOS_PAGAMENTO=cartao` e (para a compra controlada)
+   `IA_TOKEN_VALIDACAO` aleatório. A gravação por mim foi bloqueada pela política de permissões da sessão.
+4. **Agendador da rotina:** o cron diário da Vercel já está no `vercel.json`; como o webhook ainda não foi
+   validado, recomenda-se um agendador a cada 1–5 min chamando `/api/atendimento-ia/cron` com `CRON_SECRET`.
+5. **Merge do PR #5** (autorização sua) — a página aparece com o preço e "Quero ser avisado" enquanto
+   `IA_CONTRATACAO_ATIVA` não estiver definida em Production.
+6. **Compra controlada em produção** (proposta; exige sua autorização: R$ 297,00 + R$ 97,00) para validar convite
+   por e-mail, login no painel e conexão do WhatsApp.
+7. Só então `IA_CONTRATACAO_ATIVA=true` em Production e as campanhas.
+
+Higiene depois dos testes: gerar novo segredo de bypass da Vercel; redefinir a senha do comprador de teste.
+
+Não validado (registrado): convite por e-mail, conexão do WhatsApp, renovação real no dia 30, Pix, estorno e
+contestação reais, conversão no Meta (sem CAPI: se o comprador fechar o navegador antes da confirmação, o
+Purchase não é registrado).
 
 ## 1. Validações necessárias antes de lançar
 
@@ -62,12 +105,12 @@ Bloqueios (sem eles a contratação pública não abre):
 
 | # | Validação | Onde | Situação |
 |---|---|---|---|
-| 1 | Checkout de assinatura com R$ 297,00 a cada 30 dias aceito (`frequency: 30, frequency_type: days`) | Teste MP | Pendente (credenciais) |
-| 2 | Notificações chegam à prévia e passam na validação `x-signature`; repetição pelo painel é ignorada | Teste MP | Pendente |
-| 3 | Cartão aprovado, recusado e pendente → aprovado; vínculo pelo `external_reference`; só `payment` chegando | Teste MP | Pendente |
-| 4 | Meios oferecidos no checkout = meios validados (`IA_MEIOS_PAGAMENTO`); Pix: como a renovação é cobrada | Teste MP | Pendente |
-| 5 | Criação do cliente no ZappMillion (modo teste) com o plano correto; falha e nova tentativa | Teste ZM | Pendente |
-| 6 | Cancelamento pela página: Mercado Pago sem novas cobranças; acesso mantido até o fim | Teste MP + ZM | Pendente |
+| 1 | Checkout de assinatura com R$ 297,00 a cada 30 dias aceito (`frequency: 30, frequency_type: days`) | Teste MP | **OK** (05/11) |
+| 2 | Notificações chegam à prévia e passam na validação `x-signature`; repetição pelo painel é ignorada | Teste MP | **Falta** — webhook não chegou; validação x-signature só testada com requisições forjadas (401) |
+| 3 | Cartão aprovado, recusado e pendente → aprovado; vínculo pelo `external_reference`; só `payment` chegando | Teste MP | Aprovado **OK** (conciliação); recusado/pendente só no teste simulado |
+| 4 | Meios oferecidos no checkout = meios validados (`IA_MEIOS_PAGAMENTO`); Pix: como a renovação é cobrada | Teste MP | **OK** cartão; Pix não oferecido no checkout |
+| 5 | Criação do cliente no ZappMillion (modo teste) com o plano correto; falha e nova tentativa | Teste ZM | **OK** (modo teste) |
+| 6 | Cancelamento pela página: Mercado Pago sem novas cobranças; acesso mantido até o fim | Teste MP + ZM | **OK** (05/11) |
 | 7 | Produção configurada: banco Neon em Production, chaves de produção **novas** (as atuais ficaram no chat), URL de notificação de produção e segredo, `IA_ADMIN_TOKEN`, `CRON_SECRET` | Vercel/MP/ZM | Pendente |
 | 8 | Entrega real ao comprador: convite por e-mail, login no painel, conexão do WhatsApp (não testável em modo de teste) | Compra controlada | **Proposta — exige sua autorização específica** (R$ 297,00 + R$ 97,00) |
 
