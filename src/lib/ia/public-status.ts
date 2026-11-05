@@ -86,7 +86,9 @@ export function publicStatus(c: Contratacao, reembolso: Reembolso | null = null)
   const resumo = suspensa
     ? "O acesso está suspenso. Fale com a Spolaor para regularizar."
     : !pago
-      ? "Aguardando a confirmação do pagamento."
+      ? c.etapa === "cancelada"
+        ? "Assinatura cancelada. Nenhuma cobrança foi feita."
+        : "Aguardando a confirmação do pagamento."
       : whatsapp
         ? "Acesso liberado e WhatsApp conectado."
         : acesso
