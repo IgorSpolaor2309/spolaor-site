@@ -375,6 +375,11 @@ ok((await json("/api/atendimento-ia/configuracao", { method: "POST", body: "{}" 
   ok(h.status === 200 && h.body.saude === "registrada no log" && !JSON.stringify(h.body).includes("zm_test") && !h.body.report, "diagnóstico pela rotina: só no log, sem executar a rotina");
   ok((await json("/api/atendimento-ia/cron?saude=1")).status === 401, "diagnóstico pela rotina exige o segredo");
 }
+{
+  const g = await json("/api/atendimento-ia/cron?agendar=1", { headers: { authorization: "Bearer cron-teste" } });
+  ok(g.status === 200 && g.body.agendador?.registrado === false && g.body.agendador?.motivo === "sem QSTASH_TOKEN", "registro do agendador sem QStash: não falha e não executa a rotina");
+  ok((await json("/api/atendimento-ia/cron?agendar=1")).status === 401, "registro do agendador exige o segredo");
+}
 // Sem nenhuma notificação: só a página de acompanhamento aberta libera o acesso, com no máximo uma
 // leitura no Mercado Pago a cada 25 s mesmo com várias consultas seguidas.
 {

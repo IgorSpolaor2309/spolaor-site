@@ -40,6 +40,7 @@ export async function healthReport() {
     notificacao: { urlNaCriacao: !!iaConfig.mpNotificationUrl(), bypassDaPrevia: !!process.env.VERCEL_AUTOMATION_BYPASS_SECRET, segredoDasNotificacoes: !!iaConfig.mpWebhookSecret() },
     zappmillion: { modo: zmKey.startsWith("zm_test_") ? "teste" : zmKey.startsWith("zm_live_") ? "produção" : zmKey ? "?" : "sem chave", plano: zmPlano, conta: zmConta },
     mercadoPago: mpConta,
+    agendador5min: !!(process.env.QSTASH_TOKEN ?? "").trim(),
     urlPublica: iaConfig.siteUrl() || null,
   };
 }
