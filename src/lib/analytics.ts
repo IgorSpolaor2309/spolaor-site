@@ -78,6 +78,26 @@ const sent = new Set<string>();
  * Conversão: chamada SOMENTE depois que a API aceitou o lead (resposta 200), uma vez por lead.
  * `leadId` é o ID devolvido pela API e serve de eventID (deduplicação).
  */
+/**
+ * Compra: chamada SOMENTE quando o servidor confirmou a primeira cobrança aprovada da assinatura
+ * (página de acompanhamento). O id da contratação é o eventID/transaction_id: uma conversão por
+ * contratação, mesmo que a página seja aberta de novo.
+ */
+export function trackPurchase(contratacaoId: string, value: number) {
+  const key = `purchase-${contratacaoId}`;
+  try {
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, "1");
+  } catch {
+    if (sent.has(key)) return;
+  }
+  sent.add(key);
+  const win = w();
+  const params = { content_name: "Atendimento com IA no WhatsApp", content_category: "atendimento-ia", value, currency: "BRL" };
+  win.fbq?.("track", "Purchase", params, { eventID: contratacaoId });
+  if (GA_ID) win.gtag?.("event", "purchase", { transaction_id: contratacaoId, value, currency: "BRL", items: [{ item_name: params.content_name }] });
+}
+
 export function trackLead(origemRaw: string, leadId: string | undefined) {
   const origem: LeadOrigem | undefined = isOrigem(origemRaw) ? origemRaw : undefined;
   const key = leadId ?? `${origemRaw}-${Date.now()}`;

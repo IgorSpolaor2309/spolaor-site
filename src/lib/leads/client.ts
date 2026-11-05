@@ -43,7 +43,7 @@ function readEntry(): Entry | null {
 }
 
 /** Contexto de navegação enviado junto com o lead (página, entrada, origem do tráfego, UTMs). */
-function context(): Pick<LeadPayload, "pagina" | "entrada" | "referrer" | "utm"> {
+export function context(): Pick<LeadPayload, "pagina" | "entrada" | "referrer" | "utm"> {
   const pagina = window.location.pathname;
   const entry = readEntry();
   const utm = readUtm(window.location.search);
