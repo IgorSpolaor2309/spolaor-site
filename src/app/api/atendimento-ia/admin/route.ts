@@ -23,10 +23,10 @@ import { mp } from "@/lib/ia/mercadopago";
 //   { "acao": "saude" }                                  → o que falta, banco, notificação e modo das chaves (sem valores)
 export async function POST(req: Request) {
   if (!bearerOk(req, iaConfig.adminToken())) return NextResponse.json({ ok: false }, { status: 401 });
-  const body = (await req.json().catch(() => ({}))) as { acao?: string; id?: string };
+  const body = (await req.json().catch(() => ({}))) as { acao?: string; id?: string; via?: string };
   if (body.acao === "saude") return NextResponse.json({ ok: true, ...(await health()) });
   if (body.acao === "conta-mp") return NextResponse.json({ ok: true, ...(await mpAccount()) });
-  if (body.acao === "webhook") return NextResponse.json({ ok: true, ...(await webhookDiagnostics(body.id)) });
+  if (body.acao === "webhook") return NextResponse.json({ ok: true, ...(await webhookDiagnostics(body.id, body.via === "relay")) });
   if (body.acao === "conciliar") return NextResponse.json({ ok: true, divergencias: await reconcile() });
   const s = store();
   if (body.acao === "listar") {
@@ -120,8 +120,11 @@ function describeUrl(u: string | null | undefined) {
  * autoteste: assina uma notificação com MP_WEBHOOK_SECRET e envia à própria URL pública, passando pela
  * proteção da Vercel, pela validação x-signature e pelo registro de eventos (tipo ignorado, sem efeito).
  */
-async function webhookDiagnostics(id?: string) {
-  const url = iaConfig.mpNotificationUrl() ?? (iaConfig.siteUrl() ? `${iaConfig.siteUrl()}/api/atendimento-ia/webhook` : null);
+async function webhookDiagnostics(id?: string, viaRelay = false) {
+  // via "relay": o autoteste passa pelo repasse temporário (IA_MP_RELAY_URL), como fará o Mercado Pago.
+  const relay = (process.env.IA_MP_RELAY_URL ?? "").trim();
+  if (viaRelay && !relay) return { erro: "IA_MP_RELAY_URL não definida" };
+  const url = viaRelay ? relay : (iaConfig.mpNotificationUrl() ?? (iaConfig.siteUrl() ? `${iaConfig.siteUrl()}/api/atendimento-ia/webhook` : null));
   const recebidas = await store().eventStats().catch((e: Error) => ({ erro: e.message }));
   let naAssinatura: unknown = "sem contratação informada";
   if (id) {
