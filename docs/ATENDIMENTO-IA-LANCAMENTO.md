@@ -89,7 +89,7 @@ Registrado como **não observado**. Controles já implementados:
 - Aviso quando a cobrança do novo ciclo do ZappMillion aparece como `PAID` sem pagamento do cliente (entrada na
   carência), quando a carência termina e quando o fornecedor suspende um cliente com período pago (cartão da
   agência recusado), com a ação `reativar`.
-- Conciliação diária (cron da Vercel às 09:00 UTC, `?conciliar=1`): clientes ativos no ZappMillion sem
+- Conciliação diária (cron da Vercel às 09:00 UTC, identificado pelo user-agent `vercel-cron`; também com `?conciliar=1`): clientes ativos no ZappMillion sem
   contratação ativa no site e o inverso.
 - Diagnóstico `saude` e `listar` para conferência manual.
 
