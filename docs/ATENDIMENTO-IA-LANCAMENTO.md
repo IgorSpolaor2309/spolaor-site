@@ -180,8 +180,9 @@ Bloqueios para abrir as vendas (contratação pública):
 3. **Variáveis de Production que ainda faltam:** `IA_MEIOS_PAGAMENTO=cartao` e (para a compra controlada)
    `IA_TOKEN_VALIDACAO` aleatório. A gravação por mim foi bloqueada pela política de permissões da sessão.
 4. **Agendador da rotina (concluído em 05/11/2026):** QStash (Upstash, plano Free, só Production) chama
-   `/api/atendimento-ia/cron` a cada 5 minutos, com `CRON_SECRET`; execuções comprovadas às 19:30 e 19:35 (Brasília),
-   ambas `DELIVERED`. O cron diário da Vercel (09:00 UTC) segue para a conciliação com o ZappMillion. O workflow do
+   `/api/atendimento-ia/cron` a cada **15 minutos**, com `CRON_SECRET`. Funcionou primeiro a cada 5 minutos (19:30 e
+   19:35 de Brasília, `DELIVERED`), mas nesse ritmo o Neon nunca dormiria e esgotaria as 100 CU-horas do plano Free
+   perto do 17º dia, parando compras e notificações; a cada 15 minutos, usa cerca de 60. O cron diário da Vercel (09:00 UTC) segue para a conciliação com o ZappMillion. O workflow do
    GitHub ficou só manual (`IA_ROTINA_URL` com `?saude=1`, `?conciliar=1` ou `?agendar=1`). Ao trocar `CRON_SECRET`,
    repita `?agendar=1`: o registro é idempotente e atualiza o segredo guardado no QStash.
 5. **Merge do PR #5** (autorização sua) — a página aparece com o preço e "Quero ser avisado" enquanto
