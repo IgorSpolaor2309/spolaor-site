@@ -78,6 +78,8 @@ const OFFER_FORMS: Record<string, string> = {
  * orçamento direto; nas páginas com diagnóstico, rola até o formulário; nas demais, leva a /analise.
  */
 export function pageCta(pathname: string): { href: string; target: string | null; label: string } {
+  if (pathname === "/atendimento-ia") return { href: "#comprar", target: "comprar", label: "Ver plano e preço" };
+  if (pathname.startsWith("/atendimento-ia/")) return { href: "/contato", target: null, label: "Falar com a Spolaor" };
   if (OFFER_FORMS[pathname]) return { href: "#formulario", target: "formulario", label: OFFER_FORMS[pathname] };
   if (pathname === "/sites") return { href: "#orcamento", target: "orcamento", label: "Pedir orçamento" };
   if (pathname === "/automacao") return { href: "#analise", target: "analise", label: "Diagnóstico do processo" };

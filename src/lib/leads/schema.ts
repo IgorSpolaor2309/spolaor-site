@@ -21,6 +21,7 @@ export const LEAD_ORIGENS = [
   "lojas-virtuais",
   "agendamento-online",
   "diagnostico-site",
+  "atendimento-ia",
 ] as const;
 export type LeadOrigem = (typeof LEAD_ORIGENS)[number];
 
@@ -40,6 +41,7 @@ export const INTERESSES: Record<LeadOrigem, string> = {
   "lojas-virtuais": "Loja virtual",
   "agendamento-online": "Agendamento online",
   "diagnostico-site": "Diagnóstico e melhoria de site",
+  "atendimento-ia": "Atendimento com IA no WhatsApp",
 };
 
 export function isOrigem(v: unknown): v is LeadOrigem {
