@@ -64,6 +64,8 @@ export async function startContratacao(input: { empresa: string; responsavel: st
     tentativas: 0,
     proximaTentativa: null,
     motivoSuspensao: null,
+    preAvisoPara: null,
+    avisoFornecedorPara: null,
   });
   const backUrl = `${iaConfig.siteUrl()}/atendimento-ia/acompanhar?c=${contratacao.id}&t=${token}`;
   const valor = price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -297,28 +299,50 @@ async function reactivate(c: Contratacao) {
 
 /* ─────────────────────────────── rotina periódica ─────────────────────────────── */
 
+const fmt = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
+
 /**
- * Executada pelo agendador. (1) Repete ativações pendentes cuja espera venceu. (2) Relê os clientes
- * no ZappMillion. (3) Fim do período pago — NUNCA antes de pagoAte:
- *   - assinatura cancelada → suspende (sem novas cobranças do fornecedor);
+ * Executada pelo agendador. (1) Repete ativações pendentes cuja espera venceu. (2) Avisa a operação
+ * 24 h antes do fim do período de uma assinatura cancelada (o ZappMillion não tem cancelamento
+ * agendado: a renovação dele coincide com o fim do período pago). (3) Relê os clientes perto do fim do
+ * período. (4) No fim do período pago — NUNCA antes:
+ *   - cancelada → suspende;
  *   - renovação não paga e o fornecedor ainda não renovou → suspende (evita a cobrança do fornecedor);
- *   - renovação não paga e o fornecedor JÁ renovou (ciclo do fornecedor já pago) → mantém o acesso
- *     durante a tolerância (IA_CARENCIA_DIAS) enquanto o Mercado Pago tenta de novo; depois suspende.
- * Quando o fornecedor renovou antes da suspensão, a operação é avisada do custo (um ciclo do plano).
+ *   - renovação não paga e o fornecedor JÁ renovou → avisa a operação NESSE momento (custo de um ciclo do
+ *     plano já ocorrido) e mantém o acesso por IA_CARENCIA_DIAS (decisão pendente; 0 se não definida).
  */
 export async function runCron(now = new Date()) {
   const s = store();
   const report: string[] = [];
   const t = now.getTime();
+  let planCost: string | null | undefined;
+  const cost = async (planId: string) => {
+    if (planCost === undefined) {
+      const p = await zm.plans().then((ps) => ps.find((x) => x.id === planId)).catch(() => null);
+      planCost = p ? p.monthlyPrice.toLocaleString("pt-BR", { style: "currency", currency: p.currency }) : null;
+    }
+    return planCost ?? "um ciclo do plano";
+  };
+
   for (const c of await s.list({ etapas: ["ativacao_pendente", "pagamento_confirmado"] })) {
     if (c.proximaTentativa && new Date(c.proximaTentativa).getTime() <= t) report.push(`${c.id}: nova tentativa → ${JSON.stringify(await provision(c))}`);
   }
   for (const c of await s.list({ etapas: ["acesso_criado", "cancelada"] })) {
-    if (c.zmStatus !== "ACTIVE") continue;
+    if (c.zmStatus !== "ACTIVE" || !c.pagoAte) continue;
+    const paid = new Date(c.pagoAte).getTime();
+
+    if (c.etapa === "cancelada" && t >= paid - 24 * 3_600_000 && t < paid && c.preAvisoPara !== c.pagoAte) {
+      await notifyOps(
+        `Fim de assinatura cancelada em 24 h · ${c.empresa}`,
+        `Contratação ${c.id}: o período pago termina em ${fmt(c.pagoAte)}, junto com a renovação do ZappMillion (sem cancelamento agendado no fornecedor). A suspensão roda no fim do período; se o fornecedor cobrar antes, o custo é ${await cost(c.zmPlanId)}.`,
+      );
+      await s.update(c.id, { preAvisoPara: c.pagoAte });
+      report.push(`${c.id}: pré-aviso de fim de período enviado`);
+    }
+
     // Limite do ZappMillion: 60 requisições/min. Com o agendador a cada minuto, só consulta quem está
     // a 10 min (ou além) do fim do período pago, e os demais a cada 6 h (WhatsApp e período).
-    const paidAt = c.pagoAte ? new Date(c.pagoAte).getTime() : 0;
-    if (paidAt && t < paidAt - 10 * 60_000 && Date.now() - new Date(c.atualizadoEm).getTime() < 6 * 3_600_000) continue;
+    if (t < paid - 10 * 60_000 && Date.now() - new Date(c.atualizadoEm).getTime() < 6 * 3_600_000) continue;
     let cur = c;
     try {
       cur = await refreshFromZm(c);
@@ -327,23 +351,30 @@ export async function runCron(now = new Date()) {
       continue;
     }
     if (cur.zmStatus !== "ACTIVE" || !cur.pagoAte) continue;
-    const paid = new Date(cur.pagoAte).getTime();
     if (t < paid) continue; // período pago em curso: nunca suspende antes do fim
+
     const zmEnd = cur.zmPeriodoFim ? new Date(cur.zmPeriodoFim).getTime() : 0;
     const fornecedorRenovou = zmEnd > paid; // o ZappMillion já abriu (e cobrou) um ciclo além do período pago
+    const graceEnd = paid + iaConfig.graceDays() * 86_400_000;
     let motivo: string | null = null;
     if (cur.etapa === "cancelada") motivo = "cancelamento";
-    else if (!fornecedorRenovou) motivo = "inadimplencia";
-    else if (t >= paid + iaConfig.graceDays() * 86_400_000) motivo = "inadimplencia";
+    else if (!fornecedorRenovou || t >= graceEnd) motivo = "inadimplencia";
+
+    if (fornecedorRenovou && cur.avisoFornecedorPara !== cur.pagoAte) {
+      await notifyOps(
+        `Fornecedor renovou sem recebimento · ${cur.empresa}`,
+        `Contratação ${cur.id}: o período pago terminou em ${fmt(cur.pagoAte)} e o ZappMillion já renovou até ${fmt(cur.zmPeriodoFim!)} (custo ${await cost(cur.zmPlanId)}). ${
+          motivo ? `O acesso está sendo suspenso (${motivo}).` : `O cliente entrou em carência até ${fmt(new Date(graceEnd).toISOString())} enquanto o Mercado Pago tenta a cobrança.`
+        }`,
+      );
+      cur = await s.update(cur.id, { avisoFornecedorPara: cur.pagoAte });
+    }
     if (!motivo) {
-      report.push(`${c.id}: renovação não paga, fornecedor já renovou; em tolerância até ${new Date(paid + iaConfig.graceDays() * 86_400_000).toISOString()}`);
+      report.push(`${c.id}: fornecedor já renovou; em carência até ${new Date(graceEnd).toISOString()}`);
       continue;
     }
     await suspend(cur, motivo);
     report.push(`${c.id}: suspensa (${motivo}) no fim do período pago ${cur.pagoAte}${fornecedorRenovou ? " — fornecedor já tinha renovado" : ""}`);
-    if (fornecedorRenovou) {
-      await notifyOps(`Ciclo do fornecedor sem recebimento · ${cur.empresa}`, `Contratação ${cur.id}: o ZappMillion renovou em ${cur.zmPeriodoFim} antes da suspensão (${motivo}). Custo de um ciclo do plano ${cur.zmPlanId}.`);
-    }
   }
   return report;
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { context } from "@/lib/leads/client";
+import { methodsSentence, renewalTerms, type Meio } from "@/lib/ia/terms";
 
 // Contratação: dados do responsável e aceite das condições. O servidor cria a assinatura com o
 // preço definido por ele e devolve o link do checkout do Mercado Pago. Nenhum dado de cartão
@@ -39,7 +40,7 @@ function Field({ name, label, hint, error, ...rest }: { name: keyof Errors; labe
   );
 }
 
-export function HireForm({ price, replyLimit, cycle }: { price: number; replyLimit: number; cycle: string }) {
+export function HireForm({ price, replyLimit, cycle, methods }: { price: number; replyLimit: number; cycle: string; methods: Meio[] }) {
   const [errors, setErrors] = useState<Errors>({});
   const [state, setState] = useState<"idle" | "sending" | "error">("idle");
   const brl = price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -112,8 +113,8 @@ export function HireForm({ price, replyLimit, cycle }: { price: number; replyLim
         <label className="flex gap-3 text-[0.92rem] leading-snug">
           <input type="checkbox" name="aceite" className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-royal)]" aria-invalid={errors.aceite ? true : undefined} />
           <span>
-            Entendi que a assinatura custa {brl} {cycle}, renovada automaticamente no Mercado Pago; que posso cancelar quando quiser, sem novas
-            cobranças e mantendo o acesso até o fim do período já pago; e que as mensagens cobradas pela Meta no WhatsApp são pagas à parte.
+            Entendi que a assinatura custa {brl} {cycle}. {renewalTerms(methods, cycle).join(" ")} Posso cancelar quando quiser, sem novas
+            cobranças e mantendo o acesso até o fim do período já pago. As mensagens cobradas pela Meta no WhatsApp são pagas à parte.
           </span>
         </label>
         {errors.aceite && <p className="mt-1.5 text-sm text-ember">{errors.aceite}</p>}
@@ -128,9 +129,9 @@ export function HireForm({ price, replyLimit, cycle }: { price: number; replyLim
         disabled={state === "sending"}
         className="inline-flex min-h-14 items-center justify-center rounded-[10px] bg-royal px-7 text-[1.02rem] font-semibold text-white disabled:opacity-60"
       >
-        {state === "sending" ? "Abrindo o pagamento…" : "Continuar para o pagamento"}
+        {state === "sending" ? "Abrindo o pagamento…" : "Comprar agora"}
       </button>
-      <p className="text-center text-sm text-dim">Pagamento processado pelo Mercado Pago. O site não recebe os dados do seu cartão.</p>
+      <p className="text-center text-sm text-dim">{methodsSentence(methods)} O site não recebe dados de pagamento.</p>
     </form>
   );
 }

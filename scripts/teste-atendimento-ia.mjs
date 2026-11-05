@@ -5,6 +5,7 @@
 // Antes: npm run build e, com as variáveis abaixo, `node node_modules/next/dist/bin/next start --port 3210`:
 //   IA_STORE=memory IA_PRECO_MENSAL=297.00 IA_ZM_PLAN_ID=plan_teste IA_LIMITE_RESPOSTAS=2000
 //   IA_CONTRATACAO_ATIVA=true NEXT_PUBLIC_SITE_URL=http://localhost:3210 IA_PAINEL_URL=https://painel.exemplo.test
+//   IA_CARENCIA_DIAS=10 IA_MEIOS_PAGAMENTO=cartao
 //   MP_ACCESS_TOKEN=teste-local MP_WEBHOOK_SECRET=segredo-teste MP_API_URL=http://localhost:4020
 //   ZM_API_KEY=zm_test_local ZM_API_URL=http://localhost:4021 IA_ADMIN_TOKEN=admin-teste CRON_SECRET=cron-teste
 // Uso: node scripts/teste-atendimento-ia.mjs
@@ -156,7 +157,8 @@ function charge(c, { status = "approved", amount = 297, debit = iso(Date.now()) 
 
 /* ─────────────── cenários ─────────────── */
 const page = await (await fetch(B + "/atendimento-ia")).text();
-ok(page.includes("297,00") && page.includes("a cada 30 dias") && page.includes("Assinar agora"), "página: R$ 297,00 a cada 30 dias e CTA");
+ok(page.includes("297,00") && page.includes("a cada 30 dias") && page.includes("Comprar agora") && page.includes('href="#comprar"'), "página: R$ 297,00 a cada 30 dias e CTA Comprar agora levando ao formulário");
+ok(page.includes("No cartão, a renovação é cobrada automaticamente") && !page.includes("No Pix"), "só o meio validado (cartão) aparece nas condições e no aceite");
 ok(!/implanta[çc][ãa]o (inicial )?(é feita )?pela Spolaor|configurad[oa] pela Spolaor|por mês|\/mês/i.test(page), "página sem implantação pela Spolaor e sem 'por mês'");
 ok(!/zm_test_local|teste-local|segredo-teste/.test(page), "nenhuma credencial no HTML");
 
@@ -216,6 +218,8 @@ ok(cancel.status === 200 && mp.puts.some((p) => p.id === preOf(c1).id && p.statu
 st = await status(c1);
 ok(st.cancelada && st.acessoLiberado && /continua até/.test(st.resumo), "cancelada: acesso continua e a página mostra até quando");
 const end1 = new Date((await row(c1)).pagoAte).getTime();
+await cron(end1 - 12 * 3_600_000);
+ok((await row(c1)).preAvisoPara === (await row(c1)).pagoAte && !zm.suspends.includes(ext(c1)), "cancelada: pré-aviso à operação 24 h antes do fim, sem suspender");
 await cron(end1 - 1);
 ok(!zm.suspends.includes(ext(c1)), "1 ms antes do fim do período pago: não suspende");
 await cron(end1);
@@ -246,7 +250,7 @@ await notify("subscription_authorized_payment", charge(c3).id);
 const end3 = new Date((await row(c3)).pagoAte).getTime();
 zm.clients.get(ext(c3)).subscription = sub(end3); // o ZappMillion cobrou o novo ciclo
 await cron(end3 + DAY);
-ok(!zm.suspends.includes(ext(c3)), "fornecedor já renovou: acesso mantido na tolerância enquanto o Mercado Pago tenta");
+ok(!zm.suspends.includes(ext(c3)) && (await row(c3)).avisoFornecedorPara === iso(end3), "fornecedor já renovou: operação avisada AO ENTRAR na carência, acesso mantido");
 await cron(end3 + 10 * DAY);
 ok(zm.suspends.includes(ext(c3)), "fim da tolerância sem pagamento: suspende");
 

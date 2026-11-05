@@ -45,6 +45,19 @@ próprio WhatsApp autorizando na Meta. Não há implantação manual da Spolaor 
   (custo de até um ciclo extra, R$ 97,00, por cliente que cancelar ou não pagar). Nesse caso a página e o
   checkout devem dizer "por mês" — mudar só com aprovação.
 
+## Meios de pagamento
+
+Desejados: cartão e Pix. Só aparecem e são aceitos os meios listados em `IA_MEIOS_PAGAMENTO` (`cartao`, `pix`)
+depois de validados no ambiente de teste; sem nenhum, a contratação não abre. Os textos de renovação mudam
+pelo meio: cartão = cobrança automática a cada 30 dias; Pix = o comprador paga um novo Pix a cada vencimento
+e, sem esse pagamento, o acesso termina no fim do período já pago.
+- A documentação de assinaturas lista Pix entre os meios, mas **não descreve** como a renovação por Pix
+  funciona. No modelo usado (assinatura sem plano, pendente), as cobranças "dependem que o usuário busque uma
+  forma de concluir o pagamento", o que é coerente com o Pix pago a cada vencimento — confirmar no teste.
+- Restringir os meios no checkout só está documentado na assinatura **com plano** (`preapproval_plan`,
+  `payment_methods_allowed`); no modelo sem plano não há campo documentado. Se o checkout oferecer um meio
+  ainda não validado, será preciso migrar para assinatura com plano para restringir.
+
 ## Período pago, renovação e cancelamento (regra implementada)
 
 **O comprador recebe o período inteiro.** O período começa quando o acesso é criado e termina junto com o
@@ -65,25 +78,41 @@ o valor. A regra:
 | Renovação aprovada antes | Soma 30 dias; o fornecedor renova (pago pelo cliente) |
 | Cancelada | Suspende no fim do período (sem novas cobranças nossas) |
 | Cobrança não aprovada e o fornecedor ainda não renovou | Suspende no fim do período (evita a cobrança do fornecedor); volta com reativação quando o pagamento for aprovado |
-| Cobrança não aprovada e o fornecedor já renovou | Mantém o acesso por `IA_CARENCIA_DIAS` (padrão 10) enquanto o Mercado Pago tenta; se aprovar, segue sem custo extra; se não, suspende |
+| Cobrança não aprovada e o fornecedor já renovou | Avisa a operação **nesse momento** (custo de um ciclo já ocorrido) e mantém o acesso por `IA_CARENCIA_DIAS` (**decisão pendente**; sem valor, a contratação não abre e a rotina usa 0); se aprovar, segue sem custo extra; se não, suspende |
 | Estorno ou contestação | Suspende na hora |
 
-**Custo possível para a Spolaor (valores confirmados):** como o fim do período pago coincide com a renovação
-do fornecedor, se o fornecedor cobrar antes de a suspensão rodar, a Spolaor paga **R$ 97,00** por um ciclo
-sem receita:
+**Cancelamento agendado no fornecedor: não existe.** A documentação do ZappMillion (API e painel) não tem
+"cancelar no fim do período" nem "desligar a renovação": `PATCH` só aceita `name` e `planId` (troca de plano
+agendada para a próxima renovação, sem parar a renovação); `suspend` e `DELETE` valem na hora e não devolvem
+o restante do período. Também não há webhook de renovação, e o horário exato da cobrança de renovação não é
+documentado (só "a cada 30 dias, na mesma data do primeiro pagamento"). Perguntar ao suporte do ZappMillion
+se existe cancelamento no fim do período e em que momento a renovação é cobrada.
+
+**Custo possível para a Spolaor (valores confirmados):** o fim do período pago coincide com a renovação do
+fornecedor. Se o fornecedor cobrar antes de a suspensão rodar, a Spolaor paga **R$ 97,00** por um ciclo sem
+receita:
 - cliente cancela: recebeu R$ 297,00 pelo último período; se o fornecedor renovar primeiro, a margem desse
   cliente cai de R$ 200,00 para R$ 103,00 (antes das tarifas do Mercado Pago, não confirmadas aqui);
-- cliente não paga a renovação e não regulariza na tolerância: perda de R$ 97,00 se o fornecedor renovou
-  primeiro; nenhuma se a suspensão rodou antes.
-Para reduzir isso sem tirar tempo pago, o agendador deve rodar **a cada minuto** (a rotina só consulta o
-fornecedor para quem está a 10 minutos do fim, respeitando o limite de 60 requisições/min). **A confirmar
-com o ZappMillion:** em que momento exato a renovação é cobrada (no instante de `currentPeriodEnd` ou em
-lote depois dele). Se for em lote, a suspensão no fim do período evita o custo na prática.
+- cliente não paga a renovação: perda de R$ 97,00 se o fornecedor renovou primeiro e o cliente não regulariza.
+A operação recebe um pré-aviso 24 h antes do fim de uma assinatura cancelada e um aviso no momento em que a
+rotina encontra uma renovação do fornecedor sem recebimento (antes de suspender ou ao entrar na carência).
+
+**Por que existe a carência (IA_CARENCIA_DIAS) e por que ela não está decidida:** ela só vale quando o
+fornecedor JÁ cobrou o novo ciclo. Nesse caso suspender não devolve os R$ 97,00 e, se o cliente pagar depois,
+a reativação cobraria **outros** R$ 97,00. Manter o acesso enquanto o Mercado Pago tenta a cobrança (o
+Mercado Pago informa novas tentativas por até cerca de 10 dias, número a confirmar no teste) evita esse
+segundo custo; em troca, o cliente usa dias que ainda não pagou. Opções: 0 (suspende no fim do período pago;
+pagamento tardio reativa com novo custo de R$ 97,00), ou N dias. A decisão é comercial e está pendente.
 
 ## Agendador
 
+Um agendador frequente faz a suspensão rodar logo depois do fim do período pago, mas **não garante** evitar a
+cobrança extra do fornecedor: se o ZappMillion cobrar no instante exato de `currentPeriodEnd`, nenhuma
+frequência chega antes sem tirar tempo pago. Ele só reduz a exposição se a renovação acontecer depois desse
+instante (o que precisa ser confirmado com o ZappMillion).
+
 O cron da Vercel Hobby roda uma vez por dia (`vercel.json`), o que basta para novas tentativas e
-sincronização, mas não para agir no fim do período. Recomendado: um agendador externo **a cada minuto**
+sincronização, mas não para agir no fim do período. Recomendado (reduz, não garante): um agendador externo **a cada minuto**
 chamando `GET https://<domínio>/api/atendimento-ia/cron` com o cabeçalho `Authorization: Bearer <CRON_SECRET>`.
 Opções sem custo: cron-job.org (gratuito, intervalo de 1 min) ou Upstash QStash (plano gratuito com limite
 diário que comporta 1.440 chamadas/dia — conferir o limite atual). A Vercel Pro permite cron por minuto, mas
@@ -155,16 +184,33 @@ para não misturar com as campanhas atuais. Sem promessas de resultado; só depo
 
 ## Teste nos fornecedores (antes de abrir as vendas)
 
-Pendente: as credenciais recebidas do Mercado Pago são de **produção** (conta sem a marca de teste), e a
-chave do ZappMillion recebida é `zm_live_` — nenhuma das duas serve para o teste sem gerar cobranças reais.
-Com as credenciais de teste no ambiente *Preview* (ou num `.env.local` da cópia local, que o git ignora):
+As credenciais recebidas do Mercado Pago são de **produção** (conta sem a marca de teste) e a chave do
+ZappMillion é `zm_live_`: nenhuma serve para teste sem gerar cobranças reais.
 
-1. `ZM_API_KEY=zm_test_…` (Cartão e API → Chaves de API, com **Modo de teste** ligado). No modo de teste nada é
-   cobrado, o cliente é simulado e não há e-mail de convite real; renovação não acontece.
-2. `MP_ACCESS_TOKEN` de teste e contas de teste (vendedor e comprador do Brasil) em Suas integrações.
-3. URL de notificação de teste apontando para o ambiente de teste; `MP_WEBHOOK_SECRET` do modo teste.
-4. Roteiro: contratar com o e-mail do comprador de teste → pagar no checkout com cartão de teste (aprovado,
-   pendente e recusado) → conferir notificações (`subscription_preapproval`, `subscription_authorized_payment`,
-   `payment`), o ciclo `30 days` aceito e a criação no ZappMillion em modo de teste; cancelar pela página;
-   repetir uma notificação pelo painel do Mercado Pago. O pagamento no checkout é feito por uma pessoa com a
-   conta de comprador de teste.
+**O que falta para executar**
+1. ZappMillion: chave `zm_test_…` (Minha agência → Cartão e API → Chaves de API, com **Modo de teste** ligado).
+   No modo de teste nada é cobrado, o cliente é simulado, não há e-mail de convite e **não há renovação**.
+2. Mercado Pago: Access Token de teste e contas de teste (vendedor e comprador do Brasil) em Suas integrações;
+   assinatura secreta das notificações do modo teste.
+3. Onde colocar: ambiente *Preview* da Vercel ou `.env.local` na cópia local (o git ignora).
+4. URL pública para receber as notificações do teste (prévia da Vercel sem proteção de login para
+   `/api/atendimento-ia/webhook`, ou um túnel temporário para a máquina local).
+5. Banco: `DATABASE_URL` de um Postgres de teste com `db/atendimento-ia.sql` aplicado (a memória não serve na Vercel).
+6. Uma pessoa para pagar no checkout com a conta de comprador de teste (o site não entra na conta do comprador).
+
+**Roteiro (o que validar)**
+- O checkout aceita `frequency: 30, frequency_type: "days"` e mostra R$ 297,00 a cada 30 dias.
+- Quais meios o checkout oferece no modelo sem plano; se aparecer Pix ou outro meio não validado, decidir
+  entre aceitar ou migrar para assinatura com plano (`payment_methods_allowed`).
+- Cartão: aprovado, recusado e pendente → aprovado; notificações `subscription_preapproval`,
+  `subscription_authorized_payment` e `payment`; o vínculo pelo `external_reference`; a criação do cliente no
+  ZappMillion em modo de teste com o plano PRO.
+- Pix: a primeira cobrança e como o Mercado Pago gera a do vencimento seguinte (prazo, aviso ao comprador,
+  status da cobrança até o pagamento).
+- Só a notificação de `payment` chegando: os campos reais que ligam o pagamento à assinatura
+  (`metadata.preapproval_id`, `point_of_interaction`, `external_reference`) e a busca
+  `/authorized_payments/search?preapproval_id=`.
+- Cancelamento pela página (`status: cancelled`) e pelo Mercado Pago; reenvio de notificação pelo painel
+  (repetida); estorno e contestação (o que o ambiente de teste permitir).
+- Renovação e pagamento atrasado: o ambiente de teste do ZappMillion não renova; o comportamento na
+  renovação real depende da resposta do suporte (momento da cobrança).

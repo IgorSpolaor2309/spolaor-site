@@ -29,6 +29,8 @@ create table if not exists ia_contratacoes (
   tentativas            integer not null default 0,
   proxima_tentativa     timestamptz,
   motivo_suspensao      text,
+  pre_aviso_para        timestamptz,                    -- pré-aviso de custo já enviado para este fim de período
+  aviso_fornecedor_para timestamptz,                    -- aviso de renovação do fornecedor sem recebimento já enviado
   criado_em             timestamptz not null,
   atualizado_em         timestamptz not null
 );

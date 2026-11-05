@@ -43,6 +43,10 @@ export type Contratacao = {
   tentativas: number;
   proximaTentativa: string | null;
   motivoSuspensao: string | null;
+  /** fim de período (pagoAte) para o qual a operação já recebeu o pré-aviso de risco de custo */
+  preAvisoPara: string | null;
+  /** fim de período para o qual a operação já foi avisada de que o fornecedor renovou sem recebimento */
+  avisoFornecedorPara: string | null;
   criadoEm: string;
   atualizadoEm: string;
 };

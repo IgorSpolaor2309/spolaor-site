@@ -6,6 +6,7 @@ import { ChatExample } from "@/components/ia/chat-example";
 import { HireForm } from "@/components/ia/hire-form";
 import { ContactForm } from "@/components/forms/contact-form";
 import { publicOffer } from "@/lib/ia/config";
+import { methodsSentence, renewalTerms } from "@/lib/ia/terms";
 import { leadsAvailable } from "@/lib/leads/server/pipeline";
 
 export const metadata: Metadata = {
@@ -64,7 +65,7 @@ const faq = [
 export default function AtendimentoIaPage() {
   const offer = publicOffer();
   const brl = offer.price ? offer.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : null;
-  const ctaLabel = offer.enabled ? "Assinar agora" : "Quero ser avisado";
+  const ctaLabel = offer.enabled ? "Comprar agora" : "Quero ser avisado";
   return (
     <>
       <section className="relative isolate overflow-hidden pb-10 pt-[84px] md:pb-20 md:pt-[140px]" aria-labelledby="ia-title">
@@ -84,15 +85,17 @@ export default function AtendimentoIaPage() {
               Um agente de IA responde interessados, tira dúvidas e passa a negociação para a sua equipe. Você assina, configura no painel e
               conecta o seu número.
             </p>
-            <div className="fade-up mt-6 flex flex-col gap-3 sm:flex-row sm:items-center md:mt-9" style={{ animationDelay: "0.18s" }}>
-              <ButtonLink href="#contratar" size="lg" arrow data-hero-cta className="shadow-[0_10px_30px_-10px_rgb(30_91_230/0.6)]">
+            {brl && (
+              <p className="fade-up mt-5 flex flex-wrap items-baseline gap-x-2 md:mt-7" style={{ animationDelay: "0.16s" }}>
+                <strong className="text-[1.9rem] font-semibold leading-none tracking-[-0.03em] md:text-[2.2rem]">{brl}</strong>
+                <span className="text-[1.02rem] font-medium text-fg">{offer.cycle}</span>
+                <span className="basis-full text-[0.92rem] text-muted sm:basis-auto">Sem fidelidade. Cancele quando quiser.</span>
+              </p>
+            )}
+            <div className="fade-up mt-4 md:mt-6" style={{ animationDelay: "0.2s" }}>
+              <ButtonLink href="#comprar" size="lg" arrow data-hero-cta className="w-full shadow-[0_10px_30px_-10px_rgb(30_91_230/0.6)] sm:w-auto">
                 {ctaLabel}
               </ButtonLink>
-              {brl && offer.enabled && (
-                <p className="text-center text-[0.95rem] text-muted sm:text-left">
-                  <strong className="font-semibold text-fg">{brl}</strong> {offer.cycle} · cancele quando quiser
-                </p>
-              )}
             </div>
           </div>
           <div className="fade-up lg:col-span-5" style={{ animationDelay: "0.24s" }}>
@@ -137,8 +140,8 @@ export default function AtendimentoIaPage() {
                 offer.replyLimit ? `Até ${offer.replyLimit.toLocaleString("pt-BR")} respostas do agente por ciclo` : "Limite de respostas do agente por ciclo definido no plano",
                 "Acesso liberado automaticamente depois do pagamento confirmado",
                 "Configuração do agente e conexão do WhatsApp feitas por você, no painel",
-                `Renovação automática ${offer.cycle} no Mercado Pago; cancele quando quiser, sem novas cobranças`,
-                "Ao cancelar, o acesso continua até o fim do período já pago",
+                ...(offer.methods.length ? [methodsSentence(offer.methods), ...renewalTerms(offer.methods, offer.cycle)] : [`Renovação ${offer.cycle} pelo Mercado Pago`]),
+                "Cancele quando quiser: sem novas cobranças, e o acesso continua até o fim do período já pago",
                 "Mensagens cobradas pela Meta no WhatsApp pagas à parte",
               ].map((t) => (
                 <li key={t} className="flex gap-3">
@@ -149,9 +152,9 @@ export default function AtendimentoIaPage() {
             </ul>
             {!offer.enabled && <p className="mt-6 leading-relaxed text-white/75">Deixe seu contato e avisamos quando as assinaturas abrirem.</p>}
           </div>
-          <div className="text-fg lg:col-span-6 lg:col-start-7">
+          <div id="comprar" className="scroll-mt-20 text-fg lg:col-span-6 lg:col-start-7">
             {offer.enabled && offer.price && offer.replyLimit ? (
-              <HireForm price={offer.price} replyLimit={offer.replyLimit} cycle={offer.cycle} />
+              <HireForm price={offer.price} replyLimit={offer.replyLimit} cycle={offer.cycle} methods={offer.methods} />
             ) : (
               <Suspense fallback={<div className="h-[640px] rounded-[16px] bg-ink-900" />}>
                 <ContactForm
