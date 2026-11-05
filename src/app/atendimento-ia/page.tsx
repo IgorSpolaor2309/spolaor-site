@@ -5,7 +5,7 @@ import { SectionLabel } from "@/components/ui/section-label";
 import { ChatExample } from "@/components/ia/chat-example";
 import { HireForm } from "@/components/ia/hire-form";
 import { ContactForm } from "@/components/forms/contact-form";
-import { publicOffer } from "@/lib/ia/config";
+import { publicOffer, validationOk } from "@/lib/ia/config";
 import { methodsSentence, renewalTerms } from "@/lib/ia/terms";
 import { leadsAvailable } from "@/lib/leads/server/pipeline";
 
@@ -62,8 +62,10 @@ const faq = [
   },
 ];
 
-export default function AtendimentoIaPage() {
-  const offer = publicOffer();
+export default async function AtendimentoIaPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const sp = await searchParams;
+  const acesso = typeof sp.acesso === "string" && validationOk(sp.acesso) ? sp.acesso : null;
+  const offer = publicOffer({ validation: !!acesso });
   const brl = offer.price ? offer.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : null;
   const ctaLabel = offer.enabled ? "Comprar agora" : "Quero ser avisado";
   return (
@@ -154,7 +156,14 @@ export default function AtendimentoIaPage() {
           </div>
           <div id="comprar" className="scroll-mt-20 text-fg lg:col-span-6 lg:col-start-7">
             {offer.enabled && offer.price && offer.replyLimit ? (
-              <HireForm price={offer.price} replyLimit={offer.replyLimit} cycle={offer.cycle} methods={offer.methods} />
+              <>
+                {offer.validation && (
+                  <p role="note" className="mb-4 rounded-[12px] border border-[#f07a12] bg-ink-900 px-4 py-3 text-sm text-fg">
+                    Modo de validação interna: a contratação pública continua desligada. Esta compra é real.
+                  </p>
+                )}
+                <HireForm price={offer.price} replyLimit={offer.replyLimit} cycle={offer.cycle} methods={offer.methods} acesso={acesso} />
+              </>
             ) : (
               <Suspense fallback={<div className="h-[640px] rounded-[16px] bg-ink-900" />}>
                 <ContactForm

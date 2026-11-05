@@ -18,6 +18,8 @@ export type StatusPublico = {
   acessoAte: string | null;
   cancelada: boolean;
   podeCancelar: boolean;
+  /** compra de validação interna (link com token): não conta como conversão */
+  interna: boolean;
   passos: Passo[];
 };
 
@@ -90,6 +92,7 @@ export function publicStatus(c: Contratacao): StatusPublico {
     acessoAte: c.pagoAte,
     cancelada,
     podeCancelar: !cancelada && !suspensa && !!c.mpPreapprovalId,
+    interna: c.utm?.validacao === "interna",
     passos: [pagamento, acessoPasso, agente, wpp],
   };
 }

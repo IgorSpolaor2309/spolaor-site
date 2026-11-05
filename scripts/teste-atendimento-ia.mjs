@@ -8,6 +8,8 @@
 //   IA_MEIOS_PAGAMENTO=cartao   (IA_CARENCIA_DIAS no padrão decidido: 10)
 //   MP_ACCESS_TOKEN=teste-local MP_WEBHOOK_SECRET=segredo-teste MP_API_URL=http://localhost:4020
 //   ZM_API_KEY=zm_test_local ZM_API_URL=http://localhost:4021 IA_ADMIN_TOKEN=admin-teste CRON_SECRET=cron-teste
+// Segundo servidor (validação interna) em :3211 com as mesmas variáveis, exceto IA_CONTRATACAO_ATIVA, e com
+//   IA_TOKEN_VALIDACAO=validacao-interna-teste-0123456789 NEXT_PUBLIC_SITE_URL=http://localhost:3211
 // Uso: node scripts/teste-atendimento-ia.mjs
 import http from "node:http";
 import { createHmac } from "node:crypto";
@@ -309,6 +311,26 @@ preOf(c6).status = "authorized";
 await notify("subscription_preapproval", preOf(c6).id);
 st = await status(c6);
 ok(st.pagamentoConfirmado && st.passos[1].titulo === "Acesso liberado", "fora de ordem + só notificação de pagamento: acesso criado e etapa não regride");
+
+// Link de validação interna num segundo servidor com tudo configurado, mas IA_CONTRATACAO_ATIVA desligada
+const BV = process.env.IA_TESTE_URL_VALIDACAO || "http://localhost:3211";
+const TOKEN = "validacao-interna-teste-0123456789";
+const pv = await fetch(BV + "/atendimento-ia").then((r) => r.text()).catch(() => null);
+if (pv === null) ok(false, "servidor de validação em " + BV + " não respondeu");
+else {
+  const pt = await (await fetch(BV + "/atendimento-ia?acesso=" + TOKEN)).text();
+  ok(pv.includes("Quero ser avisado") && !pv.includes("Modo de validação"), "contratação desligada: página pública sem compra");
+  ok(pt.includes("Modo de validação interna") && pt.includes("Comprar agora"), "link com token: formulário de compra e aviso de validação");
+  const body = { empresa: "Spolaor validação", responsavel: "Teste", email: "validacao@exemplo.test", telefone: "11987654321", aceite: true };
+  const sem = await fetch(BV + "/api/atendimento-ia/contratar", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  const errado = await fetch(BV + "/api/atendimento-ia/contratar", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, acesso: "x".repeat(34) }) });
+  const com = await fetch(BV + "/api/atendimento-ia/contratar", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, acesso: TOKEN }) });
+  const comBody = await com.json().catch(() => ({}));
+  ok(sem.status === 503 && errado.status === 503 && com.status === 200 && !!comBody.checkoutUrl, "API: sem token ou token errado → 503; token certo → checkout");
+  const u = new URL(BV + comBody.acompanhar);
+  const vst = (await (await fetch(BV + "/api/atendimento-ia/status?c=" + u.searchParams.get("c") + "&t=" + u.searchParams.get("t"))).json()).status;
+  ok(vst?.interna === true, "compra de validação marcada como interna (não dispara Purchase)");
+}
 
 ok((await json("/api/atendimento-ia/admin", { method: "POST", body: JSON.stringify({ acao: "listar" }) })).status === 401 && (await json("/api/atendimento-ia/cron")).status === 401, "rotas internas exigem token");
 ok((await json("/api/atendimento-ia/configuracao", { method: "POST", body: "{}" })).status === 404, "sem briefing obrigatório");

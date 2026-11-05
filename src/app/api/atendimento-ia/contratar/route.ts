@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readiness } from "@/lib/ia/config";
+import { readiness, validationOk } from "@/lib/ia/config";
 import { startContratacao } from "@/lib/ia/process";
 
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
@@ -8,13 +8,14 @@ const EMAIL = /^[^\s@,]+@[^\s@,]+\.[^\s@,]{2,}$/;
 // Inicia a contratação: grava os dados, cria a assinatura no Mercado Pago com o preço definido
 // pelo servidor e devolve o link do checkout hospedado. Nada é liberado aqui.
 export async function POST(req: Request) {
-  if (!readiness().ready) return NextResponse.json({ ok: false, error: "contratacao_indisponivel" }, { status: 503 });
   let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ ok: false, error: "requisicao_invalida" }, { status: 400 });
   }
+  const validation = validationOk(body.acesso);
+  if (!readiness({ validation }).ready) return NextResponse.json({ ok: false, error: "contratacao_indisponivel" }, { status: 503 });
   if (body.website) return NextResponse.json({ ok: false, error: "requisicao_invalida" }, { status: 400 });
 
   const data = {
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
       ? Object.fromEntries(Object.entries(body.utm as Record<string, unknown>).slice(0, 10).map(([k, v]) => [k.slice(0, 40), String(v).slice(0, 200)]))
       : {};
   try {
-    const r = await startContratacao({ ...data, utm });
+    const r = await startContratacao({ ...data, utm: validation ? { ...utm, validacao: "interna" } : utm });
     return NextResponse.json({ ok: true, id: r.id, checkoutUrl: r.checkoutUrl, acompanhar: `/atendimento-ia/acompanhar?c=${r.id}&t=${r.token}` });
   } catch (e) {
     console.error("[atendimento-ia] falha ao iniciar a contratação:", (e as Error).message);

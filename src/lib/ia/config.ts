@@ -7,6 +7,8 @@
 // A contratação só fica ativa quando TODOS os itens de `readiness()` estão definidos e
 // IA_CONTRATACAO_ATIVA=true. Enquanto isso, a página mostra a oferta e um contato.
 
+import { timingSafeEqual } from "node:crypto";
+
 const env = (k: string) => (process.env[k] ?? "").trim();
 
 export type Frequency = { frequency: number; frequencyType: "months" | "days" };
@@ -70,6 +72,8 @@ export const iaConfig = {
   cronSecret: () => env("CRON_SECRET"),
   siteUrl: () => env("NEXT_PUBLIC_SITE_URL").replace(/\/+$/, ""),
   enabledFlag: () => env("IA_CONTRATACAO_ATIVA") === "true",
+  /** URL de notificação enviada na criação da assinatura (opcional; a validar no teste do Mercado Pago). */
+  mpNotificationUrl: () => env("IA_MP_NOTIFICATION_URL") || null,
   isProduction: () => env("VERCEL_ENV") === "production",
 };
 
@@ -77,7 +81,20 @@ export const iaConfig = {
  * O que falta para abrir a contratação. Também protege contra misturar ambientes: uma chave
  * zm_live_ fora de produção, ou zm_test_ em produção, bloqueia a contratação.
  */
-export function readiness(): { ready: boolean; missing: string[] } {
+/**
+ * Link de validação interna: com /atendimento-ia?acesso=<IA_TOKEN_VALIDACAO>, quem tem o token compra
+ * mesmo com IA_CONTRATACAO_ATIVA desligada (todo o resto precisa estar configurado). Serve para a
+ * compra controlada antes dos anúncios.
+ */
+export function validationOk(token: unknown) {
+  const want = env("IA_TOKEN_VALIDACAO");
+  if (want.length < 24 || typeof token !== "string") return false;
+  const a = Buffer.from(token);
+  const b = Buffer.from(want);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+export function readiness(opts: { validation?: boolean } = {}): { ready: boolean; missing: string[] } {
   const missing: string[] = [];
   if (!iaConfig.price()) missing.push("IA_PRECO_MENSAL");
   if (!iaConfig.zmPlanId()) missing.push("IA_ZM_PLAN_ID");
@@ -91,13 +108,13 @@ export function readiness(): { ready: boolean; missing: string[] } {
   if (process.env.IA_STORE === "memory" && process.env.VERCEL) missing.push("DATABASE_URL (memória só serve para teste local)");
   if (!iaConfig.siteUrl()) missing.push("NEXT_PUBLIC_SITE_URL");
   if (!iaConfig.paymentMethods().length) missing.push("IA_MEIOS_PAGAMENTO (meios validados no teste)");
-  if (!iaConfig.enabledFlag()) missing.push("IA_CONTRATACAO_ATIVA=true");
+  if (!iaConfig.enabledFlag() && !opts.validation) missing.push("IA_CONTRATACAO_ATIVA=true");
   return { ready: missing.length === 0, missing };
 }
 
 /** Dados que a página pode mostrar. Preço e limite só aparecem quando definidos. */
-export function publicOffer() {
-  return { enabled: readiness().ready, price: iaConfig.price(), replyLimit: iaConfig.replyLimit(), cycle: cycleLabel(), methods: iaConfig.paymentMethods() };
+export function publicOffer(opts: { validation?: boolean } = {}) {
+  return { enabled: readiness(opts).ready, validation: !!opts.validation && !iaConfig.enabledFlag(), price: iaConfig.price(), replyLimit: iaConfig.replyLimit(), cycle: cycleLabel(), methods: iaConfig.paymentMethods() };
 }
 
 /** Texto do ciclo para a página, o checkout e as condições: "a cada 30 dias" ou "por mês". */

@@ -40,7 +40,7 @@ function Field({ name, label, hint, error, ...rest }: { name: keyof Errors; labe
   );
 }
 
-export function HireForm({ price, replyLimit, cycle, methods }: { price: number; replyLimit: number; cycle: string; methods: Meio[] }) {
+export function HireForm({ price, replyLimit, cycle, methods, acesso = null }: { price: number; replyLimit: number; cycle: string; methods: Meio[]; acesso?: string | null }) {
   const [errors, setErrors] = useState<Errors>({});
   const [state, setState] = useState<"idle" | "sending" | "error">("idle");
   const brl = price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -56,6 +56,7 @@ export function HireForm({ price, replyLimit, cycle, methods }: { price: number;
       segmento: String(f.get("segmento") ?? ""),
       aceite: f.get("aceite") === "on",
       website: String(f.get("website") ?? ""),
+      ...(acesso ? { acesso } : {}),
       utm: context().utm,
     };
     setState("sending");

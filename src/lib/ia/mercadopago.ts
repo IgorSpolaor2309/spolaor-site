@@ -74,6 +74,7 @@ export const mp = {
         payer_email: p.payerEmail,
         back_url: p.backUrl,
         status: "pending",
+        ...(iaConfig.mpNotificationUrl() ? { notification_url: iaConfig.mpNotificationUrl() } : {}),
         auto_recurring: { frequency: f.frequency, frequency_type: f.frequencyType, transaction_amount: p.amount, currency_id: "BRL" },
       },
       `preapproval-${p.externalReference}`,

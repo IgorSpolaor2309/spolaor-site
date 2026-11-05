@@ -213,3 +213,56 @@ ZappMillion é `zm_live_`: nenhuma serve para teste sem gerar cobranças reais.
   (repetida); estorno e contestação (o que o ambiente de teste permitir).
 - Renovação e pagamento atrasado: o ambiente de teste do ZappMillion não renova; o comportamento na
   renovação real depende da resposta do suporte (momento da cobrança).
+
+## Banco e URL de notificações: o que foi preparado e o acesso que falta
+
+- **Banco.** O conector do Supabase desta máquina só alcança a organização **Digital SC** (cliente), com um
+  único projeto de produção; o banco da Spolaor não deve ficar lá. Para o teste nos fornecedores **não é
+  preciso banco**: o site roda localmente com `IA_STORE=memory` (estado mantido enquanto o servidor estiver
+  no ar). O Postgres só é necessário na Vercel. Acesso que falta, uma das opções:
+  1. Supabase: uma organização da Spolaor conectada a este conector (ou um token de acesso com escopo só para
+     ela) — com isso eu crio o projeto gratuito, aplico `db/atendimento-ia.sql` e confiro com os advisors;
+     a senha do banco para montar `DATABASE_URL` é definida na criação e precisa ir para a Vercel.
+  2. Neon pela Vercel Marketplace (plano gratuito): exige acesso ao projeto na Vercel.
+- **URL pública para as notificações do Mercado Pago.** A prévia da Vercel exige login (o Mercado Pago recebe
+  401). Um túnel temporário (`cloudflared`, já instalado) para o servidor local foi **bloqueado pela
+  política de permissões desta sessão**. Acesso que falta, uma das opções:
+  1. Permitir o túnel nesta sessão (regra de permissão para `cloudflared tunnel --url http://localhost:<porta>`),
+     durante os testes; a URL muda a cada execução e só funciona com a máquina ligada.
+  2. Vercel: o segredo de "Protection Bypass for Automation" do projeto (a URL fica
+     `https://<prévia>/api/atendimento-ia/webhook?x-vercel-protection-bypass=<segredo>`), mais as variáveis
+     de teste no ambiente *Preview* e o banco.
+- **Como rodar o teste local** (depois das credenciais): colocar as variáveis de teste em `.env.local` (o git
+  ignora), `npm run build`, `next start` com `IA_STORE=memory` e `NEXT_PUBLIC_SITE_URL` = URL pública; no
+  Mercado Pago, URL de notificação do modo teste = `<URL pública>/api/atendimento-ia/webhook`.
+  `IA_MP_NOTIFICATION_URL` (opcional) envia a mesma URL na criação da assinatura, caso a configuração do
+  painel não valha para assinaturas.
+
+## O que o ambiente de teste não valida
+
+| Item | Por que não dá no teste | Como validar |
+|---|---|---|
+| Convite por e-mail do ZappMillion | No modo de teste não há e-mail nem acesso real | Compra controlada em produção (abaixo) |
+| Login no painel, configuração do agente, "Testar agente" | Cliente simulado | Compra controlada |
+| Conexão do WhatsApp na Meta (`messagingAccount: CONNECTED`) | Exige número e conta Meta reais | Compra controlada, com um número da Spolaor |
+| Renovação do ZappMillion (momento da cobrança, `PAID` na lista de cobranças) | O modo de teste não renova | Compra controlada mantida até o dia 30 + resposta do suporte |
+| Recusa do cartão da agência na renovação | Só em produção | Não provocar; acompanhar avisos do painel "Cartão e API" |
+| Suspensão e reativação reais (bloqueio, nova cobrança R$ 97,00) | Simuladas no teste | Compra controlada (custa um ciclo extra) |
+| Limite de 2.000 respostas e cobrança das mensagens pela Meta | Uso real | Acompanhar no painel durante a compra controlada |
+| Pix na renovação, estorno e contestação reais | Teste do Mercado Pago limitado | Pix e estorno na compra controlada; contestação só se ocorrer |
+
+## Validação controlada antes dos anúncios (proposta)
+
+Com tudo configurado em produção e a contratação pública ainda desligada:
+1. Gerar `IA_TOKEN_VALIDACAO` (24+ caracteres) e abrir `/atendimento-ia?acesso=<token>`: só quem tem o link
+   vê o formulário; a compra é marcada como interna e **não** dispara a conversão `Purchase`.
+2. Uma compra real com e-mail e cartão da Spolaor: **R$ 297,00** no Mercado Pago e **R$ 97,00** no cartão da
+   agência. Conferir: notificações, criação do cliente, convite por e-mail, login, agente, conexão de um
+   número de teste da Spolaor, página de acompanhamento.
+3. Cancelamento pela página nos primeiros dias: conferir que o Mercado Pago não cobra mais e que o acesso fica
+   até o fim do período.
+4. No dia 30: observar quando o ZappMillion renova/cobra e o que a rotina faz no instante do fim do período
+   (custo possível: mais R$ 97,00 se o fornecedor cobrar antes da suspensão). Alternativa sem esse custo:
+   não cancelar e deixar renovar, para validar a renovação paga (R$ 297,00 + R$ 97,00 do 2º ciclo).
+5. Estorno do pagamento pelo Mercado Pago (se fizer parte do roteiro): o acesso deve ser suspenso na hora.
+Só depois abrir `IA_CONTRATACAO_ATIVA=true` e os anúncios.
