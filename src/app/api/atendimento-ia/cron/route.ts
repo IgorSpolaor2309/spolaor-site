@@ -10,7 +10,7 @@ import { comCanal, reconcile, runCron } from "@/lib/ia/process";
 // Veja docs/ATENDIMENTO-IA.md.
 export async function GET(req: Request) {
   if (!bearerOk(req, iaConfig.cronSecret())) return NextResponse.json({ ok: false }, { status: 401 });
-  // ?agendar=1: registra a rotina de 5 minutos no QStash (idempotente); não executa a rotina.
+  // ?agendar=1: registra a rotina de 15 minutos no QStash (idempotente); não executa a rotina.
   if (new URL(req.url).searchParams.get("agendar") === "1") {
     const agendador = await registerSchedule();
     console.info(`[atendimento-ia] agendador ${JSON.stringify(agendador)}`);
