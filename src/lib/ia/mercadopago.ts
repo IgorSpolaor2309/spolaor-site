@@ -43,7 +43,7 @@ export class MpError extends Error {
   }
 }
 
-async function call<T>(method: string, path: string, body?: unknown, idempotencyKey?: string): Promise<T> {
+async function call<T>(method: string, path: string, body?: unknown, idempotencyKey?: string, attempt = 0): Promise<T> {
   const res = await fetch(`${iaConfig.mpApi()}${path}`, {
     method,
     headers: {
@@ -55,6 +55,12 @@ async function call<T>(method: string, path: string, body?: unknown, idempotency
     signal: AbortSignal.timeout(12000),
     cache: "no-store",
   });
+  // Limite de requisições (429): até 2 novas tentativas, respeitando Retry-After (máx. 5 s cada).
+  if (res.status === 429 && attempt < 2) {
+    const wait = Math.min(5, Number(res.headers.get("retry-after")) || attempt + 1) * 1000;
+    await new Promise((r) => setTimeout(r, wait));
+    return call<T>(method, path, body, idempotencyKey, attempt + 1);
+  }
   if (!res.ok) {
     // Só o motivo do erro (message e códigos de cause), com e-mails e URLs mascarados: nunca o corpo inteiro.
     const err = (await res.json().catch(() => ({}))) as { message?: string; error?: string; cause?: { code?: string | number; description?: string }[] };

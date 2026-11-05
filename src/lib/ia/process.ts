@@ -120,7 +120,7 @@ export async function syncPreapproval(preapprovalId: string) {
     );
   }
   await store().update(c.id, patch);
-  return { ok: true, status: pre.status };
+  return { ok: true, status: pre.status, proximaCobranca: pre.next_payment_date ?? null };
 }
 
 async function applyCharge(c: Contratacao, ap: AuthorizedPayment) {
@@ -159,7 +159,11 @@ async function applyCharge(c: Contratacao, ap: AuthorizedPayment) {
 }
 
 export async function syncAuthorizedPayment(id: string) {
-  const ap = await mp.getAuthorizedPayment(id);
+  return applyAuthorizedPayment(await mp.getAuthorizedPayment(id));
+}
+
+/** Aplica uma cobrança já lida no Mercado Pago (notificação ou busca), conferindo vínculo, valor e moeda. */
+async function applyAuthorizedPayment(ap: AuthorizedPayment) {
   const c = await contratacaoDaAssinatura(ap.preapproval_id, ap.external_reference);
   if (!c) return { ignored: "cobrança sem contratação correspondente" };
   if (!sameAmount(ap.transaction_amount, c.precoMensal) || ap.currency_id !== "BRL") {
@@ -457,13 +461,14 @@ export async function reconcile() {
  */
 export async function reconcileWithMp(c: Contratacao) {
   if (!c.mpPreapprovalId) return { assinatura: null, cobrancas: [] as unknown[] };
-  const pre = await mp.getPreapproval(c.mpPreapprovalId);
-  await syncPreapproval(c.mpPreapprovalId);
+  // Uma leitura da assinatura e uma busca das cobranças; cada cobrança é aplicada com os dados da busca
+  // (sem nova consulta), para não esbarrar no limite de requisições do Mercado Pago.
+  const pre = (await syncPreapproval(c.mpPreapprovalId)) as { status?: string; proximaCobranca?: string | null };
   const aps = await mp.searchAuthorizedPayments(c.mpPreapprovalId);
   const cobrancas = [];
   for (const ap of aps) {
-    await syncAuthorizedPayment(String(ap.id));
+    await applyAuthorizedPayment(ap);
     cobrancas.push({ id: String(ap.id), status: ap.status, pagamento: ap.payment?.status ?? null, detalhe: ap.payment?.status_detail ?? null, valor: ap.transaction_amount, moeda: ap.currency_id, debito: ap.debit_date ?? null });
   }
-  return { assinatura: { status: pre.status, proximaCobranca: pre.next_payment_date ?? null }, cobrancas };
+  return { assinatura: { status: pre.status ?? null, proximaCobranca: pre.proximaCobranca ?? null }, cobrancas };
 }
