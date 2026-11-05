@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { iaConfig, readiness } from "@/lib/ia/config";
 import { bearerOk } from "@/lib/ia/access";
 import { dbHealth, store, type Contratacao } from "@/lib/ia/store";
-import { comCanal, provision, reactivateKeepingPaid, reconcile, reconcileWithMp, refreshFromZm, syncPreapproval } from "@/lib/ia/process";
+import { cancelSubscription, comCanal, provision, reactivateKeepingPaid, reconcile, reconcileWithMp, refreshFromZm, syncPreapproval } from "@/lib/ia/process";
 import { zm } from "@/lib/ia/zappmillion";
 import { mp } from "@/lib/ia/mercadopago";
 
@@ -17,6 +17,8 @@ import { mp } from "@/lib/ia/mercadopago";
 //                                                          URL gravada na assinatura e autoteste assinado de ponta a ponta
 //   { "acao": "tempos", "id": "..." }                   → aprovação no Mercado Pago → confirmação no banco → acesso no
 //                                                          ZappMillion, com os intervalos e o canal que confirmou
+//   { "acao": "cancelar-pendente", "id": "..." }        → cancela no Mercado Pago uma assinatura que nunca teve
+//                                                          cobrança aprovada (checkout abandonado); sem efeito em cobranças
 //   { "acao": "saude" }                                  → o que falta, banco, notificação e modo das chaves (sem valores)
 export async function POST(req: Request) {
   if (!bearerOk(req, iaConfig.adminToken())) return NextResponse.json({ ok: false }, { status: 401 });
@@ -46,6 +48,10 @@ export async function POST(req: Request) {
     case "verificar-mp":
       // Conferência direta no Mercado Pago (assinatura e cobranças), aplicando o estado real.
       return NextResponse.json({ ok: true, ...(await comCanal("admin", () => reconcileWithMp(c))), contratacao: await s.get(c.id).then((x) => ({ etapa: x?.etapa, zmStatus: x?.zmStatus, pagoAte: x?.pagoAte })) });
+    case "cancelar-pendente":
+      if (c.primeiroPagamentoEm || (await s.cobrancas(c.id)).length || !["aguardando_pagamento", "assinatura_autorizada"].includes(c.etapa))
+        return NextResponse.json({ ok: false, error: "nao_aplicavel" }, { status: 409 });
+      return NextResponse.json({ ok: true, result: await comCanal("admin", () => cancelSubscription(c)) });
     case "tempos":
       return NextResponse.json({ ok: true, ...(await timeline(c)) });
     case "reativar":
