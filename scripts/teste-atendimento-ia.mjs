@@ -36,6 +36,8 @@ http
       if (req.headers.authorization !== "Bearer teste-local") return send(401, {});
       const u = new URL(req.url, "http://x");
       let m;
+      if (/\/falha-/.test(u.pathname)) return send(503, { message: "indisponível" });
+      if (/\/limite-/.test(u.pathname)) return send(429, { message: "local_rate_limited" });
       if (req.method === "POST" && u.pathname === "/preapproval") {
         const body = JSON.parse(b);
         mp.creates.push(body);
@@ -348,6 +350,24 @@ else {
 
 ok((await json("/api/atendimento-ia/admin", { method: "POST", body: JSON.stringify({ acao: "listar" }) })).status === 401 && (await json("/api/atendimento-ia/cron")).status === 401, "rotas internas exigem token");
 ok((await json("/api/atendimento-ia/configuracao", { method: "POST", body: "{}" })).status === 404, "sem briefing obrigatório");
+
+// Notificação de recurso inexistente (simulação do painel, data.id 123456): 200 ignorada, sem efeito;
+// a mesma entrega repetida continua duplicada. Falhas transitórias (5xx, 429): 500 e nova tentativa aceita.
+{
+  const antes = JSON.stringify((await admin("listar")).body.contratacoes);
+  const criados = zm.creates.length;
+  const n1 = await notify("subscription_preapproval", "123456", { requestId: "simulacao-painel" });
+  const n2 = await notify("payment", "123456", { requestId: "simulacao-pagamento" });
+  const n3 = await notify("subscription_authorized_payment", "999999", { requestId: "simulacao-cobranca" });
+  ok(n1.status === 200 && n1.body.ignored && n2.status === 200 && n2.body.ignored && n3.status === 200 && n3.body.ignored, "recurso inexistente no Mercado Pago (simulação do painel) → 200 ignorada");
+  ok(JSON.stringify((await admin("listar")).body.contratacoes) === antes && zm.creates.length === criados, "recurso inexistente: nenhuma contratação alterada, nenhum acesso criado");
+  ok((await notify("subscription_preapproval", "123456", { requestId: "simulacao-painel" })).body.duplicate === true, "simulação repetida (mesmo request-id) → duplicada");
+  const f1 = await notify("subscription_preapproval", "falha-1", { requestId: "transitoria-1" });
+  const f2 = await notify("subscription_preapproval", "falha-1", { requestId: "transitoria-1" });
+  ok(f1.status === 500 && f2.status === 500, "Mercado Pago 5xx → 500 e a nova tentativa da mesma entrega é processada (não vira duplicada)");
+  const l1 = await notify("payment", "limite-1", { requestId: "limite-1" });
+  ok(l1.status === 500, "Mercado Pago 429 persistente (após as novas tentativas internas) → 500 para nova tentativa");
+}
 
 // Sem nenhuma notificação: só a página de acompanhamento aberta libera o acesso, com no máximo uma
 // leitura no Mercado Pago a cada 25 s mesmo com várias consultas seguidas.

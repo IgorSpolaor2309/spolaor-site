@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { InvalidWebhookSignatureError, WebhookSignatureValidator } from "mercadopago";
 import { iaConfig } from "@/lib/ia/config";
 import { store } from "@/lib/ia/store";
+import { MpError } from "@/lib/ia/mercadopago";
 import { comCanal, syncAuthorizedPayment, syncChargeback, syncPayment, syncPreapproval } from "@/lib/ia/process";
 
 // Notificações do Mercado Pago (Webhooks). Ordem: (1) valida a assinatura x-signature com o
@@ -52,6 +53,14 @@ export async function POST(req: Request) {
     });
     return NextResponse.json({ ok: true, result });
   } catch (e) {
+    // Recurso inexistente no Mercado Pago (ex.: notificação simulada pelo painel, data.id 123456): a
+    // primeira leitura de cada tipo é a do próprio recurso, então nada foi gravado. Fica registrado como
+    // ignorado (repetições da mesma entrega seguem como duplicadas) e responde 200 para não haver novas
+    // tentativas inúteis. Erros transitórios (429, timeout, 5xx) continuam abaixo: 500 e nova tentativa.
+    if (e instanceof MpError && e.status === 404) {
+      console.info(`[atendimento-ia] notificação ignorada: ${type} ${dataId} não existe no Mercado Pago (HTTP 404)`);
+      return NextResponse.json({ ok: true, ignored: "recurso inexistente no Mercado Pago" });
+    }
     // Libera a chave para que a nova tentativa do Mercado Pago seja processada.
     await s.unmarkEvent(key);
     console.error(`[atendimento-ia] falha ao processar ${type} ${dataId}:`, (e as Error).message);
