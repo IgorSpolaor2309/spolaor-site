@@ -1,4 +1,5 @@
-import type { Contratacao } from "./store";
+import { podeArrepender, prazoArrependimento } from "./reembolso";
+import type { Contratacao, Reembolso } from "./store";
 
 // Andamento mostrado ao comprador (autoatendimento). Só aparece como concluído o que foi
 // confirmado: pagamento aprovado e conferido pelo servidor; acesso criado no ZappMillion (convite
@@ -26,6 +27,8 @@ export type StatusPublico = {
   liberando: boolean;
   /** última conferência direta no Mercado Pago */
   conferidoEm: string | null;
+  /** direito de arrependimento: prazo disponível e situação do pedido */
+  arrependimento: { disponivel: boolean; prazo: string | null; protocolo: string | null; status: Reembolso["status"] | null; solicitadoEm: string | null; concluidoEm: string | null };
   passos: Passo[];
 };
 
@@ -34,7 +37,7 @@ function maskEmail(e: string) {
   return d ? `${u.slice(0, 2)}${"•".repeat(Math.max(1, u.length - 2))}@${d}` : "seu e-mail";
 }
 
-export function publicStatus(c: Contratacao): StatusPublico {
+export function publicStatus(c: Contratacao, reembolso: Reembolso | null = null): StatusPublico {
   const pago = !!c.primeiroPagamentoEm;
   const suspensa = c.etapa === "suspensa";
   // Acesso só conta como liberado com o cliente ACTIVE no ZappMillion (não basta a etapa local).
@@ -93,19 +96,39 @@ export function publicStatus(c: Contratacao): StatusPublico {
             : "Pagamento confirmado. Estamos liberando o seu acesso.";
 
   const cancelada = c.etapa === "cancelada";
+  // Arrependimento concluído: o contrato acabou, sem pendência para o comprador nem tarefas no painel.
+  const passos =
+    reembolso?.status === "concluido"
+      ? [
+          { id: "pagamento", titulo: "Pagamento estornado", status: "feito" as const, detalhe: "O Mercado Pago confirmou o estorno do valor integral." },
+          { id: "acesso", titulo: "Acesso encerrado", status: "feito" as const, detalhe: "A contratação foi encerrada pelo direito de arrependimento." },
+        ]
+      : [pagamento, acessoPasso, agente, wpp];
   return {
     empresa: c.empresa,
     valor: c.precoMensal,
-    resumo: cancelada && acesso && c.pagoAte ? `Assinatura cancelada. O acesso continua até ${new Date(c.pagoAte).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}.` : resumo,
+    resumo: reembolso
+      ? reembolso.status === "concluido"
+        ? "Reembolso concluído. O Mercado Pago confirmou o estorno e o acesso foi encerrado."
+        : "Pedido de arrependimento recebido. A assinatura não terá novas cobranças."
+      : cancelada && acesso && c.pagoAte ? `Assinatura cancelada. O acesso continua até ${new Date(c.pagoAte).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}.` : resumo,
     pagamentoConfirmado: pago,
     acessoLiberado: acesso,
     acessoAte: c.pagoAte,
     cancelada,
-    podeCancelar: !cancelada && !suspensa && !!c.mpPreapprovalId,
+    podeCancelar: !cancelada && !suspensa && !!c.mpPreapprovalId && !reembolso,
     interna: c.utm?.validacao === "interna",
     confirmando: !pago && (c.etapa === "aguardando_pagamento" || c.etapa === "assinatura_autorizada"),
     liberando: pago && !acesso && c.etapa === "pagamento_confirmado",
     conferidoEm: c.mpConferidoEm ?? null,
-    passos: [pagamento, acessoPasso, agente, wpp],
+    arrependimento: {
+      disponivel: !reembolso && pago && podeArrepender(c),
+      prazo: prazoArrependimento(c),
+      protocolo: reembolso?.id ?? null,
+      status: reembolso?.status ?? null,
+      solicitadoEm: reembolso?.solicitadoEm ?? null,
+      concluidoEm: reembolso?.confirmadoEm ?? null,
+    },
+    passos,
   };
 }

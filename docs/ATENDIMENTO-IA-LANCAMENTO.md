@@ -119,6 +119,54 @@ APP_USR de usuário de teste: o webhook tem de ser configurado na aplicação de
 | Medição e canal da confirmação (`pagamento_confirmado_em`, `acesso_liberado_em`, `confirmado_por`) | **Validado** no teste simulado (webhook, acompanhamento, rotina) |
 | Tela de confirmação: aviso "Conferindo…", última conferência, Verificar agora, mensagem após 3 min | **Validado** em 375 px (localhost, Mercado Pago simulado) |
 
+## Arrependimento e reembolso de 7 dias
+
+Base: CDC art. 49 (7 dias da assinatura ou do recebimento, contratação fora do estabelecimento; valores devolvidos
+de imediato) e Decreto 7.962/2013 art. 5 (informar os meios de forma clara, aceitar pela mesma ferramenta, confirmar
+o recebimento de imediato, comunicar a administradora do cartão). Empresas: o art. 2 alcança a pessoa jurídica
+destinatária final; o STJ aplica o finalismo mitigado caso a caso, exigindo vulnerabilidade, e fontes secundárias
+indicam que não o tem reconhecido em software para a atividade empresarial. Como a compra não distingue consumidor de
+empresa, **a oferta é a mesma para todos**, na primeira contratação. Vale validar com advogado.
+
+Regras implementadas:
+- Prazo: até 23:59 (Brasília) do 7º dia depois da liberação do acesso (ou do pagamento, se ainda não houver acesso).
+  Conta só a primeira contratação: renovação não reabre o prazo.
+- Pedido pelo link de acompanhamento (token + confirmação), um por contratação, com protocolo imediato.
+- O pedido cancela a assinatura. O acesso continua até o estorno ser confirmado e, com a confirmação, é encerrado com
+  `suspend`, que também interrompe a cobrança do fornecedor.
+- Estorno: ação `reembolsar` do admin ou painel do Mercado Pago. Com `IA_REEMBOLSO_AUTOMATICO=true`, roda no pedido.
+  Desligado até o primeiro estorno real ser validado. Chave de idempotência fixa por contratação.
+- Conclusão só com o pagamento `refunded` no Mercado Pago (releitura, webhook ou rotina de 5 minutos).
+- Recusa do provedor (ex.: sem saldo): fica `falhou`, a operação é avisada e a ação pode ser repetida.
+- Cancelamento comum: sem reembolso do período pago, e não retira o direito dentro do prazo.
+- O direito do comprador não depende do ZappMillion, e nenhum pedido é enviado a ele automaticamente.
+
+Não validado: **estorno real**. No sandbox, o Mercado Pago recusou com "Unauthorized use of live credentials" (conta de
+teste com credencial APP_USR), então o POST e o status `refunded` só foram exercitados no simulador. O restante do
+fluxo rodou em Postgres na prévia. O Mercado Pago exige saldo disponível e limita o reembolso a 180 dias da aprovação.
+
+### ZappMillion (R$ 97,00 por cliente)
+
+Termos de 16/10/2026, https://app.zappmillion.com/terms. Confirmado: a cláusula 7.7 dá 7 dias "a contar do primeiro
+pagamento", na "primeira contratação de um plano", com pedido por e-mail a contato@zappmillion.com e reembolso no mesmo
+meio; a 7.6 diz que fora disso o ciclo em curso não é reembolsado; a 7.2 cobra no cartão da agência a assinatura de
+cada cliente. Incerto: se a 7.7 vale para cada cliente provisionado pela API ou só para a primeira contratação da
+agência. Até haver resposta por escrito, considerar os R$ 97,00 como custo não recuperável.
+
+Mensagem para contato@zappmillion.com:
+
+> Assunto: Direito de arrependimento (cláusula 7.7) em clientes provisionados pela API de agência
+>
+> Olá. Somos uma agência e cadastramos clientes pela API de provisionamento, no plano PRO, cobrados no cartão da
+> agência conforme a cláusula 7.2. Quando um cliente final desiste nos primeiros 7 dias, precisamos saber:
+> 1. O prazo de 7 dias da cláusula 7.7 vale para a primeira assinatura de cada cliente provisionado, ou só para a
+> primeira contratação da própria agência?
+> 2. Se valer por cliente, o reembolso é integral (R$ 97,00), mesmo com o cliente já suspenso ou cancelado pela API?
+> 3. O prazo conta da cobrança no cartão da agência? O pedido deve ser feito por este e-mail, informando qual dado
+> (externalId, por exemplo)? Há limite de pedidos?
+> 4. Devemos suspender ou excluir o cliente antes de pedir, para não perder o direito?
+> Pedimos a confirmação por escrito. Obrigado.
+
 ## Checklist de publicação
 
 Bloqueios para abrir as vendas (contratação pública):
