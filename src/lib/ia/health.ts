@@ -31,7 +31,7 @@ export async function healthReport() {
         const u = await r.json().catch(() => ({}));
         return r.ok ? { contaDeTeste: Array.isArray(u.tags) && u.tags.includes("test_user"), tokenDeTeste: iaConfig.mpToken().startsWith("TEST-"), site: u.site_id } : { erro: `HTTP ${r.status}` };
       })
-      .catch((e: Error) => ({ erro: e.message }));
+      .catch((e: Error) => ({ erro: e.name }));
   }
   return {
     ambiente: process.env.VERCEL_ENV ?? "local",
@@ -57,7 +57,7 @@ export async function mpAccount() {
   const userIdNoToken = seg.length >= 5 && /^\d+$/.test(seg[seg.length - 1]) ? seg[seg.length - 1] : null;
   const get = (path: string) =>
     fetch(`${iaConfig.mpApi()}${path}`, { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(8000) }).then(async (r) => ({ http: r.status, body: (await r.json().catch(() => ({}))) as Record<string, unknown> }));
-  const me = await get("/users/me").catch((e: Error) => ({ http: 0, body: { erro: e.message } as Record<string, unknown> }));
+  const me = await get("/users/me").catch((e: Error) => ({ http: 0, body: { erro: e.name } as Record<string, unknown> }));
   const app = appId ? await get(`/applications/${appId}`).catch(() => null) : null;
   const tags = Array.isArray(me.body.tags) ? (me.body.tags as string[]) : [];
   return {

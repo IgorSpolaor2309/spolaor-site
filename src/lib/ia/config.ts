@@ -121,9 +121,11 @@ export function readiness(opts: { validation?: boolean } = {}): { ready: boolean
   if (!iaConfig.zmPlanId()) missing.push("IA_ZM_PLAN_ID");
   if (!iaConfig.replyLimit()) missing.push("IA_LIMITE_RESPOSTAS");
   if (!iaConfig.mpToken()) missing.push("MP_ACCESS_TOKEN");
+  else if (/\s/.test(iaConfig.mpToken())) missing.push("MP_ACCESS_TOKEN (valor inválido: espaço ou quebra de linha)");
   if (!iaConfig.mpWebhookSecret()) missing.push("MP_WEBHOOK_SECRET");
   const zm = iaConfig.zmKey();
   if (!zm) missing.push("ZM_API_KEY");
+  else if (/\s/.test(zm)) missing.push("ZM_API_KEY (valor inválido: espaço ou quebra de linha)");
   else if (iaConfig.isProduction() ? !zm.startsWith("zm_live_") : zm.startsWith("zm_live_")) missing.push("ZM_API_KEY (modo errado para este ambiente)");
   if (!process.env.DATABASE_URL && process.env.IA_STORE !== "memory") missing.push("DATABASE_URL");
   if (process.env.IA_STORE === "memory" && process.env.VERCEL) missing.push("DATABASE_URL (memória só serve para teste local)");

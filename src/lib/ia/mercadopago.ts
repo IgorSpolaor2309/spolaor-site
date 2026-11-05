@@ -54,6 +54,9 @@ async function call<T>(method: string, path: string, body?: unknown, idempotency
     body: body ? JSON.stringify(body) : undefined,
     signal: AbortSignal.timeout(12000),
     cache: "no-store",
+  }).catch((e: Error) => {
+    // Só o tipo do erro: a mensagem do fetch pode repetir cabeçalhos, inclusive o token.
+    throw new MpError(503, `Falha de rede ao chamar o Mercado Pago em ${method} ${path.split("?")[0]} (${e.name})`);
   });
   // Limite de requisições (429): até 2 novas tentativas, respeitando Retry-After (máx. 5 s cada).
   if (res.status === 429 && attempt < 2) {

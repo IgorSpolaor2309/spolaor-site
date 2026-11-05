@@ -41,7 +41,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
       cache: "no-store",
     });
   } catch (e) {
-    throw new ZmError(503, "NetworkError", `Falha de rede ao chamar o ZappMillion: ${(e as Error).message}`);
+    // Só o tipo do erro: a mensagem do fetch pode repetir cabeçalhos, inclusive a chave.
+    throw new ZmError(503, "NetworkError", `Falha de rede ao chamar o ZappMillion (${(e as Error).name})`);
   }
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => ({}));
