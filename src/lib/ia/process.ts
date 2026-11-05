@@ -1,27 +1,31 @@
-import { iaConfig } from "./config";
+import { iaConfig, cycleLabel } from "./config";
 import { mp, type AuthorizedPayment } from "./mercadopago";
 import { zm, ZmError, type ZmClient } from "./zappmillion";
 import { store, type Contratacao } from "./store";
 import { notifyOps } from "./notify";
 
 // Regras do fluxo. Cada função relê o recurso no Mercado Pago ou no ZappMillion e grava o estado:
-// a ordem e a repetição das notificações não importam (idempotente e resistente a eventos fora de
-// ordem). O retorno do navegador depois do checkout nunca confirma nada.
+// a ordem e a repetição das notificações não importam (idempotente, resistente a eventos fora de
+// ordem e simultâneos). O retorno do navegador depois do checkout nunca confirma nada.
+//
+// PERÍODO PAGO (pagoAte): o comprador recebe o ciclo inteiro a partir do momento em que o acesso
+// existe. Primeira cobrança: pagoAte = fim do período do ZappMillion criado para ele (início do
+// acesso + 30 dias). Cada renovação aprovada soma um ciclo ao pagoAte anterior (contínuo). Se o
+// acesso tinha sido suspenso por falta de pagamento, a reativação abre um novo período e pagoAte
+// passa a ser o fim dele. Nada é suspenso antes de pagoAte.
 
 const nowIso = () => new Date().toISOString();
 const isCancelled = (s?: string | null) => !!s && /^cancel+ed$/.test(s);
 const sameAmount = (a: number, b: number) => Math.abs(a - b) < 0.005;
 
-/** Fim do período coberto por uma cobrança aprovada, conforme o ciclo configurado. */
-export function periodEnd(startIso: string): string {
-  const d = new Date(startIso);
+/** Soma um ciclo do Mercado Pago a uma data. */
+export function addCycle(fromIso: string): string {
+  const d = new Date(fromIso);
   const f = iaConfig.frequency();
-  if (f.frequencyType === "days") d.setUTCDate(d.getUTCDate() + f.frequency);
+  if (f.frequencyType === "days") d.setTime(d.getTime() + f.frequency * 86_400_000);
   else d.setUTCMonth(d.getUTCMonth() + f.frequency);
   return d.toISOString();
 }
-
-const later = (a: string | null, b: string) => (!a || new Date(b) > new Date(a) ? b : a);
 
 /** Telefone em E.164 (+55…), como o ZappMillion espera. */
 export function e164(phone: string) {
@@ -32,14 +36,7 @@ export function e164(phone: string) {
 
 /* ──────────────────────────────── contratação ──────────────────────────────── */
 
-export async function startContratacao(input: {
-  empresa: string;
-  responsavel: string;
-  email: string;
-  telefone: string;
-  segmento?: string;
-  utm: Record<string, string>;
-}) {
+export async function startContratacao(input: { empresa: string; responsavel: string; email: string; telefone: string; segmento?: string; utm: Record<string, string> }) {
   const price = iaConfig.price()!;
   const planId = iaConfig.zmPlanId()!;
   const s = store();
@@ -69,8 +66,9 @@ export async function startContratacao(input: {
     motivoSuspensao: null,
   });
   const backUrl = `${iaConfig.siteUrl()}/atendimento-ia/acompanhar?c=${contratacao.id}&t=${token}`;
+  const valor = price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const pre = await mp.createPreapproval({
-    reason: "Spolaor · Atendimento com IA no WhatsApp",
+    reason: `Spolaor · Atendimento com IA no WhatsApp · ${valor} ${cycleLabel()}`,
     externalReference: contratacao.id,
     payerEmail: input.email,
     amount: price,
@@ -81,9 +79,15 @@ export async function startContratacao(input: {
   return { id: contratacao.id, token, checkoutUrl: pre.init_point };
 }
 
+/** Cancela a assinatura no Mercado Pago (sem novas cobranças). O acesso continua até pagoAte. */
+export async function cancelSubscription(c: Contratacao) {
+  if (!c.mpPreapprovalId) return { error: "sem assinatura" };
+  if (!isCancelled(c.mpStatus)) await mp.setPreapprovalStatus(c.mpPreapprovalId, "cancelled");
+  return syncPreapproval(c.mpPreapprovalId);
+}
+
 /* ───────────────────────────── notificações (Mercado Pago) ───────────────────────────── */
 
-/** Localiza a contratação de uma assinatura e confere o vínculo (external_reference). */
 async function contratacaoDaAssinatura(preapprovalId: string, externalReference?: string) {
   const s = store();
   const c = (await s.byPreapproval(preapprovalId)) ?? (externalReference ? await s.get(externalReference).catch(() => null) : null);
@@ -106,9 +110,11 @@ export async function syncPreapproval(preapprovalId: string) {
   const patch: Partial<Contratacao> = { mpStatus: pre.status };
   if (pre.status === "authorized" && c.etapa === "aguardando_pagamento") patch.etapa = "assinatura_autorizada";
   if (isCancelled(pre.status) && c.etapa !== "cancelada" && c.etapa !== "suspensa") {
-    // Mantém o acesso até o fim do período já pago; a guarda suspende no momento certo.
     patch.etapa = "cancelada";
-    await notifyOps(`Assinatura cancelada · ${c.empresa}`, `Contratação ${c.id}. Pago até: ${c.pagoAte ?? "nenhuma cobrança aprovada"}. O acesso continua até essa data e é suspenso antes da próxima renovação do fornecedor.`);
+    await notifyOps(
+      `Assinatura cancelada · ${c.empresa}`,
+      `Contratação ${c.id}. Acesso mantido até ${c.pagoAte ?? "— (nenhuma cobrança aprovada)"}; suspensão automática depois dessa data.`,
+    );
   }
   await store().update(c.id, patch);
   return { ok: true, status: pre.status };
@@ -117,7 +123,7 @@ export async function syncPreapproval(preapprovalId: string) {
 async function applyCharge(c: Contratacao, ap: AuthorizedPayment) {
   const s = store();
   const payStatus = ap.payment?.status ?? null;
-  const { previous } = await s.upsertCobranca({
+  await s.upsertCobranca({
     id: String(ap.id),
     contratacaoId: c.id,
     status: ap.status,
@@ -128,19 +134,21 @@ async function applyCharge(c: Contratacao, ap: AuthorizedPayment) {
     dataDebito: ap.debit_date ?? ap.date_created ?? null,
     atualizadoEm: nowIso(),
   });
-  if (payStatus === "approved" && previous?.pagamentoStatus !== "approved") {
-    // Cobrança efetivamente aprovada (não basta a assinatura estar autorizada).
-    const start = ap.debit_date ?? ap.date_created ?? nowIso();
-    const first = !c.primeiroPagamentoEm;
-    const updated = await s.update(c.id, {
-      pagoAte: later(c.pagoAte, periodEnd(start)),
-      primeiroPagamentoEm: c.primeiroPagamentoEm ?? start,
-      ...(first && (c.etapa === "aguardando_pagamento" || c.etapa === "assinatura_autorizada") ? { etapa: "pagamento_confirmado" as const } : {}),
-    });
-    if (first) return provision(updated);
-    // Renovação paga: atualiza a contratação existente. Se estava suspensa por falta de pagamento,
-    // reativa (o ZappMillion cobra um novo ciclo do fornecedor só nesse caso).
-    if (updated.etapa === "suspensa" && updated.motivoSuspensao === "inadimplencia") return reactivate(updated);
+  if (payStatus === "approved") {
+    // Cobrança efetivamente aprovada (assinatura autorizada não basta). Só quem marca primeiro aplica.
+    if (!(await s.claimApproval(String(ap.id)))) return { ok: true, already: true };
+    const cur = (await s.get(c.id))!;
+    if (!cur.primeiroPagamentoEm) {
+      const updated = await s.update(c.id, {
+        primeiroPagamentoEm: ap.debit_date ?? nowIso(),
+        ...(cur.etapa === "aguardando_pagamento" || cur.etapa === "assinatura_autorizada" || cur.etapa === "cancelada" ? { etapa: "pagamento_confirmado" as const } : {}),
+      });
+      return provision(updated);
+    }
+    // Renovação paga. Suspensa por falta de pagamento → reativa (novo período do fornecedor).
+    if (cur.etapa === "suspensa" && cur.motivoSuspensao === "inadimplencia") return reactivate(cur);
+    // Acesso ativo: soma um ciclo ao período pago, sem criar cliente nem cobrar o fornecedor de novo.
+    await s.update(c.id, { pagoAte: addCycle(cur.pagoAte ?? nowIso()) });
     return { ok: true, renewal: true };
   }
   if (payStatus && ["refunded", "charged_back", "in_mediation"].includes(payStatus)) return applyReversal(c, payStatus);
@@ -159,17 +167,31 @@ export async function syncAuthorizedPayment(id: string) {
   return applyCharge(c, ap);
 }
 
-/** Notificação de pagamento: só interessa se for de uma cobrança já registrada (estorno etc.). */
+/**
+ * Notificação de pagamento. Se a cobrança já é conhecida, atualiza o status (estorno, contestação).
+ * Se chegou só a notificação de pagamento (sem a da cobrança recorrente), localiza a assinatura
+ * pelo pagamento e relê as cobranças dela no Mercado Pago.
+ */
 export async function syncPayment(id: string) {
   const s = store();
-  const cob = await s.cobrancaByPagamento(id);
-  if (!cob) return { ignored: "pagamento sem cobrança registrada (aguardando a notificação da assinatura)" };
   const p = await mp.getPayment(id);
-  await s.upsertCobranca({ ...cob, pagamentoStatus: p.status, atualizadoEm: nowIso() });
-  const c = await s.get(cob.contratacaoId);
-  if (!c) return { ignored: "contratação removida" };
-  if (["refunded", "charged_back", "in_mediation"].includes(p.status)) return applyReversal(c, p.status);
-  return { ok: true, status: p.status };
+  const cob = await s.cobrancaByPagamento(id);
+  if (cob) {
+    await s.upsertCobranca({ ...cob, pagamentoStatus: p.status, atualizadoEm: nowIso() });
+    const c = await s.get(cob.contratacaoId);
+    if (!c) return { ignored: "contratação removida" };
+    if (p.status === "approved" && !cob.aprovadaEm) return syncAuthorizedPayment(cob.id);
+    if (["refunded", "charged_back", "in_mediation"].includes(p.status)) return applyReversal(c, p.status);
+    return { ok: true, status: p.status };
+  }
+  const preapprovalId = p.metadata?.preapproval_id ?? p.point_of_interaction?.transaction_data?.subscription_id ?? null;
+  const c = preapprovalId ? await s.byPreapproval(preapprovalId) : p.external_reference ? await s.get(p.external_reference).catch(() => null) : null;
+  if (!c?.mpPreapprovalId) return { ignored: "pagamento sem assinatura correspondente" };
+  const results = [];
+  for (const ap of await mp.searchAuthorizedPayments(c.mpPreapprovalId)) {
+    if (String(ap.payment?.id ?? "") === String(p.id) || ap.payment?.status === "approved") results.push(await syncAuthorizedPayment(String(ap.id)));
+  }
+  return { ok: true, viaBusca: results };
 }
 
 export async function syncChargeback(id: string) {
@@ -179,7 +201,6 @@ export async function syncChargeback(id: string) {
   return { ok: true, results };
 }
 
-/** Estorno ou contestação: suspende o acesso e avisa a operação. */
 async function applyReversal(c: Contratacao, status: string) {
   const motivo = status === "refunded" ? "estorno" : "contestacao";
   if (c.etapa === "suspensa" && c.motivoSuspensao === motivo) return { ok: true, already: true };
@@ -225,13 +246,13 @@ export async function provision(c: Contratacao) {
       user: { name: c.responsavel, email: c.email, phoneNumber: e164(c.telefone) },
       ...(pbs.length ? { playbookIds: pbs, playbookVariables: playbookVariables(c) } : {}),
     });
-    await s.update(c.id, { ...syncedFields(cli), etapa: "acesso_criado", ultimoErro: null, tentativas: 0, proximaTentativa: null });
+    // O período pago começa com o acesso: termina junto com o período do fornecedor.
+    const pagoAte = cli.subscription?.currentPeriodEnd ?? addCycle(nowIso());
+    await s.update(c.id, { ...syncedFields(cli), pagoAte, etapa: "acesso_criado", ultimoErro: null, tentativas: 0, proximaTentativa: null });
     return { ok: true, created: true };
   } catch (e) {
     const err = e instanceof ZmError ? e : new ZmError(500, "Unknown", (e as Error).message);
     const tentativas = c.tentativas + 1;
-    // 429/5xx: nova tentativa automática com espera crescente. Outros erros (cartão da agência
-    // recusado, e-mail em uso, plano inexistente) esperam correção e nova tentativa manual.
     const proxima = err.retryable && tentativas < 8 ? new Date(Date.now() + 5 * 60_000 * 2 ** (tentativas - 1)).toISOString() : null;
     await s.update(c.id, { etapa: "ativacao_pendente", ultimoErro: `${err.status} ${err.type}`, tentativas, proximaTentativa: proxima });
     await notifyOps(
@@ -264,7 +285,8 @@ async function reactivate(c: Contratacao) {
   const s = store();
   try {
     const cli = await zm.reactivate(c.externalId, c.zmPlanId);
-    await s.update(c.id, { ...syncedFields(cli), etapa: "acesso_criado", motivoSuspensao: null, ultimoErro: null });
+    // Reativar cobra um novo ciclo do fornecedor e abre um novo período: o pago acompanha.
+    await s.update(c.id, { ...syncedFields(cli), pagoAte: cli.subscription?.currentPeriodEnd ?? addCycle(nowIso()), etapa: "acesso_criado", motivoSuspensao: null, ultimoErro: null });
     return { ok: true, reactivated: true };
   } catch (e) {
     await s.update(c.id, { ultimoErro: `reativação falhou: ${(e as Error).message}` });
@@ -276,37 +298,51 @@ async function reactivate(c: Contratacao) {
 /* ─────────────────────────────── rotina periódica ─────────────────────────────── */
 
 /**
- * Executada pelo cron. (1) Repete ativações pendentes cuja espera venceu. (2) Atualiza o estado
- * dos clientes no ZappMillion (período, WhatsApp). (3) Guarda de renovação: o ZappMillion cobra o
- * cartão da agência a cada 30 dias; se o cliente não pagou o período seguinte, suspende antes da
- * renovação, sem cortar tempo já pago além da antecedência configurada (IA_GUARDA_HORAS).
+ * Executada pelo agendador. (1) Repete ativações pendentes cuja espera venceu. (2) Relê os clientes
+ * no ZappMillion. (3) Fim do período pago — NUNCA antes de pagoAte:
+ *   - assinatura cancelada → suspende (sem novas cobranças do fornecedor);
+ *   - renovação não paga e o fornecedor ainda não renovou → suspende (evita a cobrança do fornecedor);
+ *   - renovação não paga e o fornecedor JÁ renovou (ciclo do fornecedor já pago) → mantém o acesso
+ *     durante a tolerância (IA_CARENCIA_DIAS) enquanto o Mercado Pago tenta de novo; depois suspende.
+ * Quando o fornecedor renovou antes da suspensão, a operação é avisada do custo (um ciclo do plano).
  */
 export async function runCron(now = new Date()) {
   const s = store();
   const report: string[] = [];
+  const t = now.getTime();
   for (const c of await s.list({ etapas: ["ativacao_pendente", "pagamento_confirmado"] })) {
-    if (c.proximaTentativa && new Date(c.proximaTentativa) <= now) {
-      const r = await provision(c);
-      report.push(`${c.id}: nova tentativa → ${JSON.stringify(r)}`);
-    }
+    if (c.proximaTentativa && new Date(c.proximaTentativa).getTime() <= t) report.push(`${c.id}: nova tentativa → ${JSON.stringify(await provision(c))}`);
   }
   for (const c of await s.list({ etapas: ["acesso_criado", "cancelada"] })) {
     if (c.zmStatus !== "ACTIVE") continue;
+    // Limite do ZappMillion: 60 requisições/min. Com o agendador a cada minuto, só consulta quem está
+    // a 10 min (ou além) do fim do período pago, e os demais a cada 6 h (WhatsApp e período).
+    const paidAt = c.pagoAte ? new Date(c.pagoAte).getTime() : 0;
+    if (paidAt && t < paidAt - 10 * 60_000 && Date.now() - new Date(c.atualizadoEm).getTime() < 6 * 3_600_000) continue;
     let cur = c;
     try {
       cur = await refreshFromZm(c);
     } catch (e) {
       report.push(`${c.id}: não foi possível consultar o ZappMillion (${(e as Error).message})`);
+      continue;
     }
-    if (cur.zmStatus !== "ACTIVE" || !cur.zmPeriodoFim) continue;
-    const zmEnd = new Date(cur.zmPeriodoFim).getTime();
-    const paid = cur.pagoAte ? new Date(cur.pagoAte).getTime() : 0;
-    if (paid >= zmEnd) continue; // o cliente já pagou além da próxima renovação do fornecedor
-    const suspendAt = Math.min(paid, zmEnd - iaConfig.guardHours() * 3_600_000);
-    if (now.getTime() >= suspendAt) {
-      const motivo = cur.etapa === "cancelada" ? "cancelamento" : "inadimplencia";
-      await suspend(cur, motivo);
-      report.push(`${c.id}: suspensa (${motivo}) antes da renovação de ${cur.zmPeriodoFim}`);
+    if (cur.zmStatus !== "ACTIVE" || !cur.pagoAte) continue;
+    const paid = new Date(cur.pagoAte).getTime();
+    if (t < paid) continue; // período pago em curso: nunca suspende antes do fim
+    const zmEnd = cur.zmPeriodoFim ? new Date(cur.zmPeriodoFim).getTime() : 0;
+    const fornecedorRenovou = zmEnd > paid; // o ZappMillion já abriu (e cobrou) um ciclo além do período pago
+    let motivo: string | null = null;
+    if (cur.etapa === "cancelada") motivo = "cancelamento";
+    else if (!fornecedorRenovou) motivo = "inadimplencia";
+    else if (t >= paid + iaConfig.graceDays() * 86_400_000) motivo = "inadimplencia";
+    if (!motivo) {
+      report.push(`${c.id}: renovação não paga, fornecedor já renovou; em tolerância até ${new Date(paid + iaConfig.graceDays() * 86_400_000).toISOString()}`);
+      continue;
+    }
+    await suspend(cur, motivo);
+    report.push(`${c.id}: suspensa (${motivo}) no fim do período pago ${cur.pagoAte}${fornecedorRenovou ? " — fornecedor já tinha renovado" : ""}`);
+    if (fornecedorRenovou) {
+      await notifyOps(`Ciclo do fornecedor sem recebimento · ${cur.empresa}`, `Contratação ${cur.id}: o ZappMillion renovou em ${cur.zmPeriodoFim} antes da suspensão (${motivo}). Custo de um ciclo do plano ${cur.zmPlanId}.`);
     }
   }
   return report;

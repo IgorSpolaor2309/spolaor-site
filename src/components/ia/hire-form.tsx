@@ -39,7 +39,7 @@ function Field({ name, label, hint, error, ...rest }: { name: keyof Errors; labe
   );
 }
 
-export function HireForm({ price, replyLimit }: { price: number; replyLimit: number }) {
+export function HireForm({ price, replyLimit, cycle }: { price: number; replyLimit: number; cycle: string }) {
   const [errors, setErrors] = useState<Errors>({});
   const [state, setState] = useState<"idle" | "sending" | "error">("idle");
   const brl = price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -84,9 +84,9 @@ export function HireForm({ price, replyLimit }: { price: number; replyLimit: num
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-line pb-4">
         <p className="text-[1.6rem] font-semibold tracking-[-0.03em]">
           {brl}
-          <span className="text-base font-normal text-muted"> por mês</span>
+          <span className="text-base font-normal text-muted"> {cycle}</span>
         </p>
-        <p className="text-sm text-muted">Até {replyLimit.toLocaleString("pt-BR")} respostas do agente por mês</p>
+        <p className="text-sm text-muted">Até {replyLimit.toLocaleString("pt-BR")} respostas do agente por ciclo</p>
       </div>
       <Field name="empresa" label="Nome da empresa" autoComplete="organization" required error={errors.empresa} />
       <Field name="responsavel" label="Seu nome" autoComplete="name" required error={errors.responsavel} />
@@ -112,8 +112,8 @@ export function HireForm({ price, replyLimit }: { price: number; replyLimit: num
         <label className="flex gap-3 text-[0.92rem] leading-snug">
           <input type="checkbox" name="aceite" className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-royal)]" aria-invalid={errors.aceite ? true : undefined} />
           <span>
-            Entendi que a assinatura é mensal e renovada automaticamente no Mercado Pago, que posso cancelar quando quiser e manter o acesso até o
-            fim do período já pago, e que as mensagens cobradas pela Meta no WhatsApp são pagas à parte.
+            Entendi que a assinatura custa {brl} {cycle}, renovada automaticamente no Mercado Pago; que posso cancelar quando quiser, sem novas
+            cobranças e mantendo o acesso até o fim do período já pago; e que as mensagens cobradas pela Meta no WhatsApp são pagas à parte.
           </span>
         </label>
         {errors.aceite && <p className="mt-1.5 text-sm text-ember">{errors.aceite}</p>}

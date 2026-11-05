@@ -21,6 +21,10 @@ export function FollowUp({ id, token }: { id: string; token: string }) {
   const [status, setStatus] = useState<StatusPublico | null>(null);
   const [painelUrl, setPainelUrl] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [cancelState, setCancelState] = useState<"idle" | "sending" | "error">("idle");
+
+
 
   const load = useCallback(async () => {
     try {
@@ -35,6 +39,18 @@ export function FollowUp({ id, token }: { id: string; token: string }) {
     }
   }, [id, token]);
 
+  async function cancel() {
+    setCancelState("sending");
+    try {
+      const res = await fetch("/api/atendimento-ia/cancelar", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ c: id, t: token, confirmar: true }) });
+      if (!res.ok) throw new Error(String(res.status));
+      setConfirming(false);
+      setCancelState("idle");
+      await load();
+    } catch {
+      setCancelState("error");
+    }
+  }
   useEffect(() => {
     load();
     const t = setInterval(load, 6000);
@@ -93,6 +109,34 @@ export function FollowUp({ id, token }: { id: string; token: string }) {
             Abrir o painel
           </a>
           <p className="text-center text-sm text-dim">Entre com o e-mail da contratação e a senha criada pelo convite.</p>
+        </div>
+      )}
+
+      {status.podeCancelar && (
+        <div className="border-t border-line pt-6">
+          {!confirming ? (
+            <button type="button" onClick={() => setConfirming(true)} className="text-[0.95rem] font-medium text-fg underline decoration-line-strong underline-offset-4">
+              Cancelar assinatura
+            </button>
+          ) : (
+            <div className="grid gap-3 rounded-[14px] border border-line-strong bg-ink-900 p-5">
+              <p className="leading-relaxed">
+                Ao cancelar, não haverá novas cobranças.
+                {status.acessoAte
+                  ? ` O acesso continua até ${new Date(status.acessoAte).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}, fim do período já pago.`
+                  : ""}
+              </p>
+              {cancelState === "error" && <p role="alert" className="text-sm text-ember">Não foi possível cancelar agora. Tente de novo ou cancele pelo Mercado Pago.</p>}
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button type="button" disabled={cancelState === "sending"} onClick={cancel} className="min-h-12 rounded-[10px] border border-ember px-5 font-semibold text-ember disabled:opacity-60">
+                  {cancelState === "sending" ? "Cancelando…" : "Confirmar cancelamento"}
+                </button>
+                <button type="button" onClick={() => setConfirming(false)} className="min-h-12 rounded-[10px] px-5 font-medium text-muted">
+                  Manter assinatura
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -25,7 +25,7 @@ export const dynamic = "force-dynamic";
 // resultados, garantias, contador ou desconto: não há oferta com prazo definida.
 
 const steps = [
-  { title: "Assine", text: "Pagamento mensal pelo Mercado Pago. Assim que a primeira cobrança é aprovada, o acesso é liberado automaticamente." },
+  { title: "Assine", text: "Pagamento recorrente pelo Mercado Pago. Assim que a primeira cobrança é aprovada, o acesso é liberado automaticamente." },
   { title: "Configure o agente", text: "Pelo convite no seu e-mail, entre no painel e informe serviços, horários e respostas. Dá para testar o agente antes de ligar." },
   { title: "Conecte o seu WhatsApp", text: "No painel, entre com a sua conta da Meta e autorize o número da empresa. A autorização é sempre feita pelo dono do número." },
 ];
@@ -45,7 +45,7 @@ const faq = [
   },
   {
     q: "Existe limite de respostas?",
-    a: "Sim. O plano tem um número de respostas do agente por mês, que zera a cada renovação. Ao atingir o limite, o agente para de responder e as conversas seguem para atendimento humano.",
+    a: "Sim. O plano tem um número de respostas do agente por ciclo de 30 dias, que zera a cada renovação. Ao atingir o limite, o agente para de responder e as conversas seguem para atendimento humano.",
   },
   {
     q: "As mensagens do WhatsApp estão incluídas?",
@@ -53,11 +53,11 @@ const faq = [
   },
   {
     q: "Como funciona o cancelamento?",
-    a: "Você cancela a assinatura quando quiser. O acesso continua até o fim do período já pago e não há nova cobrança depois disso.",
+    a: "Você cancela quando quiser, pelo link de acompanhamento da contratação ou pelo Mercado Pago. Não há novas cobranças, e o acesso continua até o fim do período já pago.",
   },
   {
     q: "E se um pagamento não for aprovado?",
-    a: "O Mercado Pago tenta a cobrança de novo. Enquanto ela não for aprovada, o acesso pode ser suspenso ao fim do período pago e volta quando o pagamento for confirmado.",
+    a: "O Mercado Pago tenta a cobrança de novo. O acesso nunca é retirado antes do fim do período pago; depois dele, pode ser suspenso até a cobrança ser aprovada e volta quando o pagamento for confirmado.",
   },
 ];
 
@@ -90,7 +90,7 @@ export default function AtendimentoIaPage() {
               </ButtonLink>
               {brl && offer.enabled && (
                 <p className="text-center text-[0.95rem] text-muted sm:text-left">
-                  <strong className="font-semibold text-fg">{brl}</strong> por mês · cancele quando quiser
+                  <strong className="font-semibold text-fg">{brl}</strong> {offer.cycle} · cancele quando quiser
                 </p>
               )}
             </div>
@@ -129,15 +129,16 @@ export default function AtendimentoIaPage() {
             {brl && offer.enabled && (
               <p className="mt-5 text-[2.6rem] font-semibold leading-none tracking-[-0.04em]">
                 {brl}
-                <span className="ml-1 text-base font-normal tracking-normal text-white/70">/mês</span>
+                <span className="ml-1 text-base font-normal tracking-normal text-white/70">{offer.cycle}</span>
               </p>
             )}
             <ul className="mt-6 grid gap-2.5 leading-snug text-white/90">
               {[
-                offer.replyLimit ? `Até ${offer.replyLimit.toLocaleString("pt-BR")} respostas do agente por mês` : "Limite mensal de respostas do agente definido no plano",
+                offer.replyLimit ? `Até ${offer.replyLimit.toLocaleString("pt-BR")} respostas do agente por ciclo` : "Limite de respostas do agente por ciclo definido no plano",
                 "Acesso liberado automaticamente depois do pagamento confirmado",
                 "Configuração do agente e conexão do WhatsApp feitas por você, no painel",
-                "Renovação mensal automática no Mercado Pago; cancele quando quiser",
+                `Renovação automática ${offer.cycle} no Mercado Pago; cancele quando quiser, sem novas cobranças`,
+                "Ao cancelar, o acesso continua até o fim do período já pago",
                 "Mensagens cobradas pela Meta no WhatsApp pagas à parte",
               ].map((t) => (
                 <li key={t} className="flex gap-3">
@@ -150,7 +151,7 @@ export default function AtendimentoIaPage() {
           </div>
           <div className="text-fg lg:col-span-6 lg:col-start-7">
             {offer.enabled && offer.price && offer.replyLimit ? (
-              <HireForm price={offer.price} replyLimit={offer.replyLimit} />
+              <HireForm price={offer.price} replyLimit={offer.replyLimit} cycle={offer.cycle} />
             ) : (
               <Suspense fallback={<div className="h-[640px] rounded-[16px] bg-ink-900" />}>
                 <ContactForm

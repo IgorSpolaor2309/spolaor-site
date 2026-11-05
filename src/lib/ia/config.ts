@@ -39,14 +39,25 @@ export const iaConfig = {
       return {};
     }
   },
-  /** Ciclo do Mercado Pago. Padrão mensal; "30:days" alinha com o ciclo de 30 dias do ZappMillion. */
+  /**
+   * Ciclo do Mercado Pago. Padrão "30:days", alinhado com os 30 dias do ZappMillion (a validar no
+   * ambiente de teste do Mercado Pago). Alternativa: "1:months".
+   */
   frequency: (): Frequency => {
-    const [n, t] = (env("IA_MP_FREQUENCIA") || "1:months").split(":");
+    const [n, t] = (env("IA_MP_FREQUENCIA") || "30:days").split(":");
     const frequency = Number(n);
     return { frequency: Number.isInteger(frequency) && frequency > 0 ? frequency : 1, frequencyType: t === "days" ? "days" : "months" };
   },
-  /** Horas de antecedência da renovação do ZappMillion em que a guarda age (padrão 36). */
-  guardHours: () => Number(env("IA_GUARDA_HORAS")) || 36,
+  /**
+   * Dias de tolerância para uma renovação não paga quando o ZappMillion JÁ renovou (o ciclo do
+   * fornecedor já foi pago): o acesso continua enquanto o Mercado Pago tenta a cobrança de novo.
+   * Padrão 10. Nunca é usado para encurtar um período pago.
+   */
+  graceDays: () => {
+    const raw = env("IA_CARENCIA_DIAS");
+    const v = Number(raw);
+    return raw !== "" && Number.isFinite(v) && v >= 0 ? v : 10;
+  },
   mpToken: () => env("MP_ACCESS_TOKEN"),
   mpWebhookSecret: () => env("MP_WEBHOOK_SECRET"),
   mpApi: () => env("MP_API_URL") || "https://api.mercadopago.com",
@@ -74,7 +85,7 @@ export function readiness(): { ready: boolean; missing: string[] } {
   if (!zm) missing.push("ZM_API_KEY");
   else if (iaConfig.isProduction() ? !zm.startsWith("zm_live_") : zm.startsWith("zm_live_")) missing.push("ZM_API_KEY (modo errado para este ambiente)");
   if (!process.env.DATABASE_URL && process.env.IA_STORE !== "memory") missing.push("DATABASE_URL");
-  if (process.env.IA_STORE === "memory" && iaConfig.isProduction()) missing.push("DATABASE_URL (memória não é permitida em produção)");
+  if (process.env.IA_STORE === "memory" && process.env.VERCEL) missing.push("DATABASE_URL (memória só serve para teste local)");
   if (!iaConfig.siteUrl()) missing.push("NEXT_PUBLIC_SITE_URL");
   if (!iaConfig.enabledFlag()) missing.push("IA_CONTRATACAO_ATIVA=true");
   return { ready: missing.length === 0, missing };
@@ -82,5 +93,12 @@ export function readiness(): { ready: boolean; missing: string[] } {
 
 /** Dados que a página pode mostrar. Preço e limite só aparecem quando definidos. */
 export function publicOffer() {
-  return { enabled: readiness().ready, price: iaConfig.price(), replyLimit: iaConfig.replyLimit() };
+  return { enabled: readiness().ready, price: iaConfig.price(), replyLimit: iaConfig.replyLimit(), cycle: cycleLabel() };
+}
+
+/** Texto do ciclo para a página, o checkout e as condições: "a cada 30 dias" ou "por mês". */
+export function cycleLabel() {
+  const f = iaConfig.frequency();
+  if (f.frequencyType === "days") return f.frequency === 1 ? "por dia" : `a cada ${f.frequency} dias`;
+  return f.frequency === 1 ? "por mês" : `a cada ${f.frequency} meses`;
 }

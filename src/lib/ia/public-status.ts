@@ -14,6 +14,10 @@ export type StatusPublico = {
   resumo: string;
   pagamentoConfirmado: boolean;
   acessoLiberado: boolean;
+  /** fim do período pago (o acesso não é retirado antes) */
+  acessoAte: string | null;
+  cancelada: boolean;
+  podeCancelar: boolean;
   passos: Passo[];
 };
 
@@ -76,5 +80,16 @@ export function publicStatus(c: Contratacao): StatusPublico {
             ? "Pagamento confirmado. A liberação do acesso está pendente."
             : "Pagamento confirmado. Estamos liberando o seu acesso.";
 
-  return { empresa: c.empresa, valor: c.precoMensal, resumo, pagamentoConfirmado: pago, acessoLiberado: acesso, passos: [pagamento, acessoPasso, agente, wpp] };
+  const cancelada = c.etapa === "cancelada";
+  return {
+    empresa: c.empresa,
+    valor: c.precoMensal,
+    resumo: cancelada && acesso && c.pagoAte ? `Assinatura cancelada. O acesso continua até ${new Date(c.pagoAte).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}.` : resumo,
+    pagamentoConfirmado: pago,
+    acessoLiberado: acesso,
+    acessoAte: c.pagoAte,
+    cancelada,
+    podeCancelar: !cancelada && !suspensa && !!c.mpPreapprovalId,
+    passos: [pagamento, acessoPasso, agente, wpp],
+  };
 }

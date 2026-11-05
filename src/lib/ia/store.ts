@@ -56,6 +56,8 @@ export type Cobranca = {
   valor: number;
   moeda: string;
   dataDebito: string | null;
+  /** quando a aprovação foi aplicada (período estendido); null = ainda não */
+  aprovadaEm?: string | null;
   atualizadoEm: string;
 };
 
@@ -66,6 +68,11 @@ export interface Store {
   update(id: string, patch: Partial<Contratacao>): Promise<Contratacao>;
   list(filter: { etapas?: Etapa[] }): Promise<Contratacao[]>;
   upsertCobranca(c: Cobranca): Promise<{ previous: Cobranca | null }>;
+  /**
+   * Marca a cobrança como aprovada UMA vez. Devolve true só para quem marcou primeiro: notificações
+   * simultâneas da mesma cobrança não estendem o período nem criam o acesso duas vezes.
+   */
+  claimApproval(cobrancaId: string): Promise<boolean>;
   cobrancaByPagamento(pagamentoId: string): Promise<Cobranca | null>;
   cobrancas(contratacaoId: string): Promise<Cobranca[]>;
   /** Registra o evento; false se já tinha sido processado (notificação repetida). */
@@ -113,8 +120,14 @@ const memoryStore: Store = {
   },
   async upsertCobranca(c) {
     const previous = mem().cob.get(c.id) ?? null;
-    mem().cob.set(c.id, c);
+    mem().cob.set(c.id, { ...c, aprovadaEm: previous?.aprovadaEm ?? null });
     return { previous };
+  },
+  async claimApproval(id) {
+    const cur = mem().cob.get(id);
+    if (!cur || cur.aprovadaEm) return false;
+    cur.aprovadaEm = now();
+    return true;
   },
   async cobrancaByPagamento(pid) {
     return [...mem().cob.values()].find((c) => c.pagamentoId === pid) ?? null;
@@ -187,6 +200,11 @@ const pgStore: Store = {
     await db`insert into ia_cobrancas ${db(row as Record<string, never>)}
       on conflict (id) do update set ${db(row as Record<string, never>, Object.keys(row).filter((k) => k !== "id") as never[])}`;
     return { previous: prev ? fromRow<Cobranca>(prev) : null };
+  },
+  async claimApproval(id) {
+    const db = await sql();
+    const res = await db`update ia_cobrancas set aprovada_em = now() where id = ${id} and aprovada_em is null returning id`;
+    return res.length > 0;
   },
   async cobrancaByPagamento(pid) {
     const db = await sql();

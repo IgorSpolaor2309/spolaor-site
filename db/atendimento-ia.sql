@@ -43,6 +43,7 @@ create table if not exists ia_cobrancas (
   valor            numeric(10,2) not null,
   moeda            text not null,
   data_debito      timestamptz,
+  aprovada_em      timestamptz,                          -- aprovação aplicada uma única vez
   atualizado_em    timestamptz not null
 );
 

@@ -26,7 +26,16 @@ export type AuthorizedPayment = {
   payment?: { id: number | string; status: string; status_detail?: string } | null;
 };
 
-export type Payment = { id: number | string; status: string; transaction_amount: number; currency_id: string; date_approved?: string | null };
+export type Payment = {
+  id: number | string;
+  status: string;
+  transaction_amount: number;
+  currency_id: string;
+  date_approved?: string | null;
+  external_reference?: string | null;
+  metadata?: { preapproval_id?: string } | null;
+  point_of_interaction?: { transaction_data?: { subscription_id?: string } } | null;
+};
 
 export class MpError extends Error {
   constructor(public status: number, message: string) {
@@ -75,5 +84,8 @@ export const mp = {
     call<Preapproval>("PUT", `/preapproval/${encodeURIComponent(id)}`, { status }),
   getAuthorizedPayment: (id: string) => call<AuthorizedPayment>("GET", `/authorized_payments/${encodeURIComponent(id)}`),
   getPayment: (id: string) => call<Payment>("GET", `/v1/payments/${encodeURIComponent(id)}`),
+  /** Cobranças de uma assinatura (GET /authorized_payments/search). Parâmetros a confirmar no teste. */
+  searchAuthorizedPayments: (preapprovalId: string) =>
+    call<{ results?: AuthorizedPayment[] }>("GET", `/authorized_payments/search?preapproval_id=${encodeURIComponent(preapprovalId)}`).then((r) => r.results ?? []),
   getChargeback: (id: string) => call<{ id: string; payments?: (number | string)[] }>("GET", `/v1/chargebacks/${encodeURIComponent(id)}`),
 };

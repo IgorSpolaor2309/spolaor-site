@@ -8,6 +8,8 @@ import { runCron } from "@/lib/ia/process";
 export async function GET(req: Request) {
   if (!bearerOk(req, iaConfig.cronSecret())) return NextResponse.json({ ok: false }, { status: 401 });
   if (!process.env.DATABASE_URL && process.env.IA_STORE !== "memory") return NextResponse.json({ ok: true, skipped: "sem banco" });
-  const report = await runCron();
+  // Relógio simulado só nos testes locais (IA_STORE=memory), para conferir limites entre datas.
+  const fake = process.env.IA_STORE === "memory" ? req.headers.get("x-ia-agora") : null;
+  const report = await runCron(fake ? new Date(fake) : new Date());
   return NextResponse.json({ ok: true, report });
 }

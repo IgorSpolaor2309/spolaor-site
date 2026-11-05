@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { iaConfig } from "@/lib/ia/config";
 import { bearerOk } from "@/lib/ia/access";
 import { store } from "@/lib/ia/store";
-import { provision, syncPreapproval } from "@/lib/ia/process";
+import { provision, refreshFromZm, syncPreapproval } from "@/lib/ia/process";
 import { zm } from "@/lib/ia/zappmillion";
 
 // Ações da operação (Authorization: Bearer IA_ADMIN_TOKEN):
@@ -10,6 +10,7 @@ import { zm } from "@/lib/ia/zappmillion";
 //   { "acao": "retentar", "id": "<contratação>" }        → nova tentativa segura de criar o acesso
 //   { "acao": "sincronizar", "id": "..." }               → relê a assinatura no Mercado Pago
 //   { "acao": "reenviar-convite", "id": "..." }          → novo e-mail de acesso (ZappMillion)
+//   { "acao": "atualizar", "id": "..." }                 → relê o cliente no ZappMillion (período, WhatsApp)
 export async function POST(req: Request) {
   if (!bearerOk(req, iaConfig.adminToken())) return NextResponse.json({ ok: false }, { status: 401 });
   const body = (await req.json().catch(() => ({}))) as { acao?: string; id?: string };
@@ -28,6 +29,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, result: await provision({ ...c, tentativas: c.tentativas }) });
     case "sincronizar":
       return NextResponse.json({ ok: true, result: c.mpPreapprovalId ? await syncPreapproval(c.mpPreapprovalId) : "sem assinatura" });
+    case "atualizar":
+      if (!c.zmStatus) return NextResponse.json({ ok: false, error: "acesso_nao_criado" }, { status: 409 });
+      await refreshFromZm(c);
+      return NextResponse.json({ ok: true });
     case "reenviar-convite":
       if (c.zmStatus !== "ACTIVE") return NextResponse.json({ ok: false, error: "acesso_nao_criado" }, { status: 409 });
       await zm.resendInvite(c.externalId);
