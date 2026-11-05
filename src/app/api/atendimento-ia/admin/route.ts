@@ -17,14 +17,6 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { acao?: string; id?: string };
   if (body.acao === "saude") return NextResponse.json({ ok: true, ...(await health()) });
   if (body.acao === "conciliar") return NextResponse.json({ ok: true, divergencias: await reconcile() });
-  // Consulta de um usuário no Mercado Pago (GET /users/{id}), só leitura e só fora de produção: serve para
-  // descobrir o e-mail do comprador de teste. Devolve apenas id, apelido, país, marca de teste e e-mail.
-  if (body.acao === "mp-usuario") {
-    if (iaConfig.isProduction() || !/^\d{5,15}$/.test(String(body.id ?? ""))) return NextResponse.json({ ok: false, error: "nao_aplicavel" }, { status: 400 });
-    const r = await fetch(`${iaConfig.mpApi()}/users/${body.id}`, { headers: { authorization: `Bearer ${iaConfig.mpToken()}` }, signal: AbortSignal.timeout(8000) });
-    const u = (await r.json().catch(() => ({}))) as { id?: number; nickname?: string; site_id?: string; email?: string; tags?: string[] };
-    return NextResponse.json({ ok: r.ok, http: r.status, id: u.id, nickname: u.nickname, site: u.site_id, teste: Array.isArray(u.tags) && u.tags.includes("test_user"), email: u.email ?? null });
-  }
   const s = store();
   if (body.acao === "listar") {
     const all = await s.list({});
