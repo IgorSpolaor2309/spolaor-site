@@ -56,8 +56,11 @@ async function call<T>(method: string, path: string, body?: unknown, idempotency
     cache: "no-store",
   });
   if (!res.ok) {
-    // Não repassa o corpo (pode conter dados do pagador); só o status.
-    throw new MpError(res.status, `Mercado Pago respondeu HTTP ${res.status} em ${method} ${path.split("?")[0]}`);
+    // Só o motivo do erro (message e códigos de cause), com e-mails e URLs mascarados: nunca o corpo inteiro.
+    const err = (await res.json().catch(() => ({}))) as { message?: string; error?: string; cause?: { code?: string | number; description?: string }[] };
+    const mask = (s?: string) => (s ?? "").replace(/[^\s@,;:"']+@[^\s@,;:"']+/g, "<e-mail>").replace(/https?:\/\/\S+/g, "<url>").slice(0, 160);
+    const causes = (Array.isArray(err.cause) ? err.cause : []).map((c) => `${c.code ?? ""} ${mask(c.description)}`.trim()).join(" | ");
+    throw new MpError(res.status, `Mercado Pago respondeu HTTP ${res.status} em ${method} ${path.split("?")[0]}: ${mask(err.message || err.error)}${causes ? ` [${causes}]` : ""}`);
   }
   return (await res.json()) as T;
 }
