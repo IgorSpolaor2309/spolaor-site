@@ -66,3 +66,21 @@ alter table ia_contratacoes add column if not exists pagamento_confirmado_em tim
 alter table ia_contratacoes add column if not exists acesso_liberado_em timestamptz;
 alter table ia_contratacoes add column if not exists confirmado_por text;
 alter table ia_contratacoes add column if not exists mp_conferido_em timestamptz;
+
+-- Direito de arrependimento: um pedido por contratação (idempotência do pedido e do estorno)
+create table if not exists ia_reembolsos (
+  id                      uuid primary key,                -- protocolo informado ao comprador
+  contratacao_id          uuid not null unique references ia_contratacoes(id),
+  status                  text not null check (status in ('solicitado', 'processando', 'falhou', 'concluido')),
+  pagamento_id            text not null,                   -- payment.id da primeira cobrança aprovada
+  valor                   numeric(10,2) not null,
+  mp_reembolso_id         text,
+  assinatura_cancelada_em timestamptz,
+  solicitado_em           timestamptz not null,
+  confirmado_em           timestamptz,                     -- Mercado Pago informou o pagamento como refunded
+  tentativas              integer not null default 0,
+  ultimo_erro             text,
+  atualizado_em           timestamptz not null
+);
+create index if not exists ia_reembolsos_abertos on ia_reembolsos (solicitado_em) where status <> 'concluido';
+alter table ia_reembolsos enable row level security;

@@ -7,7 +7,7 @@ import { HireForm } from "@/components/ia/hire-form";
 import { Price, PriceNote } from "@/components/ia/price";
 import { ContactForm } from "@/components/forms/contact-form";
 import { publicOffer, validationOk } from "@/lib/ia/config";
-import { methodsSentence, renewalTerms } from "@/lib/ia/terms";
+import { arrependimentoTexto, methodsSentence, renewalTerms } from "@/lib/ia/terms";
 import { leadsAvailable } from "@/lib/leads/server/pipeline";
 
 export const metadata: Metadata = {
@@ -56,6 +56,10 @@ const faq = [
   {
     q: "Como funciona o cancelamento?",
     a: "Você cancela quando quiser, pelo link de acompanhamento da contratação ou pelo Mercado Pago. Não há novas cobranças, e o acesso continua até o fim do período já pago.",
+  },
+  {
+    q: "Posso desistir e receber o dinheiro de volta?",
+    a: "Sim. Na primeira contratação pelo site, você pode desistir em até 7 dias da liberação do acesso, pelo link de acompanhamento, e recebe o valor integral no mesmo meio de pagamento, pelo Mercado Pago. O acesso termina quando o estorno é confirmado. O prazo não se repete nas renovações: depois dele, cancelar interrompe as próximas cobranças e o acesso segue até o fim do período pago, sem reembolso desse período.",
   },
   {
     q: "E se um pagamento não for aprovado?",
@@ -162,6 +166,7 @@ export default async function AtendimentoIaPage({ searchParams }: { searchParams
                 "Configuração do agente e conexão do WhatsApp feitas por você, no painel",
                 ...(offer.methods.length ? [methodsSentence(offer.methods), ...renewalTerms(offer.methods, offer.cycle)] : [`Renovação ${offer.cycle} pelo Mercado Pago`]),
                 "Cancele quando quiser: sem novas cobranças, e o acesso continua até o fim do período já pago",
+                arrependimentoTexto,
                 "Mensagens cobradas pela Meta no WhatsApp pagas à parte",
               ].map((t) => (
                 <li key={t} className="flex gap-3">

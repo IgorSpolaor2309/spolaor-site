@@ -100,5 +100,8 @@ export const mp = {
   /** Cobranças de uma assinatura (GET /authorized_payments/search). Parâmetros a confirmar no teste. */
   searchAuthorizedPayments: (preapprovalId: string) =>
     call<{ results?: AuthorizedPayment[] }>("GET", `/authorized_payments/search?preapproval_id=${encodeURIComponent(preapprovalId)}`).then((r) => r.results ?? []),
+  /** Reembolso integral (corpo vazio). Status final: reler o pagamento (`refunded`). Chave fixa por pedido. */
+  refundPayment: (paymentId: string, idempotencyKey: string) =>
+    call<{ id?: number | string; status?: string }>("POST", `/v1/payments/${encodeURIComponent(paymentId)}/refunds`, {}, idempotencyKey),
   getChargeback: (id: string) => call<{ id: string; payments?: (number | string)[] }>("GET", `/v1/chargebacks/${encodeURIComponent(id)}`),
 };

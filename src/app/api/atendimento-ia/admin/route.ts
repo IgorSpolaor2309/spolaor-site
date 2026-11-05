@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { iaConfig } from "@/lib/ia/config";
 import { bearerOk } from "@/lib/ia/access";
 import { healthReport, mpAccount } from "@/lib/ia/health";
+import { confirmarEstorno, executarEstorno } from "@/lib/ia/reembolso";
 import { store, type Contratacao } from "@/lib/ia/store";
 import { cancelSubscription, comCanal, provision, reactivateKeepingPaid, reconcile, reconcileWithMp, refreshFromZm, syncPreapproval } from "@/lib/ia/process";
 import { zm } from "@/lib/ia/zappmillion";
@@ -21,6 +22,8 @@ import { mp } from "@/lib/ia/mercadopago";
 //   { "acao": "cancelar-pendente", "id": "..." }        → cancela no Mercado Pago uma assinatura que nunca teve
 //                                                          cobrança aprovada (checkout abandonado); sem efeito em cobranças
 //   { "acao": "conta-mp" }                              → conta vendedora e aplicação do MP_ACCESS_TOKEN (sem o token)
+//   { "acao": "reembolsar", "id": "..." }               → executa o estorno integral de um pedido de arrependimento
+//   { "acao": "conferir-reembolso", "id": "..." }       → relê o pagamento e conclui se o Mercado Pago confirmou
 //   { "acao": "saude" }                                  → o que falta, banco, notificação e modo das chaves (sem valores)
 export async function POST(req: Request) {
   if (!bearerOk(req, iaConfig.adminToken())) return NextResponse.json({ ok: false }, { status: 401 });
@@ -55,6 +58,10 @@ export async function POST(req: Request) {
       if (c.primeiroPagamentoEm || (await s.cobrancas(c.id)).length || !["aguardando_pagamento", "assinatura_autorizada"].includes(c.etapa))
         return NextResponse.json({ ok: false, error: "nao_aplicavel" }, { status: 409 });
       return NextResponse.json({ ok: true, result: await comCanal("admin", () => cancelSubscription(c)) });
+    case "reembolsar":
+      return NextResponse.json({ ok: true, reembolso: await comCanal("admin", () => executarEstorno(c)) });
+    case "conferir-reembolso":
+      return NextResponse.json({ ok: true, reembolso: await comCanal("admin", () => confirmarEstorno(c)) });
     case "tempos":
       return NextResponse.json({ ok: true, ...(await timeline(c)) });
     case "reativar":

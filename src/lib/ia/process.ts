@@ -240,7 +240,19 @@ export async function syncChargeback(id: string) {
   return { ok: true, results };
 }
 
+/** Fim do arrependimento: o Mercado Pago confirmou o estorno, então o acesso termina e o ciclo do fornecedor é encerrado. */
+export async function closeAfterRefund(c: Contratacao) {
+  const atual = (await store().get(c.id)) ?? c;
+  if (atual.etapa === "suspensa" && atual.motivoSuspensao === "arrependimento") return { ok: true, already: true };
+  return suspend(atual, "arrependimento");
+}
+
 async function applyReversal(c: Contratacao, status: string) {
+  // Estorno de um pedido de arrependimento: quem conclui (e encerra o acesso) é o fluxo do pedido.
+  if (status === "refunded" && (await store().refundOf(c.id))) {
+    const { confirmarEstorno } = await import("./reembolso");
+    return { ok: true, reembolso: (await confirmarEstorno(c)).status };
+  }
   const motivo = status === "refunded" ? "estorno" : "contestacao";
   if (c.etapa === "suspensa" && c.motivoSuspensao === motivo) return { ok: true, already: true };
   await notifyOps(`Pagamento ${status} · ${c.empresa}`, `Contratação ${c.id}. O acesso foi suspenso. Confira a contestação ou o estorno no Mercado Pago.`);
@@ -379,8 +391,11 @@ export async function runCron(now = new Date()) {
       report.push(`${c.id}: falha ao conferir no Mercado Pago (${(e as Error).message})`);
     }
   }
+  const { rotinaReembolsos } = await import("./reembolso");
+  report.push(...(await rotinaReembolsos()));
+  const emReembolso = new Set((await s.openRefunds()).map((r) => r.contratacaoId));
   for (const c of await s.list({ etapas: ["acesso_criado", "cancelada"] })) {
-    if (c.zmStatus !== "ACTIVE" || !c.pagoAte) continue;
+    if (c.zmStatus !== "ACTIVE" || !c.pagoAte || emReembolso.has(c.id)) continue;
     const paid = new Date(c.pagoAte).getTime();
 
     if (c.etapa === "cancelada" && t >= paid - 24 * 3_600_000 && t < paid && c.preAvisoPara !== c.pagoAte) {

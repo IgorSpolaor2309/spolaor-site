@@ -23,6 +23,8 @@ export function FollowUp({ id, token }: { id: string; token: string }) {
   const [notFound, setNotFound] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [cancelState, setCancelState] = useState<"idle" | "sending" | "error">("idle");
+  const [arrepConfirm, setArrepConfirm] = useState(false);
+  const [arrepState, setArrepState] = useState<"idle" | "sending" | "error">("idle");
   const [polling, setPolling] = useState(true);
   const [checking, setChecking] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -55,6 +57,19 @@ export function FollowUp({ id, token }: { id: string; token: string }) {
       setCancelState("error");
     }
   }
+  async function arrepender() {
+    setArrepState("sending");
+    try {
+      const res = await fetch("/api/atendimento-ia/arrependimento", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ c: id, t: token, confirmar: true }) });
+      if (!res.ok) throw new Error(String(res.status));
+      setArrepConfirm(false);
+      setArrepState("idle");
+      await load();
+    } catch {
+      setArrepState("error");
+    }
+  }
+
   // Atualização automática: a cada 5 s enquanto o pagamento é confirmado ou o acesso é criado (o servidor
   // só consulta o Mercado Pago a cada 30 s); a cada 20 s depois disso. Pausa após 30 min (botão retoma)
   // e confere de novo ao voltar para a aba.
@@ -175,6 +190,48 @@ export function FollowUp({ id, token }: { id: string; token: string }) {
         </div>
       )}
 
+      {status.arrependimento.protocolo && (
+        <div className="grid gap-2 rounded-[14px] border border-line-strong bg-ink-900 p-5" role="status">
+          <p className="font-semibold">{status.arrependimento.status === "concluido" ? "Reembolso concluído" : "Pedido de arrependimento recebido"}</p>
+          <p className="text-sm leading-relaxed text-muted">
+            {status.arrependimento.status === "concluido"
+              ? "O Mercado Pago confirmou o estorno do valor integral, no mesmo meio de pagamento. O prazo para aparecer na fatura depende do emissor do cartão."
+              : "A assinatura não terá novas cobranças. Vamos estornar o valor integral pelo Mercado Pago e avisar aqui quando for confirmado. O acesso termina com a confirmação."}
+          </p>
+          <p className="font-mono text-[0.7rem] text-dim">Protocolo {status.arrependimento.protocolo}</p>
+        </div>
+      )}
+
+      {status.arrependimento.disponivel && (
+        <div className="border-t border-line pt-6">
+          {!arrepConfirm ? (
+            <div className="grid gap-1">
+              <button type="button" onClick={() => setArrepConfirm(true)} className="justify-self-start text-[0.95rem] font-medium text-fg underline decoration-line-strong underline-offset-4">
+                Desistir e pedir reembolso
+              </button>
+              <p className="text-sm text-muted">
+                Direito de arrependimento, disponível até {new Date(status.arrependimento.prazo!).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-3 rounded-[14px] border border-line-strong bg-ink-900 p-5">
+              <p className="leading-relaxed">
+                Você desiste da contratação e recebe o valor integral de volta pelo Mercado Pago. A assinatura é cancelada agora, e o acesso termina quando o estorno for confirmado.
+              </p>
+              {arrepState === "error" && <p role="alert" className="text-sm text-ember">Não foi possível registrar o pedido agora. Tente de novo ou fale com a Spolaor.</p>}
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button type="button" disabled={arrepState === "sending"} onClick={arrepender} className="min-h-12 rounded-[10px] border border-ember px-5 font-semibold text-ember disabled:opacity-60">
+                  {arrepState === "sending" ? "Enviando…" : "Confirmar desistência"}
+                </button>
+                <button type="button" onClick={() => setArrepConfirm(false)} className="min-h-12 rounded-[10px] px-5 font-medium text-muted">
+                  Voltar
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {status.podeCancelar && (
         <div className="border-t border-line pt-6">
           {!confirming ? (
@@ -184,7 +241,7 @@ export function FollowUp({ id, token }: { id: string; token: string }) {
           ) : (
             <div className="grid gap-3 rounded-[14px] border border-line-strong bg-ink-900 p-5">
               <p className="leading-relaxed">
-                Ao cancelar, não haverá novas cobranças.
+                Ao cancelar, não haverá novas cobranças e não há reembolso do período já pago.
                 {status.acessoAte
                   ? ` O acesso continua até ${new Date(status.acessoAte).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}, fim do período já pago.`
                   : ""}

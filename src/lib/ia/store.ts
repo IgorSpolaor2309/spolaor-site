@@ -74,6 +74,21 @@ export type Cobranca = {
   atualizadoEm: string;
 };
 
+export type Reembolso = {
+  id: string; // protocolo informado ao comprador
+  contratacaoId: string;
+  status: "solicitado" | "processando" | "falhou" | "concluido";
+  pagamentoId: string;
+  valor: number;
+  mpReembolsoId: string | null;
+  assinaturaCanceladaEm: string | null;
+  solicitadoEm: string;
+  confirmadoEm: string | null;
+  tentativas: number;
+  ultimoErro: string | null;
+  atualizadoEm: string;
+};
+
 export interface Store {
   create(c: Omit<Contratacao, "id" | "externalId" | "tokenHash" | "criadoEm" | "atualizadoEm">): Promise<{ contratacao: Contratacao; token: string }>;
   get(id: string): Promise<Contratacao | null>;
@@ -95,10 +110,29 @@ export interface Store {
   eventStats(): Promise<{ total: number; ultima: string | null }>;
   /** Reserva a conferência no Mercado Pago (no máximo uma a cada `seconds`, entre instâncias). */
   claimMpCheck(id: string, seconds: number): Promise<boolean>;
+  /** Cria o pedido de arrependimento; null se a contratação já tem um (idempotência). */
+  createRefund(r: { contratacaoId: string; pagamentoId: string; valor: number }): Promise<Reembolso | null>;
+  refundOf(contratacaoId: string): Promise<Reembolso | null>;
+  openRefunds(): Promise<Reembolso[]>;
+  updateRefund(id: string, patch: Partial<Reembolso>): Promise<Reembolso>;
+  /** Passa para "processando" só a partir dos estados informados: uma execução por vez. */
+  claimRefund(id: string, from: Reembolso["status"][]): Promise<boolean>;
 }
 
 export const hashToken = (t: string) => createHash("sha256").update(t).digest("hex");
 const now = () => new Date().toISOString();
+const newRefund = (r: { contratacaoId: string; pagamentoId: string; valor: number }): Reembolso => ({
+  id: randomUUID(),
+  ...r,
+  status: "solicitado",
+  mpReembolsoId: null,
+  assinaturaCanceladaEm: null,
+  solicitadoEm: now(),
+  confirmadoEm: null,
+  tentativas: 0,
+  ultimoErro: null,
+  atualizadoEm: now(),
+});
 
 function newRecord(c: Parameters<Store["create"]>[0]) {
   const id = randomUUID();
@@ -109,9 +143,9 @@ function newRecord(c: Parameters<Store["create"]>[0]) {
 
 /* ───────────────────────────── memória (testes) ───────────────────────────── */
 
-type Mem = { c: Map<string, Contratacao>; cob: Map<string, Cobranca>; ev: Set<string> };
+type Mem = { c: Map<string, Contratacao>; cob: Map<string, Cobranca>; ev: Set<string>; re: Map<string, Reembolso> };
 const g = globalThis as unknown as { __iaMem?: Mem };
-const mem = (): Mem => (g.__iaMem ??= { c: new Map(), cob: new Map(), ev: new Set() });
+const mem = (): Mem => (g.__iaMem ??= { c: new Map(), cob: new Map(), ev: new Set(), re: new Map() });
 
 const memoryStore: Store = {
   async create(c) {
@@ -165,6 +199,30 @@ const memoryStore: Store = {
     if (!c) return false;
     if (c.mpConferidoEm && Date.now() - new Date(c.mpConferidoEm).getTime() < seconds * 1000) return false;
     c.mpConferidoEm = now();
+    return true;
+  },
+  async createRefund(r) {
+    if (mem().re.has(r.contratacaoId)) return null;
+    const novo = newRefund(r);
+    mem().re.set(r.contratacaoId, novo);
+    return novo;
+  },
+  async refundOf(cid) {
+    return mem().re.get(cid) ?? null;
+  },
+  async openRefunds() {
+    return [...mem().re.values()].filter((r) => r.status !== "concluido");
+  },
+  async updateRefund(id, patch) {
+    const r = [...mem().re.values()].find((x) => x.id === id);
+    if (!r) throw new Error("Reembolso não encontrado");
+    Object.assign(r, patch, { atualizadoEm: now() });
+    return r;
+  },
+  async claimRefund(id, from) {
+    const r = [...mem().re.values()].find((x) => x.id === id);
+    if (!r || !from.includes(r.status)) return false;
+    r.status = "processando";
     return true;
   },
   async eventStats() {
@@ -282,6 +340,34 @@ const pgStore: Store = {
   async claimMpCheck(id, seconds) {
     const db = await sql();
     const res = await db`update ia_contratacoes set mp_conferido_em = now() where id = ${id} and (mp_conferido_em is null or mp_conferido_em < now() - make_interval(secs => ${seconds})) returning id`;
+    return res.length > 0;
+  },
+  async createRefund(r) {
+    const db = await sql();
+    const row = Object.fromEntries(Object.entries(newRefund(r)).map(([k, v]) => [toSnake(k), v]));
+    const [res] = await db`insert into ia_reembolsos ${db(row as Record<string, never>)} on conflict (contratacao_id) do nothing returning *`;
+    return res ? fromRow<Reembolso>(res) : null;
+  },
+  async refundOf(cid) {
+    const db = await sql();
+    const [row] = await db`select * from ia_reembolsos where contratacao_id = ${cid}`;
+    return row ? fromRow<Reembolso>(row) : null;
+  },
+  async openRefunds() {
+    const db = await sql();
+    const rows = await db`select * from ia_reembolsos where status <> 'concluido' order by solicitado_em`;
+    return rows.map((r) => fromRow<Reembolso>(r));
+  },
+  async updateRefund(id, patch) {
+    const db = await sql();
+    const row = Object.fromEntries(Object.entries({ ...patch, atualizadoEm: now() }).map(([k, v]) => [toSnake(k), v]));
+    const [res] = await db`update ia_reembolsos set ${db(row as Record<string, never>)} where id = ${id} returning *`;
+    if (!res) throw new Error("Reembolso não encontrado");
+    return fromRow<Reembolso>(res);
+  },
+  async claimRefund(id, from) {
+    const db = await sql();
+    const res = await db`update ia_reembolsos set status = 'processando', atualizado_em = now() where id = ${id} and status in ${db(from)} returning id`;
     return res.length > 0;
   },
   async eventStats() {

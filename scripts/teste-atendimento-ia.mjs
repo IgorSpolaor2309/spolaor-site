@@ -22,7 +22,7 @@ const DAY = 86_400_000;
 const iso = (ms) => new Date(ms).toISOString();
 
 /* ─────────────── Mercado Pago simulado ─────────────── */
-const mp = { pre: new Map(), ap: new Map(), pay: new Map(), cb: new Map(), creates: [], puts: [] };
+const mp = { pre: new Map(), ap: new Map(), pay: new Map(), cb: new Map(), creates: [], puts: [], refunds: [] };
 let seq = 1000;
 http
   .createServer((req, res) => {
@@ -59,6 +59,13 @@ http
       }
       if (u.pathname === "/authorized_payments/search") return send(200, { results: [...mp.ap.values()].filter((a) => a.preapproval_id === u.searchParams.get("preapproval_id")) });
       if ((m = u.pathname.match(/^\/authorized_payments\/(.+)$/))) return mp.ap.has(m[1]) ? send(200, mp.ap.get(m[1])) : send(404, {});
+      if (req.method === "POST" && (m = u.pathname.match(/^\/v1\/payments\/(.+)\/refunds$/))) {
+        mp.refunds.push({ id: m[1], key: req.headers["x-idempotency-key"] });
+        if (mp.refundFail) return send(mp.refundFail, { message: "saldo insuficiente" });
+        const pay = mp.pay.get(m[1]);
+        if (pay && !mp.refundPending) pay.status = "refunded";
+        return send(201, { id: 9000 + mp.refunds.length, status: mp.refundPending ? "in_process" : "approved" });
+      }
       if ((m = u.pathname.match(/^\/v1\/payments\/(.+)$/))) return mp.pay.has(m[1]) ? send(200, mp.pay.get(m[1])) : send(404, {});
       if ((m = u.pathname.match(/^\/v1\/chargebacks\/(.+)$/))) return mp.cb.has(m[1]) ? send(200, mp.cb.get(m[1])) : send(404, {});
       send(404, {});
@@ -379,6 +386,65 @@ ok((await json("/api/atendimento-ia/configuracao", { method: "POST", body: "{}" 
   const g = await json("/api/atendimento-ia/cron?agendar=1", { headers: { authorization: "Bearer cron-teste" } });
   ok(g.status === 200 && g.body.agendador?.registrado === false && g.body.agendador?.motivo === "sem QSTASH_TOKEN", "registro do agendador sem QStash: não falha e não executa a rotina");
   ok((await json("/api/atendimento-ia/cron?agendar=1")).status === 401, "registro do agendador exige o segredo");
+}
+// Arrependimento: prazo, idempotência, cancelamento, estorno confirmado pelo provedor e fim do acesso
+{
+  const arrep = (c, extra = { confirmar: true }) => json("/api/atendimento-ia/arrependimento", { method: "POST", body: JSON.stringify({ c: c.id, t: c.token, ...extra }) });
+  const a1 = await contratar("Empresa Arrependida", "arrep@exemplo.test");
+  const semPag = await arrep(a1);
+  ok(semPag.status === 409, "arrependimento sem pagamento aprovado é recusado");
+  await notify("subscription_authorized_payment", charge(a1).id);
+  const s0 = await status(a1);
+  ok(s0.arrependimento.disponivel === true && !!s0.arrependimento.prazo, "pago: página oferece o arrependimento e informa o prazo");
+  const dias = (new Date(s0.arrependimento.prazo) - Date.now()) / DAY;
+  ok(dias >= 7 && dias <= 8.1, `prazo: até o fim do 7º dia depois da liberação (${dias.toFixed(1)} dias)`);
+  ok((await json("/api/atendimento-ia/arrependimento", { method: "POST", body: JSON.stringify({ c: a1.id, t: "token-errado", confirmar: true }) })).status === 404, "arrependimento exige o token do link");
+  ok((await arrep(a1, {})).status === 422, "arrependimento exige confirmação explícita");
+  const putsAntes = mp.puts.length, suspAntes = zm.suspends.length;
+  const [p1a, p1b] = await Promise.all([arrep(a1), arrep(a1)]);
+  ok(p1a.status === 200 && p1b.status === 200 && p1a.body.protocolo === p1b.body.protocolo, "pedido em dobro: um único protocolo");
+  ok(mp.puts.filter((x) => x.status === "cancelled").length >= 1 && mp.puts.length > putsAntes && preOf(a1).status === "cancelled", "pedido cancela a assinatura: sem novas cobranças");
+  ok(mp.refunds.length === 0, "sem IA_REEMBOLSO_AUTOMATICO, nenhum estorno é executado no pedido");
+  ok(zm.suspends.length === suspAntes, "acesso continua até o estorno ser confirmado");
+  const s1 = await status(a1);
+  ok(s1.podeCancelar === false && s1.arrependimento.disponivel === false && s1.arrependimento.status === "solicitado", "página mostra o pedido, sem repetir o botão");
+  mp.refundFail = 400;
+  const r1 = await admin("reembolsar", a1.id);
+  ok(r1.body.reembolso?.status === "falhou" && zm.suspends.length === suspAntes, "estorno recusado (saldo insuficiente): fica como falhou e o acesso continua");
+  mp.refundFail = 0;
+  mp.refundPending = true;
+  const r2 = await admin("reembolsar", a1.id);
+  ok(r2.body.reembolso?.status === "processando", "estorno aceito ainda não conclui: depende do provedor");
+  await cron();
+  ok((await status(a1)).arrependimento.status === "processando", "rotina não conclui sem o provedor confirmar");
+  const pagId = [...mp.pay.values()].find((x) => x.external_reference === a1.id || String(x.id) === mp.refunds.at(-1).id);
+  mp.refundPending = false;
+  mp.pay.get(mp.refunds.at(-1).id).status = "refunded";
+  await notify("payment", mp.refunds.at(-1).id, { requestId: "estorno-confirmado" });
+  const s2 = await status(a1);
+  ok(s2.arrependimento.status === "concluido" && !!s2.arrependimento.concluidoEm, "provedor confirmou (refunded): reembolso concluído");
+  ok(zm.suspends.filter((x) => x === ext(a1)).length === 1 && !s2.acessoLiberado, "estorno confirmado encerra o acesso uma única vez");
+  ok(new Set(mp.refunds.map((x) => x.key)).size === 1 && mp.refunds[0].key === `arrependimento-${a1.id}`, "toda tentativa de estorno usa a mesma chave de idempotência");
+  const qtd = mp.refunds.length;
+  await admin("reembolsar", a1.id);
+  await notify("payment", mp.refunds.at(-1).id, { requestId: "estorno-repetido" });
+  ok(mp.refunds.length === qtd && zm.suspends.filter((x) => x === ext(a1)).length === 1, "concluído: repetir não estorna nem suspende de novo");
+  // Limite do prazo e renovação não reabre o período
+  const a3 = await contratar("Empresa Prazo", "prazo@exemplo.test");
+  await notify("subscription_authorized_payment", charge(a3).id);
+  const fim = new Date((await status(a3)).arrependimento.prazo).getTime();
+  const pedir = (ms) => json("/api/atendimento-ia/arrependimento", { method: "POST", headers: { "x-ia-agora": iso(ms) }, body: JSON.stringify({ c: a3.id, t: a3.token, confirmar: true }) });
+  ok((await pedir(fim + 1000)).status === 409, "depois do prazo: arrependimento recusado");
+  await notify("subscription_authorized_payment", charge(a3, { debit: iso(Date.now() + 30 * DAY) }).id);
+  ok((await status(a3)).arrependimento.prazo === iso(fim) && (await pedir(fim + 31 * DAY)).status === 409, "renovação paga não reabre o prazo de 7 dias");
+  ok((await pedir(fim - 1000)).status === 200, "no último momento do prazo: pedido aceito");
+  // Cancelamento comum
+  const a2 = await contratar("Empresa Fora do Prazo", "fora@exemplo.test");
+  await notify("subscription_authorized_payment", charge(a2, { debit: iso(Date.now()) }).id);
+  ok((await status(a2)).podeCancelar === true, "cancelamento comum continua disponível");
+  await json("/api/atendimento-ia/cancelar", { method: "POST", body: JSON.stringify({ c: a2.id, t: a2.token, confirmar: true }) });
+  const s3 = await status(a2);
+  ok(s3.arrependimento.disponivel === true && s3.arrependimento.status === null && s3.cancelada && mp.refunds.length === qtd, "cancelamento comum não gera estorno e mantém o direito dentro do prazo");
 }
 // Sem nenhuma notificação: só a página de acompanhamento aberta libera o acesso, com no máximo uma
 // leitura no Mercado Pago a cada 25 s mesmo com várias consultas seguidas.

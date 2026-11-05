@@ -13,6 +13,10 @@ export function renewalTerms(methods: Meio[], cycle: string): string[] {
   return out;
 }
 
+/** Direito de arrependimento, com os mesmos dizeres na página, no aceite e nas condições. */
+export const arrependimentoTexto =
+  "Na primeira contratação, você pode desistir em até 7 dias da liberação do acesso e recebe o valor integral de volta. O prazo não se repete nas renovações.";
+
 export function methodsSentence(methods: Meio[]) {
   if (!methods.length) return "";
   return `Pagamento por ${methods.map((m) => meioLabel[m]).join(" ou ")}, pelo Mercado Pago.`;

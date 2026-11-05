@@ -3,7 +3,7 @@
 import { Price, PriceNote } from "@/components/ia/price";
 import { useState } from "react";
 import { context } from "@/lib/leads/client";
-import { methodsSentence, renewalTerms, type Meio } from "@/lib/ia/terms";
+import { arrependimentoTexto, methodsSentence, renewalTerms, type Meio } from "@/lib/ia/terms";
 
 // Contratação: dados do responsável e aceite das condições. O servidor cria a assinatura com o
 // preço definido por ele e devolve o link do checkout do Mercado Pago. Nenhum dado de cartão
@@ -119,7 +119,7 @@ export function HireForm({ price, replyLimit, cycle, methods, acesso = null }: {
         <label className="flex gap-3 text-[0.92rem] leading-snug">
           <input type="checkbox" name="aceite" className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-royal)]" aria-invalid={errors.aceite ? true : undefined} />
           <span>
-            Entendi que a assinatura custa {brl} {cycle}. {renewalTerms(methods, cycle).join(" ")} Posso cancelar quando quiser, sem novas
+            Entendi que a assinatura custa {brl} {cycle}. {renewalTerms(methods, cycle).join(" ")} {arrependimentoTexto} Posso cancelar quando quiser, sem novas
             cobranças e mantendo o acesso até o fim do período já pago. As mensagens cobradas pela Meta no WhatsApp são pagas à parte.
           </span>
         </label>

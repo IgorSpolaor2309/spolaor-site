@@ -24,5 +24,5 @@ export async function GET(req: Request) {
     c = (await refreshFromZm(c).catch(() => null)) ?? c;
   }
   const painelUrl = (process.env.IA_PAINEL_URL ?? "").trim() || null;
-  return NextResponse.json({ ok: true, status: publicStatus(c), painelUrl }, { headers: { "cache-control": "no-store" } });
+  return NextResponse.json({ ok: true, status: publicStatus(c, await store().refundOf(c.id)), painelUrl }, { headers: { "cache-control": "no-store" } });
 }
