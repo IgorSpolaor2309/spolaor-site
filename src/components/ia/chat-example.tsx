@@ -17,7 +17,7 @@ export function ChatExample({ className = "" }: { className?: string }) {
     <figure className={className}>
       <div className="overflow-hidden rounded-[18px] border border-line-strong bg-ink-900 shadow-[0_1px_2px_rgb(20_37_61/0.06),0_40px_80px_-40px_rgb(20_37_61/0.35)]">
         <div className="flex items-center gap-3 border-b border-line bg-ink-850 px-4 py-3">
-          <span aria-hidden className="grid h-8 w-8 place-items-center rounded-full bg-royal/10 font-mono text-[0.7rem] font-semibold text-royal">
+          <span aria-hidden className="grid h-8 w-8 place-items-center rounded-full bg-[#f07a12]/15 font-mono text-[0.7rem] font-semibold text-ember">
             SE
           </span>
           <span className="leading-tight">
@@ -28,7 +28,7 @@ export function ChatExample({ className = "" }: { className?: string }) {
         <ol className="grid gap-2.5 bg-ink-950/60 p-4" aria-label="Exemplo de conversa">
           {lines.map((l, i) =>
             l.from === "aviso" ? (
-              <li key={i} className="mx-auto max-w-[95%] rounded-full border border-line bg-ink-900 px-3 py-1.5 text-center text-[0.72rem] leading-snug text-muted">
+              <li key={i} className="mx-auto max-w-[95%] rounded-full border border-[#f07a12]/60 bg-ink-900 px-3 py-1.5 text-center text-[0.72rem] leading-snug text-muted">
                 {l.text}
               </li>
             ) : (

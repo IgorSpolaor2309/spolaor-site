@@ -171,7 +171,8 @@ function charge(c, { status = "approved", amount = 297, debit = iso(Date.now()) 
 const page = await (await fetch(B + "/atendimento-ia")).text();
 ok(page.includes("297,00") && page.includes("a cada 30 dias") && page.includes("Comprar agora") && page.includes('href="#comprar"'), "página: R$ 297,00 a cada 30 dias e CTA Comprar agora levando ao formulário");
 ok(page.includes("No cartão, a renovação é cobrada automaticamente") && !page.includes("No Pix"), "só o meio validado (cartão) aparece nas condições e no aceite");
-ok(!/implanta[çc][ãa]o (inicial )?(é feita )?pela Spolaor|configurad[oa] pela Spolaor|por mês|\/mês/i.test(page), "página sem implantação pela Spolaor e sem 'por mês'");
+ok(!/implanta[çc][ãa]o (inicial )?(é feita )?pela Spolaor|configurad[oa] pela Spolaor|por mês/i.test(page), "página sem implantação pela Spolaor e sem 'por mês'");
+ok((page.match(/>\/mês</g) ?? []).length >= 1 && (page.match(/>\/mês</g) ?? []).length === (page.match(/Cobrança recorrente <!-- -->a cada 30 dias|Cobrança recorrente a cada 30 dias/g) ?? []).length, "todo preço em /mês vem com a observação do ciclo real (a cada 30 dias)");
 ok(!/zm_test_local|teste-local|segredo-teste/.test(page), "nenhuma credencial no HTML");
 
 const bad = await json("/api/atendimento-ia/contratar", { method: "POST", body: JSON.stringify({ empresa: "", email: "x", aceite: false }) });

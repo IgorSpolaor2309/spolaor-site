@@ -44,6 +44,9 @@ próprio WhatsApp autorizando na Meta. Não há implantação manual da Spolaor 
   contra os 30 do fornecedor, e nos meses de 31 dias o fornecedor renova antes do fim do período pago
   (custo de até um ciclo extra, R$ 97,00, por cliente que cancelar ou não pagar). Nesse caso a página e o
   checkout devem dizer "por mês" — mudar só com aprovação.
+  Aprovado em 05/11/2026 (só apresentação): a página mostra **R$ 297 /mês**, sempre com a observação
+  "Cobrança recorrente a cada 30 dias." ao lado. A assinatura continua de 30 em 30 dias, e o aceite, as
+  condições e o checkout mantêm "R$ 297,00 a cada 30 dias".
 
 ## Meios de pagamento
 
