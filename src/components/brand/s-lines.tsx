@@ -34,7 +34,7 @@ export function SLines({ className = "" }: { className?: string }) {
           strokeLinecap="round"
           initial={reduce ? false : { pathLength: 0 }}
           whileInView={{ pathLength: 1 }}
-          viewport={{ once: true, margin: "-15% 0px" }}
+          viewport={{ once: true, amount: "some", margin: "0px" }}
           transition={{ duration: 2.2, delay: i * 0.18, ease: [0.65, 0, 0.35, 1] }}
         />
       ))}

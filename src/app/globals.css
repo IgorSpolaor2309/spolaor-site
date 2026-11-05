@@ -190,3 +190,30 @@
 .fade-up { animation: fade-up 1s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .float-y { animation: float-y 7s ease-in-out infinite; }
 @keyframes dash { to { stroke-dashoffset: -40; } }
+
+/* ── Entradas com Reveal ([data-reveal]) ─────────────────────────────────────
+   O motion renderiza no servidor com opacity 0 e anima ao entrar na tela. Estas regras
+   garantem que o conteúdo nunca fica invisível de vez:
+   - sem JavaScript (o script do <head> não marcou html.js): aparece direto;
+   - movimento reduzido: aparece direto, sem deslocamento;
+   - JavaScript carregado mas sem hidratação (erro ou rede muito lenta): depois de 2,5 s a
+     animação de segurança mostra tudo. Com a hidratação, RevealReady marca html.reveal-ready,
+     a regra deixa de valer e o motion assume as entradas normalmente. */
+html:not(.js) [data-reveal] {
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+}
+@keyframes reveal-failsafe {
+  to { opacity: 1; transform: none; filter: none; }
+}
+html.js:not(.reveal-ready) [data-reveal] {
+  animation: reveal-failsafe 0.6s ease-out 2.5s forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}
