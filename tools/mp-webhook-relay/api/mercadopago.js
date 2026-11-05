@@ -31,6 +31,8 @@ export async function POST(req) {
     }
     const res = await fetch(target, { method: "POST", headers, body, redirect: "manual", signal: AbortSignal.timeout(15000) }).catch((e) => ({ status: 502, error: e.message }));
     console.info(`[relay] ${req.headers.get("x-request-id") || "?"} → HTTP ${res.status}${res.error ? ` (${res.error})` : ""}`);
-    return new Response(res.error ? "Bad Gateway" : await res.text(), { status: res.status, headers: { "content-type": "application/json" } });
+    // Só o status volta ao chamador; o corpo apenas em sucesso (nada da proteção da prévia vaza).
+    const ok = !res.error && res.status >= 200 && res.status < 300;
+    return new Response(ok ? await res.text() : JSON.stringify({ ok: false }), { status: res.status, headers: { "content-type": "application/json" } });
   }
 }
