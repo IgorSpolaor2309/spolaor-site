@@ -3,7 +3,8 @@
 // Depois rola em passos pequenos e repete a conferência a cada passo. Cada suspeito é medido de
 // novo 1,5 s depois: se a opacidade mudou, é uma demonstração em andamento (mensagens que entram e
 // saem), não conteúdo preso; só conta como falha o que continua transparente e parado.
-// Uso: node scripts/checagem-reveal.mjs <url-base> [--reduce] [--slow] [--shots <pasta>]
+// Uso: node scripts/checagem-reveal.mjs <url-base> [--reduce] [--slow] [--shots <pasta>] [--pages /,/sites] [--vps 390x664,402x700]
+// Contra o domínio oficial, Pixel e Google ficam bloqueados para as visitas de teste não entrarem na medição.
 import { chromium } from "playwright-core";
 import { mkdirSync } from "node:fs";
 
@@ -17,9 +18,10 @@ const only = args.includes("--pages") ? args[args.indexOf("--pages") + 1].split(
 
 const paths = only ?? ["/", "/sites", "/lojas-virtuais", "/agendamento-online", "/automacao", "/diagnostico-site", "/sistemas", "/corretores", "/clinicas", "/orcamentos", "/analise", "/consultoria", "/projetos", "/contato"];
 // alturas úteis: Safari com barras (≈ 560–700) e a tela inteira
-const vps = [
-  [360, 560], [360, 640], [390, 664], [390, 750], [402, 700], [402, 874], [1440, 900],
-];
+const vps = args.includes("--vps")
+  ? args[args.indexOf("--vps") + 1].split(",").map((v) => v.split("x").map(Number))
+  : [[360, 560], [360, 640], [390, 664], [390, 750], [402, 700], [402, 874], [1440, 900]];
+const TRACKING = /facebook.(com|net)|googletagmanager|google-analytics|doubleclick|googleadservices/;
 const exe = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const browser = await chromium.launch({ executablePath: exe });
 
@@ -64,6 +66,7 @@ for (const path of paths) {
   for (const [w, h] of vps) {
     const mobile = w < 768;
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: mobile, hasTouch: mobile, reducedMotion: reduce ? "reduce" : "no-preference" });
+    await ctx.route(TRACKING, (r) => r.abort());
     const page = await ctx.newPage();
     if (slow) {
       const cdp = await ctx.newCDPSession(page);
