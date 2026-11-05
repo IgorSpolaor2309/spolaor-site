@@ -167,6 +167,16 @@ Mensagem para contato@zappmillion.com:
 > 4. Devemos suspender ou excluir o cliente antes de pedir, para não perder o direito?
 > Pedimos a confirmação por escrito. Obrigado.
 
+## Primeira execução real em Produção (05/11/2026, sem pagamento)
+
+Com `IA_CONTRATACAO_ATIVA=true` por alguns minutos, sem cobrança nem compra:
+- Assinatura criada no Mercado Pago com credencial de produção: HTTP 200 e checkout real, com um e-mail de Gmail.
+- Cancelamento dessa assinatura sem pagamento: `cancelled`, sem acesso criado.
+- Notificação real `subscription_preapproval` recebida no webhook (23:01:11 UTC), sem recusa de assinatura.
+- **Falha:** `POST /preapproval` respondeu HTTP 400 "User bad request" para um e-mail válido com alias `+`. A causa não
+  foi determinada: pode ser o `+` ou o e-mail não ter conta no Mercado Pago. A documentação não esclarece. Se for a
+  conta, quem não tem Mercado Pago não consegue comprar. Por isso a contratação voltou a ficar desligada.
+
 ## Checklist de publicação
 
 Bloqueios para abrir as vendas (contratação pública):
