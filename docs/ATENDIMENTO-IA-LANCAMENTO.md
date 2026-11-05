@@ -173,9 +173,15 @@ Com `IA_CONTRATACAO_ATIVA=true` por alguns minutos, sem cobrança nem compra:
 - Assinatura criada no Mercado Pago com credencial de produção: HTTP 200 e checkout real, com um e-mail de Gmail.
 - Cancelamento dessa assinatura sem pagamento: `cancelled`, sem acesso criado.
 - Notificação real `subscription_preapproval` recebida no webhook (23:01:11 UTC), sem recusa de assinatura.
-- **Falha:** `POST /preapproval` respondeu HTTP 400 "User bad request" para um e-mail válido com alias `+`. A causa não
-  foi determinada: pode ser o `+` ou o e-mail não ter conta no Mercado Pago. A documentação não esclarece. Se for a
-  conta, quem não tem Mercado Pago não consegue comprar. Por isso a contratação voltou a ficar desligada.
+- Formulário real no site oficial até o checkout, sem pagar: o Mercado Pago mostra "Sem conta Mercado Pago → Cartão" e
+  "R$ 297,00 a cada 30 dias". Em navegador automatizado sem interface, o checkout responde com erro.
+- Limitação conhecida: `POST /preapproval` recusa e-mail com alias `+` ("User bad request") e o e-mail da própria conta
+  vendedora ("Payer and collector cannot be the same user"). O comprador vê que nada foi cobrado. Um e-mail sem conta
+  no Mercado Pago foi aceito.
+
+**Contratação aberta em 05/11/2026**, com `IA_REEMBOLSO_AUTOMATICO=false` e sem campanhas. Ainda sem transação real:
+pagamento aprovado, notificação do pagamento, criação do cliente no ZappMillion (R$ 97,00), convite por e-mail, login,
+estorno e renovação no dia 30. Acompanhe de perto as primeiras vendas.
 
 ## Checklist de publicação
 
