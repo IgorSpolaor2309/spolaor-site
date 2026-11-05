@@ -131,12 +131,11 @@ Bloqueios para abrir as vendas (contratação pública):
    produção, `ZM_API_KEY` `zm_live_` nova — cadastrar em Production (Sensitive).
 3. **Variáveis de Production que ainda faltam:** `IA_MEIOS_PAGAMENTO=cartao` e (para a compra controlada)
    `IA_TOKEN_VALIDACAO` aleatório. A gravação por mim foi bloqueada pela política de permissões da sessão.
-4. **Agendador da rotina:** sem webhook, o acesso é liberado (a) em até ~30 s enquanto o comprador está na
-   página de acompanhamento, para onde o checkout volta; (b) senão, só no cron diário da Vercel (09:00 UTC; o
-   plano Hobby não permite cron mais frequente) — até 24 h de atraso. O workflow
-   `.github/workflows/atendimento-ia-rotina.yml` chama a rotina a cada 5 min (o GitHub pode atrasar alguns
-   minutos; repositório público, sem custo). Ativa-se depois do merge, ao cadastrar no GitHub o segredo
-   `IA_CRON_SECRET` com o mesmo valor do `CRON_SECRET` de Production; sem ele, não faz nada.
+4. **Agendador da rotina (concluído em 05/11/2026):** QStash (Upstash, plano Free, só Production) chama
+   `/api/atendimento-ia/cron` a cada 5 minutos, com `CRON_SECRET`; execuções comprovadas às 19:30 e 19:35 (Brasília),
+   ambas `DELIVERED`. O cron diário da Vercel (09:00 UTC) segue para a conciliação com o ZappMillion. O workflow do
+   GitHub ficou só manual (`IA_ROTINA_URL` com `?saude=1`, `?conciliar=1` ou `?agendar=1`). Ao trocar `CRON_SECRET`,
+   repita `?agendar=1`: o registro é idempotente e atualiza o segredo guardado no QStash.
 5. **Merge do PR #5** (autorização sua) — a página aparece com o preço e "Quero ser avisado" enquanto
    `IA_CONTRATACAO_ATIVA` não estiver definida em Production.
 6. **Compra controlada em produção** (proposta; exige sua autorização: R$ 297,00 + R$ 97,00) para validar convite
