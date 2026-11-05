@@ -1,0 +1,94 @@
+# Atendimento com IA — preparação do teste e plano de lançamento
+
+Complementa `docs/ATENDIMENTO-IA.md`. A contratação pública (`IA_CONTRATACAO_ATIVA`) continua desligada
+até os bloqueios da parte 1 estarem resolvidos.
+
+## 0. Ambiente de teste na prévia da Vercel (Preview)
+
+O que já está feito no código:
+- **URL de notificação com bypass, montada no servidor.** Na prévia (`VERCEL_ENV=preview`), a assinatura é
+  criada com `notification_url = https://<VERCEL_BRANCH_URL>/api/atendimento-ia/webhook?x-vercel-protection-bypass=<segredo>`.
+  O segredo vem de `VERCEL_AUTOMATION_BYPASS_SECRET`, que a Vercel injeta no servidor; ninguém digita nem
+  copia o segredo, ele não vai para o navegador, para o repositório nem para os logs do site.
+  A validação `x-signature` do Mercado Pago continua igual (o parâmetro do bypass não entra na assinatura).
+- **Retorno do checkout** na prévia usa a URL estável do branch (`VERCEL_BRANCH_URL`).
+- **Esquema do banco aplicado sozinho** na primeira conexão (idempotente, pela conexão direta
+  `DATABASE_URL_UNPOOLED` da Neon). Testado contra um Postgres real local (PGlite): tabelas criadas e as 46
+  verificações do teste simulado passaram no banco.
+- **Diagnóstico** sem valores secretos: `POST /api/atendimento-ia/admin` com `{"acao":"saude"}` mostra o que
+  falta, o banco (tabelas), se a URL de notificação com bypass está ativa, o modo das chaves (teste/produção)
+  e se o plano do ZappMillion existe.
+
+O que só você consegue fazer (acesso à conta da Vercel, aceite de termos e credenciais):
+1. **Segredo do bypass:** Vercel → projeto `spolaor-site` → Settings → Deployment Protection →
+   *Protection Bypass for Automation* → gerar o segredo. Em Settings → Environment Variables, confira que
+   *Automatically expose System Environment Variables* está marcado. Não copie o segredo para lugar nenhum.
+2. **Banco Neon:** Vercel → projeto → Storage → Create Database → Neon → plano gratuito → aceitar os termos →
+   Connect Project: `spolaor-site`, ambiente **Preview** (Production depois). Deixe *Create database branch
+   for deployment* desmarcado (um banco só para o teste).
+3. **Credenciais de teste, só no ambiente Preview** (Settings → Environment Variables, marcar *Sensitive*):
+   `ZM_API_KEY` (`zm_test_…`), `MP_ACCESS_TOKEN` (teste), `MP_WEBHOOK_SECRET` (modo teste). Digitadas
+   direto no painel da Vercel, nunca no chat.
+4. **Login da Vercel CLI nesta máquina** (uma vez, no seu terminal): `npx vercel@latest login`. Com isso eu
+   cadastro as demais variáveis do Preview (preço, plano, meios, URL do painel, `IA_ADMIN_TOKEN` e
+   `CRON_SECRET` gerados aleatoriamente sem exibir), faço o redeploy da prévia e rodo o diagnóstico.
+   Sem o login, as variáveis da lista abaixo também podem ser cadastradas por você.
+
+Variáveis do Preview (além dos itens 1–3): `IA_PRECO_MENSAL=297.00`, `IA_LIMITE_RESPOSTAS=2000`,
+`IA_ZM_PLAN_ID` (o id do plano no **modo de teste**, mostrado pelo diagnóstico), `IA_MEIOS_PAGAMENTO=cartao`
+(e `pix` depois de validado), `IA_PAINEL_URL=https://spolaortecnologia.agencyzm.com`, `IA_ADMIN_TOKEN`,
+`CRON_SECRET`, `IA_CONTRATACAO_ATIVA=true` **só no Preview**.
+
+Cuidado conhecido: a documentação da Vercel não diz se os logs de requisição registram a query string. Restrinja
+o acesso aos logs da prévia e **gere um novo segredo de bypass ao fim dos testes** (Deployment Protection).
+
+No painel do Mercado Pago, se as notificações de assinatura não chegarem pela URL enviada na criação, a URL de
+teste em Suas integrações → Webhooks precisaria do segredo: nesse caso copie o segredo direto da Vercel para o
+campo do Mercado Pago, sem passar por chat ou arquivo.
+
+## 1. Validações necessárias antes de lançar
+
+Bloqueios (sem eles a contratação pública não abre):
+
+| # | Validação | Onde | Situação |
+|---|---|---|---|
+| 1 | Checkout de assinatura com R$ 297,00 a cada 30 dias aceito (`frequency: 30, frequency_type: days`) | Teste MP | Pendente (credenciais) |
+| 2 | Notificações chegam à prévia e passam na validação `x-signature`; repetição pelo painel é ignorada | Teste MP | Pendente |
+| 3 | Cartão aprovado, recusado e pendente → aprovado; vínculo pelo `external_reference`; só `payment` chegando | Teste MP | Pendente |
+| 4 | Meios oferecidos no checkout = meios validados (`IA_MEIOS_PAGAMENTO`); Pix: como a renovação é cobrada | Teste MP | Pendente |
+| 5 | Criação do cliente no ZappMillion (modo teste) com o plano correto; falha e nova tentativa | Teste ZM | Pendente |
+| 6 | Cancelamento pela página: Mercado Pago sem novas cobranças; acesso mantido até o fim | Teste MP + ZM | Pendente |
+| 7 | Produção configurada: banco Neon em Production, chaves de produção **novas** (as atuais ficaram no chat), URL de notificação de produção e segredo, `IA_ADMIN_TOKEN`, `CRON_SECRET` | Vercel/MP/ZM | Pendente |
+| 8 | Entrega real ao comprador: convite por e-mail, login no painel, conexão do WhatsApp (não testável em modo de teste) | Compra controlada | **Proposta — exige sua autorização específica** (R$ 297,00 + R$ 97,00) |
+
+O item 8 é o único que depende de cobrança real. Sem ele, o lançamento é possível aceitando o risco de o
+primeiro comprador encontrar um problema no convite; nesse caso, acompanhar manualmente as primeiras
+contratações (a operação é avisada a cada etapa) e manter o reenvio de convite (`acao: reenviar-convite`).
+
+Não bloqueiam o lançamento (riscos registrados com controle):
+- Renovação do ZappMillion nunca observada (o modo de teste não renova) → parte 2.
+- Ausência de cancelamento agendado no ZappMillion → custo possível de R$ 97,00 por cancelamento/inadimplência
+  quando o fornecedor cobra antes da suspensão; avisos à operação.
+- Respostas pendentes do suporte do ZappMillion (cancelamento no fim do período, momento da cobrança).
+- Agendador por minuto: recomendado (reduz, não garante); sem ele, o cron diário ainda faz a conciliação.
+
+## 2. Acompanhamento da primeira renovação real (dia 30)
+
+Registrado como **não observado**. Controles já implementados:
+- Pré-aviso 24 h antes do fim de uma assinatura cancelada.
+- Aviso quando a cobrança do novo ciclo do ZappMillion aparece como `PAID` sem pagamento do cliente (entrada na
+  carência), quando a carência termina e quando o fornecedor suspende um cliente com período pago (cartão da
+  agência recusado), com a ação `reativar`.
+- Conciliação diária (cron da Vercel às 09:00 UTC, `?conciliar=1`): clientes ativos no ZappMillion sem
+  contratação ativa no site e o inverso.
+- Diagnóstico `saude` e `listar` para conferência manual.
+
+Roteiro do dia 30 (para cada um dos primeiros clientes):
+1. D-1: conferir em `listar` o `pagoAte` e o `zmPeriodoFim`; conferir no Mercado Pago a próxima cobrança.
+2. Dia 30: registrar a hora da cobrança do cliente (Mercado Pago) e a hora da cobrança do ZappMillion
+   (`GET /clients/{externalId}/charges`: `createdAt`, `paidAt`, `periodStart`).
+3. Conferir que `pagoAte` avançou 30 dias e que nenhum aviso de custo foi emitido.
+4. Se houver cancelamento ou falta de pagamento: conferir que a suspensão ocorreu no fim do período (nunca
+   antes) e se o fornecedor cobrou antes disso (custo R$ 97,00).
+5. Com os horários observados, decidir se é preciso ajustar o momento da suspensão ou pedir ao ZappMillion
+   cancelamento no fim do período.

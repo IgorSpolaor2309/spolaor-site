@@ -70,10 +70,30 @@ export const iaConfig = {
   zmApi: () => env("ZM_API_URL") || "https://app.zappmillion.com/api/v1/provisioning",
   adminToken: () => env("IA_ADMIN_TOKEN"),
   cronSecret: () => env("CRON_SECRET"),
-  siteUrl: () => env("NEXT_PUBLIC_SITE_URL").replace(/\/+$/, ""),
+  /**
+   * Endereço público do retorno do checkout. Ordem: IA_URL_PUBLICA; na prévia da Vercel, a URL estável
+   * do branch (VERCEL_BRANCH_URL); senão NEXT_PUBLIC_SITE_URL.
+   */
+  siteUrl: () => {
+    const explicit = env("IA_URL_PUBLICA");
+    if (explicit) return explicit.replace(/\/+$/, "");
+    if (env("VERCEL_ENV") === "preview" && env("VERCEL_BRANCH_URL")) return `https://${env("VERCEL_BRANCH_URL")}`;
+    return env("NEXT_PUBLIC_SITE_URL").replace(/\/+$/, "");
+  },
   enabledFlag: () => env("IA_CONTRATACAO_ATIVA") === "true",
-  /** URL de notificação enviada na criação da assinatura (opcional; a validar no teste do Mercado Pago). */
-  mpNotificationUrl: () => env("IA_MP_NOTIFICATION_URL") || null,
+  /**
+   * URL de notificação enviada na criação da assinatura. Na prévia protegida da Vercel é montada aqui com
+   * o segredo de "Protection Bypass for Automation" (VERCEL_AUTOMATION_BYPASS_SECRET, que a Vercel expõe
+   * ao servidor): ninguém digita nem copia o segredo. Nunca registrar esta URL em logs.
+   */
+  mpNotificationUrl: (): string | null => {
+    if (env("IA_MP_NOTIFICATION_URL")) return env("IA_MP_NOTIFICATION_URL");
+    const bypass = env("VERCEL_AUTOMATION_BYPASS_SECRET");
+    if (env("VERCEL_ENV") === "preview" && bypass && env("VERCEL_BRANCH_URL")) {
+      return `https://${env("VERCEL_BRANCH_URL")}/api/atendimento-ia/webhook?x-vercel-protection-bypass=${encodeURIComponent(bypass)}`;
+    }
+    return null;
+  },
   isProduction: () => env("VERCEL_ENV") === "production",
 };
 

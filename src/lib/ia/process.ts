@@ -351,7 +351,18 @@ export async function runCron(now = new Date()) {
       report.push(`${c.id}: não foi possível consultar o ZappMillion (${(e as Error).message})`);
       continue;
     }
-    if (cur.zmStatus !== "ACTIVE" || !cur.pagoAte) continue;
+    if (cur.zmStatus !== "ACTIVE") {
+      // O fornecedor suspendeu por conta própria (ex.: cartão da agência recusado na renovação dele).
+      if (t < paid) {
+        await notifyOps(
+          `Fornecedor suspendeu cliente com período pago · ${cur.empresa}`,
+          `Contratação ${cur.id}: o ZappMillion está ${cur.zmStatus} e o cliente pagou até ${fmt(cur.pagoAte!)}. Confira o cartão da agência em "Cartão e API" e use a ação "reativar" (cobra um ciclo do fornecedor) para restabelecer.`,
+        );
+        report.push(`${c.id}: fornecedor suspendeu com período pago; operação avisada`);
+      }
+      continue;
+    }
+    if (!cur.pagoAte) continue;
     if (t < paid) continue; // período pago em curso: nunca suspende antes do fim
 
     // O fornecedor só conta como renovado com a cobrança do novo ciclo CONFIRMADA (status PAID, período
@@ -391,4 +402,39 @@ export async function runCron(now = new Date()) {
     report.push(`${c.id}: suspensa (${motivo}) ${fornecedorRenovou && t >= graceEnd ? "ao fim da carência" : "no fim do período pago"} ${cur.pagoAte}`);
   }
   return report;
+}
+
+/** Reativa no fornecedor sem mudar o período pago (ex.: depois de o ZappMillion suspender por cartão recusado). */
+export async function reactivateKeepingPaid(c: Contratacao) {
+  const cli = await zm.reactivate(c.externalId, c.zmPlanId);
+  await store().update(c.id, { ...syncedFields(cli), ultimoErro: null });
+  return { ok: true, zmStatus: cli.status };
+}
+
+/**
+ * Conciliação diária entre as contratações e os clientes do ZappMillion: avisa a operação de clientes
+ * ativos no fornecedor que não deveriam estar (custo sem receita) e de contratações ativas que o
+ * fornecedor não tem como ativas.
+ */
+export async function reconcile() {
+  const s = store();
+  const ours = new Map((await s.list({})).map((c) => [c.externalId, c]));
+  const theirs = new Map<string, ZmClient>();
+  for (let offset = 0; offset < 10_000; offset += 100) {
+    const page = await zm.listClients(offset);
+    for (const cli of page.data) theirs.set(cli.externalId, cli);
+    if (page.data.length < 100) break;
+  }
+  const problemas: string[] = [];
+  for (const [ext, cli] of theirs) {
+    if (!ext.startsWith("spolaor-ia-") || cli.status !== "ACTIVE") continue;
+    const c = ours.get(ext);
+    if (!c) problemas.push(`${ext}: ativo no ZappMillion sem contratação no site`);
+    else if (c.etapa === "suspensa") problemas.push(`${ext}: ativo no ZappMillion, suspenso no site (${c.motivoSuspensao})`);
+  }
+  for (const [ext, c] of ours) {
+    if ((c.etapa === "acesso_criado" || c.etapa === "cancelada") && theirs.get(ext)?.status !== "ACTIVE") problemas.push(`${ext}: ativo no site, ${theirs.get(ext)?.status ?? "ausente"} no ZappMillion`);
+  }
+  if (problemas.length) await notifyOps(`Conciliação: ${problemas.length} divergência(s)`, problemas.join("\n"));
+  return problemas;
 }

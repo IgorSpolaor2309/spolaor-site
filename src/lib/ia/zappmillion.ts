@@ -69,6 +69,8 @@ export const zm = {
   suspend: (externalId: string) => call<ZmClient>("POST", `${ext(externalId)}/suspend`),
   reactivate: (externalId: string, planId?: string) => call<ZmClient>("POST", `${ext(externalId)}/reactivate`, planId ? { planId } : {}),
   resendInvite: (externalId: string) => call<void>("POST", `${ext(externalId)}/resend-invite`),
+  /** Clientes da agência (para conciliação), paginado. */
+  listClients: (offset = 0) => call<{ data: ZmClient[]; total: number }>("GET", `/clients?limit=100&offset=${offset}`),
   /** Cobranças do cliente no cartão da agência, da mais recente para a mais antiga. */
   charges: (externalId: string) => call<{ data: ZmCharge[] }>("GET", `${ext(externalId)}/charges?limit=20`).then((r) => r.data),
 };

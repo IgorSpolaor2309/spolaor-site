@@ -57,3 +57,8 @@ create table if not exists ia_eventos (
 alter table ia_contratacoes enable row level security;
 alter table ia_cobrancas enable row level security;
 alter table ia_eventos enable row level security;
+
+-- Colunas acrescentadas depois da primeira versão (idempotente)
+alter table ia_cobrancas add column if not exists aprovada_em timestamptz;
+alter table ia_contratacoes add column if not exists pre_aviso_para timestamptz;
+alter table ia_contratacoes add column if not exists aviso_fornecedor_para timestamptz;

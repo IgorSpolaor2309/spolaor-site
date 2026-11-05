@@ -31,7 +31,9 @@ function maskEmail(e: string) {
 export function publicStatus(c: Contratacao): StatusPublico {
   const pago = !!c.primeiroPagamentoEm;
   const suspensa = c.etapa === "suspensa";
-  const acesso = !suspensa && (c.zmStatus === "ACTIVE" || c.etapa === "acesso_criado" || (c.etapa === "cancelada" && c.zmStatus === "ACTIVE"));
+  // Acesso só conta como liberado com o cliente ACTIVE no ZappMillion (não basta a etapa local).
+  const acesso = !suspensa && c.zmStatus === "ACTIVE";
+  const fornecedorSuspendeu = !suspensa && c.zmStatus === "SUSPENDED";
   const whatsapp = acesso && c.whatsappStatus === "CONNECTED";
 
   let pagamento: Passo;
@@ -44,6 +46,8 @@ export function publicStatus(c: Contratacao): StatusPublico {
   let acessoPasso: Passo;
   if (!pago) acessoPasso = { id: "acesso", titulo: "Acesso à plataforma", status: "pendente", detalhe: "É liberado automaticamente depois do pagamento confirmado." };
   else if (suspensa) acessoPasso = { id: "acesso", titulo: "Acesso suspenso", status: "problema", detalhe: "Fale com a Spolaor para regularizar a assinatura." };
+  else if (fornecedorSuspendeu)
+    acessoPasso = { id: "acesso", titulo: "Acesso interrompido", status: "problema", detalhe: "O acesso foi interrompido na plataforma. A Spolaor já foi avisada e vai restabelecer; o seu período pago não muda." };
   else if (acesso)
     acessoPasso = {
       id: "acesso",

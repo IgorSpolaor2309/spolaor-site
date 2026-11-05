@@ -1,4 +1,5 @@
 import { randomBytes, randomUUID, createHash } from "node:crypto";
+import { SCHEMA_SQL } from "./schema";
 
 // Persistência das contratações. Fonte de verdade do fluxo: cada webhook relê o recurso no
 // Mercado Pago e grava o estado aqui. Duas implementações:
@@ -163,8 +164,35 @@ function fromRow<T>(row: Record<string, unknown>): T {
 type Sql = import("postgres").Sql;
 let sqlPromise: Promise<Sql> | null = null;
 async function sql(): Promise<Sql> {
-  sqlPromise ??= import("postgres").then((m) => m.default(process.env.DATABASE_URL!, { max: 3, idle_timeout: 20, prepare: false }));
+  sqlPromise ??= (async () => {
+    const { default: postgres } = await import("postgres");
+    // Esquema idempotente na primeira conexão, pela conexão direta (DATABASE_URL_UNPOOLED, da Neon) quando houver.
+    const ddl = postgres(process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL!, { max: 1, prepare: false, onnotice: () => {} });
+    try {
+      await ddl.unsafe(SCHEMA_SQL);
+    } finally {
+      await ddl.end({ timeout: 5 });
+    }
+    return postgres(process.env.DATABASE_URL!, { max: Number(process.env.IA_DB_POOL_MAX) || 3, idle_timeout: 20, prepare: false });
+  })().catch((e) => {
+    sqlPromise = null; // permite nova tentativa na próxima requisição
+    throw e;
+  });
   return sqlPromise;
+}
+
+/** Saúde do banco para a operação: conecta, garante o esquema e conta as contratações. */
+export async function dbHealth(): Promise<{ ok: boolean; tabelas?: string[]; contratacoes?: number; erro?: string }> {
+  if (process.env.IA_STORE === "memory") return { ok: true, tabelas: ["(memória)"] };
+  if (!process.env.DATABASE_URL) return { ok: false, erro: "DATABASE_URL não definida" };
+  try {
+    const db = await sql();
+    const t = await db`select table_name from information_schema.tables where table_schema = 'public' and table_name like 'ia\_%' order by 1`;
+    const [{ n }] = await db`select count(*)::int as n from ia_contratacoes`;
+    return { ok: true, tabelas: t.map((r) => r.table_name as string), contratacoes: n };
+  } catch (e) {
+    return { ok: false, erro: (e as Error).message.slice(0, 200) };
+  }
 }
 
 const pgStore: Store = {
