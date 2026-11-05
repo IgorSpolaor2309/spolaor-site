@@ -46,6 +46,16 @@ No painel do Mercado Pago, se as notificações de assinatura não chegarem pela
 teste em Suas integrações → Webhooks precisaria do segredo: nesse caso copie o segredo direto da Vercel para o
 campo do Mercado Pago, sem passar por chat ou arquivo.
 
+## Situação da prévia (branch oferta-ia-whatsapp, 05/11/2026)
+
+- Variáveis do Preview (só deste branch): preço, limite, meio (cartão), URL do painel, plano, contratação ativa só na prévia, IA_ADMIN_TOKEN e CRON_SECRET aleatórios, ZM_API_KEY (modo teste) e MP_WEBHOOK_SECRET.
+- Banco Neon de teste (plano Free, região gru1) conectado só ao Preview; esquema criado automaticamente (ia_cobrancas, ia_contratacoes, ia_eventos).
+- Bypass da Vercel ativo; URL de notificação montada no servidor.
+- Diagnóstico: ZappMillion em modo teste com o plano PRO (R$ 97,00, 2.000 respostas, 30 dias).
+- Rota de notificação recusa requisição sem assinatura e com assinatura falsa (401).
+- **Falta:** MP_ACCESS_TOKEN de teste. Sem ele, a prévia mostra "Quero ser avisado" e o checkout não abre.
+- O pagamento no checkout de teste é feito por uma pessoa com a conta de comprador de teste (não automatizado).
+
 ## 1. Validações necessárias antes de lançar
 
 Bloqueios (sem eles a contratação pública não abre):
