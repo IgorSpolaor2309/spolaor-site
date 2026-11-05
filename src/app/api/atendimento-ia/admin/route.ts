@@ -19,11 +19,13 @@ import { mp } from "@/lib/ia/mercadopago";
 //                                                          ZappMillion, com os intervalos e o canal que confirmou
 //   { "acao": "cancelar-pendente", "id": "..." }        → cancela no Mercado Pago uma assinatura que nunca teve
 //                                                          cobrança aprovada (checkout abandonado); sem efeito em cobranças
+//   { "acao": "conta-mp" }                              → conta vendedora e aplicação do MP_ACCESS_TOKEN (sem o token)
 //   { "acao": "saude" }                                  → o que falta, banco, notificação e modo das chaves (sem valores)
 export async function POST(req: Request) {
   if (!bearerOk(req, iaConfig.adminToken())) return NextResponse.json({ ok: false }, { status: 401 });
   const body = (await req.json().catch(() => ({}))) as { acao?: string; id?: string };
   if (body.acao === "saude") return NextResponse.json({ ok: true, ...(await health()) });
+  if (body.acao === "conta-mp") return NextResponse.json({ ok: true, ...(await mpAccount()) });
   if (body.acao === "webhook") return NextResponse.json({ ok: true, ...(await webhookDiagnostics(body.id)) });
   if (body.acao === "conciliar") return NextResponse.json({ ok: true, divergencias: await reconcile() });
   const s = store();
@@ -170,5 +172,29 @@ async function timeline(c: Contratacao) {
     confirmadoPor: c.confirmadoPor ?? "não registrado (contratação anterior à medição)",
     origemDosTempos: { banco: c.pagamentoConfirmadoEm ? "pagamento_confirmado_em" : "aprovada_em da cobrança", acesso: c.acessoLiberadoEm ? "acesso_liberado_em" : "createdAt do cliente no ZappMillion" },
     segundos: { aprovacaoAteBanco: sec(aprovadoMp, confirmadoBanco), bancoAteAcesso: sec(confirmadoBanco, acesso), aprovacaoAteAcesso: sec(aprovadoMp, acesso) },
+  };
+}
+
+/**
+ * Qual conta e qual aplicação o MP_ACCESS_TOKEN usa, para configurar o webhook no lugar certo. Mostra só
+ * identificadores públicos (id do usuário, apelido, id da aplicação), nunca o token.
+ */
+async function mpAccount() {
+  const token = iaConfig.mpToken();
+  if (!token) return { erro: "sem MP_ACCESS_TOKEN" };
+  const seg = token.split("-");
+  // Formato observado: APP_USR-<id da aplicação>-<data>-<hash>-<id do usuário>
+  const appId = seg.length >= 5 && /^\d+$/.test(seg[1]) ? seg[1] : null;
+  const userIdNoToken = seg.length >= 5 && /^\d+$/.test(seg[seg.length - 1]) ? seg[seg.length - 1] : null;
+  const get = (path: string) =>
+    fetch(`${iaConfig.mpApi()}${path}`, { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(8000) }).then(async (r) => ({ http: r.status, body: (await r.json().catch(() => ({}))) as Record<string, unknown> }));
+  const me = await get("/users/me").catch((e: Error) => ({ http: 0, body: { erro: e.message } as Record<string, unknown> }));
+  const app = appId ? await get(`/applications/${appId}`).catch(() => null) : null;
+  const tags = Array.isArray(me.body.tags) ? (me.body.tags as string[]) : [];
+  return {
+    prefixo: seg[0],
+    usuario: { id: me.body.id ?? null, apelido: me.body.nickname ?? null, site: me.body.site_id ?? null, contaDeTeste: tags.includes("test_user"), idConfereComToken: userIdNoToken ? String(me.body.id) === userIdNoToken : null },
+    aplicacao: { id: appId, http: app?.http ?? null, nome: (app?.body.name as string | undefined) ?? null, dono: (app?.body.owner_id as number | undefined) ?? null },
+    painel: appId ? `https://www.mercadopago.com.br/developers/panel/app/${appId}` : "https://www.mercadopago.com.br/developers/panel/app",
   };
 }
