@@ -84,3 +84,8 @@ create table if not exists ia_reembolsos (
 );
 create index if not exists ia_reembolsos_abertos on ia_reembolsos (solicitado_em) where status <> 'concluido';
 alter table ia_reembolsos enable row level security;
+
+-- Checkout próprio: chave do pedido (clique duplo e recarga reutilizam a assinatura) e link do Mercado Pago
+alter table ia_contratacoes add column if not exists chave_pedido text;
+alter table ia_contratacoes add column if not exists mp_checkout_url text;
+create unique index if not exists ia_contratacoes_chave_pedido on ia_contratacoes (chave_pedido) where chave_pedido is not null;

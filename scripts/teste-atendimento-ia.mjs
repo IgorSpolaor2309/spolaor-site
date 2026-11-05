@@ -176,14 +176,17 @@ function charge(c, { status = "approved", amount = 297, debit = iso(Date.now()) 
 
 /* ─────────────── cenários ─────────────── */
 const page = await (await fetch(B + "/atendimento-ia")).text();
-ok(page.includes("297,00") && page.includes("a cada 30 dias") && page.includes("Comprar agora") && page.includes('href="#comprar"'), "página: R$ 297,00 a cada 30 dias e CTA Comprar agora levando ao formulário");
+const checkoutPage = await (await fetch(B + "/atendimento-ia/checkout")).text();
+ok(page.includes("a cada 30 dias") && page.includes("Comprar agora") && page.includes('href="/atendimento-ia/checkout"') && !page.includes('name="email"'), "landing: Comprar agora leva ao checkout, sem formulário embutido");
+ok(checkoutPage.includes("297,00") && checkoutPage.includes("a cada 30 dias") && checkoutPage.includes("Continuar para pagamento") && checkoutPage.includes("2.000 respostas") && checkoutPage.includes("7 dias") && checkoutPage.includes("noindex"), "checkout: resumo, condições, botão principal e fora dos buscadores");
+ok(["nome", "email", "telefone"].every((n) => checkoutPage.includes(`name="${n}"`)) && !/name="(empresa|segmento)"/.test(checkoutPage), "checkout pede só nome completo, e-mail e WhatsApp");
 ok(page.includes("No cartão, a renovação é cobrada automaticamente") && !page.includes("No Pix"), "só o meio validado (cartão) aparece nas condições e no aceite");
 ok(!/implanta[çc][ãa]o (inicial )?(é feita )?pela Spolaor|configurad[oa] pela Spolaor|por mês/i.test(page), "página sem implantação pela Spolaor e sem 'por mês'");
 ok((page.match(/>\/mês</g) ?? []).length >= 1 && (page.match(/>\/mês</g) ?? []).length === (page.match(/Cobrança recorrente <!-- -->a cada 30 dias|Cobrança recorrente a cada 30 dias/g) ?? []).length, "todo preço em /mês vem com a observação do ciclo real (a cada 30 dias)");
 ok(!/zm_test_local|teste-local|segredo-teste/.test(page), "nenhuma credencial no HTML");
 
-const bad = await json("/api/atendimento-ia/contratar", { method: "POST", body: JSON.stringify({ empresa: "", email: "x", aceite: false }) });
-ok(bad.status === 422 && bad.body.errors?.aceite && bad.body.errors?.email, "contratação valida campos e aceite (422)");
+const bad = await json("/api/atendimento-ia/contratar", { method: "POST", body: JSON.stringify({ email: "x", aceite: false }) });
+ok(bad.status === 422 && bad.body.errors?.aceite && bad.body.errors?.email && bad.body.errors?.responsavel, "contratação valida campos e aceite (422)");
 
 const c1 = await contratar("Empresa Um", "um@exemplo.test");
 const cr = mp.creates[0];
@@ -446,6 +449,31 @@ ok((await json("/api/atendimento-ia/configuracao", { method: "POST", body: "{}" 
   await json("/api/atendimento-ia/cancelar", { method: "POST", body: JSON.stringify({ c: a2.id, t: a2.token, confirmar: true }) });
   const s3 = await status(a2);
   ok(s3.arrependimento.disponivel === true && s3.arrependimento.status === null && s3.cancelada && mp.refunds.length === qtd, "cancelamento comum não gera estorno e mantém o direito dentro do prazo");
+}
+// Checkout próprio: nome do cliente, clique duplo, recarga e nova tentativa depois de falha
+{
+  const post = (extra) => json("/api/atendimento-ia/contratar", { method: "POST", body: JSON.stringify({ responsavel: "Maria Souza", email: "maria@exemplo.test", telefone: "(11) 98765-4321", aceite: true, ...extra }) });
+  const chave = "pedido-teste-0001-abcdef";
+  const antes = mp.creates.length;
+  const [d1, d2] = await Promise.all([post({ chavePedido: chave }), post({ chavePedido: chave })]);
+  const umOk = [d1, d2].filter((r) => r.status === 200).length >= 1 && [d1, d2].every((r) => r.status === 200 || r.body.error === "em_andamento");
+  ok(umOk && mp.creates.length === antes + 1, "clique duplo: uma única assinatura no Mercado Pago");
+  const d3 = await post({ chavePedido: chave });
+  ok(d3.status === 200 && d3.body.checkoutUrl === (d1.body.checkoutUrl ?? d2.body.checkoutUrl) && d3.body.acompanhar === null && mp.creates.length === antes + 1, "recarga: mesmo pedido devolve o mesmo link, sem nova assinatura");
+  const criado = d1.body.id ? d1 : d2;
+  const q = new URL(B + criado.body.acompanhar).searchParams;
+  const pedido = { id: q.get("c"), token: q.get("t") };
+  ok((await row(pedido)).empresa === "Maria Souza", "sem dado de empresa: o nome completo é o nome do cliente");
+  const ZmAntes = zm.creates.length;
+  await notify("subscription_authorized_payment", charge(pedido).id);
+  ok(zm.creates.at(-1)?.name === "Maria Souza" && zm.creates.at(-1)?.user?.name === "Maria Souza" && zm.creates.at(-1)?.user?.email === "maria@exemplo.test" && zm.creates.length === ZmAntes + 1, "ZappMillion recebe nome, e-mail e telefone do checkout");
+  ok((await post({ chavePedido: chave })).body.error === "ja_contratada", "pedido já pago não gera novo link");
+  const outra = await post({ chavePedido: "pedido-teste-0002-abcdef", email: "joao@exemplo.test" });
+  const cancelada = new URL(B + outra.body.acompanhar).searchParams;
+  await json("/api/atendimento-ia/cancelar", { method: "POST", body: JSON.stringify({ c: cancelada.get("c"), t: cancelada.get("t"), confirmar: true }) });
+  const nova = await post({ chavePedido: "pedido-teste-0002-abcdef", email: "joao@exemplo.test" });
+  ok(nova.status === 200 && nova.body.id !== outra.body.id, "assinatura cancelada sem pagamento: mesma chave abre um pedido novo");
+  ok((await post({ chavePedido: "curta" })).status === 200, "chave inválida é ignorada, sem impedir a compra");
 }
 // Sem nenhuma notificação: só a página de acompanhamento aberta libera o acesso, com no máximo uma
 // leitura no Mercado Pago a cada 25 s mesmo com várias consultas seguidas.

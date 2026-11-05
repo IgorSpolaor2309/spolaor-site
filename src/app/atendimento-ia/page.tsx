@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { SectionLabel } from "@/components/ui/section-label";
 import { ChatExample } from "@/components/ia/chat-example";
-import { HireForm } from "@/components/ia/hire-form";
 import { Price, PriceNote } from "@/components/ia/price";
 import { ContactForm } from "@/components/forms/contact-form";
 import { publicOffer, validationOk } from "@/lib/ia/config";
@@ -72,6 +71,7 @@ export default async function AtendimentoIaPage({ searchParams }: { searchParams
   const acesso = typeof sp.acesso === "string" && validationOk(sp.acesso) ? sp.acesso : null;
   const offer = publicOffer({ validation: !!acesso });
   const ctaLabel = offer.enabled ? "Comprar agora" : "Quero ser avisado";
+  const checkoutHref = `/atendimento-ia/checkout${acesso ? `?acesso=${encodeURIComponent(acesso)}` : ""}`;
   return (
     <>
       <section className="relative isolate overflow-hidden pb-10 pt-[84px] md:pb-20 md:pt-[140px]" aria-labelledby="ia-title">
@@ -109,7 +109,7 @@ export default async function AtendimentoIaPage({ searchParams }: { searchParams
               </div>
             )}
             <div className="fade-up mt-4 md:mt-6" style={{ animationDelay: "0.2s" }}>
-              <ButtonLink href="#comprar" size="lg" arrow data-hero-cta className="w-full shadow-[0_10px_30px_-10px_rgb(30_91_230/0.6)] sm:w-auto">
+              <ButtonLink href={offer.enabled ? checkoutHref : "#comprar"} size="lg" arrow data-hero-cta className="w-full shadow-[0_10px_30px_-10px_rgb(30_91_230/0.6)] sm:w-auto">
                 {ctaLabel}
               </ButtonLink>
             </div>
@@ -185,7 +185,15 @@ export default async function AtendimentoIaPage({ searchParams }: { searchParams
                     Modo de validação interna: a contratação pública continua desligada. Esta compra é real.
                   </p>
                 )}
-                <HireForm price={offer.price} replyLimit={offer.replyLimit} cycle={offer.cycle} methods={offer.methods} acesso={acesso} />
+                <div className="grid gap-4 rounded-[16px] border border-line-strong bg-ink-900 p-6 sm:p-8">
+                  <p className="text-[1.25rem] font-semibold tracking-[-0.02em]">Comece agora</p>
+                  <p className="leading-relaxed text-muted">
+                    Informe seu nome, e-mail e WhatsApp e conclua o pagamento no ambiente seguro do Mercado Pago. Depois da confirmação, o convite de acesso chega no seu e-mail.
+                  </p>
+                  <ButtonLink href={checkoutHref} size="lg" arrow className="w-full">
+                    Comprar agora
+                  </ButtonLink>
+                </div>
               </>
             ) : (
               <Suspense fallback={<div className="h-[640px] rounded-[16px] bg-ink-900" />}>

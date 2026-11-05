@@ -42,12 +42,39 @@ export function e164(phone: string) {
 
 /* ──────────────────────────────── contratação ──────────────────────────────── */
 
-export async function startContratacao(input: { empresa: string; responsavel: string; email: string; telefone: string; segmento?: string; utm: Record<string, string> }) {
+/** Pedido repetido ainda sendo criado por outra requisição, ou já pago: o navegador não recebe outro link. */
+export class PedidoError extends Error {
+  constructor(public codigo: "em_andamento" | "ja_contratada") {
+    super(codigo);
+  }
+}
+
+/** Reaproveita o pedido da mesma chave. Devolve o link existente ou libera a chave para uma nova tentativa. */
+async function pedidoExistente(chave: string, email: string) {
+  const s = store();
+  const c = await s.byOrderKey(chave);
+  if (!c) return null;
+  const aberto = c.etapa === "aguardando_pagamento" && !isCancelled(c.mpStatus);
+  if (c.email === email && aberto && c.mpCheckoutUrl) return { id: c.id, token: null, checkoutUrl: c.mpCheckoutUrl };
+  if (c.email === email && aberto && Date.now() - new Date(c.criadoEm).getTime() < 60_000) throw new PedidoError("em_andamento");
+  if (c.primeiroPagamentoEm) throw new PedidoError("ja_contratada");
+  await s.update(c.id, { chavePedido: null });
+  return null;
+}
+
+export async function startContratacao(input: { empresa: string; responsavel: string; email: string; telefone: string; segmento?: string; utm: Record<string, string>; chavePedido?: string | null }) {
   const price = iaConfig.price()!;
   const planId = iaConfig.zmPlanId()!;
   const s = store();
-  const { contratacao, token } = await s.create({
+  const chavePedido = input.chavePedido ?? null;
+  if (chavePedido) {
+    const existente = await pedidoExistente(chavePedido, input.email);
+    if (existente) return existente;
+  }
+  const criado = await s
+    .create({
     etapa: "aguardando_pagamento",
+    chavePedido,
     empresa: input.empresa,
     responsavel: input.responsavel,
     email: input.email,
@@ -72,19 +99,32 @@ export async function startContratacao(input: { empresa: string; responsavel: st
     motivoSuspensao: null,
     preAvisoPara: null,
     avisoFornecedorPara: null,
-  });
+  })
+    .catch((e: Error) => {
+      // Duas requisições simultâneas com a mesma chave: o índice único deixa só uma criar a assinatura.
+      if (chavePedido && /duplicate key|chave_pedido/i.test(e.message)) throw new PedidoError("em_andamento");
+      throw e;
+    });
+  const { contratacao, token } = criado;
   const backUrl = `${iaConfig.siteUrl()}/atendimento-ia/acompanhar?c=${contratacao.id}&t=${token}`;
   const valor = price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  const pre = await mp.createPreapproval({
-    // O Mercado Pago aceita no máximo 60 caracteres em reason (erro 400 acima disso).
-    reason: `Atendimento IA WhatsApp · ${valor} ${cycleLabel()}`.slice(0, 60),
-    externalReference: contratacao.id,
-    payerEmail: input.email,
-    amount: price,
-    backUrl,
-  });
-  if (!pre.init_point) throw new Error("Mercado Pago não devolveu o link de pagamento (init_point)");
-  await s.update(contratacao.id, { mpPreapprovalId: pre.id, mpStatus: pre.status });
+  let pre: Awaited<ReturnType<typeof mp.createPreapproval>>;
+  try {
+    pre = await mp.createPreapproval({
+      // O Mercado Pago aceita no máximo 60 caracteres em reason (erro 400 acima disso).
+      reason: `Atendimento IA WhatsApp · ${valor} ${cycleLabel()}`.slice(0, 60),
+      externalReference: contratacao.id,
+      payerEmail: input.email,
+      amount: price,
+      backUrl,
+    });
+    if (!pre.init_point) throw new Error("Mercado Pago não devolveu o link de pagamento (init_point)");
+  } catch (e) {
+    // Sem assinatura criada: libera a chave para o comprador tentar de novo (ex.: corrigir o e-mail).
+    if (chavePedido) await s.update(contratacao.id, { chavePedido: null }).catch(() => {});
+    throw e;
+  }
+  await s.update(contratacao.id, { mpPreapprovalId: pre.id, mpStatus: pre.status, mpCheckoutUrl: pre.init_point });
   return { id: contratacao.id, token, checkoutUrl: pre.init_point };
 }
 
