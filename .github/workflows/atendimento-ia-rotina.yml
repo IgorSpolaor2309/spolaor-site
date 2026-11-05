@@ -6,7 +6,7 @@ name: Atendimento IA - rotina
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "2-57/5 * * * *" # minutos fora do pico do GitHub (hora cheia e múltiplos de 5)
   workflow_dispatch:
 
 permissions: {}

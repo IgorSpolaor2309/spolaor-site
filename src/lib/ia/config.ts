@@ -66,7 +66,11 @@ export const iaConfig = {
   mpToken: () => env("MP_ACCESS_TOKEN"),
   mpWebhookSecret: () => env("MP_WEBHOOK_SECRET"),
   mpApi: () => env("MP_API_URL") || "https://api.mercadopago.com",
-  zmKey: () => env("ZM_API_KEY"),
+  /** Chave colada duas vezes (mesmo valor repetido) vale como uma; valores diferentes seguem inválidos. */
+  zmKey: () => {
+    const parts = env("ZM_API_KEY").split(/\s+/).filter(Boolean);
+    return new Set(parts).size === 1 ? parts[0] : env("ZM_API_KEY");
+  },
   zmApi: () => env("ZM_API_URL") || "https://app.zappmillion.com/api/v1/provisioning",
   adminToken: () => env("IA_ADMIN_TOKEN"),
   cronSecret: () => env("CRON_SECRET"),
