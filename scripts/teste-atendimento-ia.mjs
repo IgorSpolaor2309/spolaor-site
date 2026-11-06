@@ -93,6 +93,7 @@ http
       if (req.headers.authorization !== "Bearer zm_test_local") return send(401, { type: "InvalidApiKey" });
       const u = new URL(req.url, "http://x");
       if (req.method === "GET" && u.pathname === "/plans") return send(200, { data: [{ id: "plan_teste", name: "PRO", monthlyPrice: 97, currency: "BRL", agentReplyLimit: 2000, billingCycleDays: 30 }] });
+      if (req.method === "GET" && u.pathname === "/clients") return send(200, { data: [...zm.clients.values()], total: zm.clients.size });
       if (req.method === "POST" && u.pathname === "/clients") {
         const body = JSON.parse(b);
         zm.creates.push(body);
@@ -474,6 +475,38 @@ ok((await json("/api/atendimento-ia/configuracao", { method: "POST", body: "{}" 
   const nova = await post({ chavePedido: "pedido-teste-0002-abcdef", email: "joao@exemplo.test" });
   ok(nova.status === 200 && nova.body.id !== outra.body.id, "assinatura cancelada sem pagamento: mesma chave abre um pedido novo");
   ok((await post({ chavePedido: "curta" })).status === 200, "chave inválida é ignorada, sem impedir a compra");
+}
+// Conciliação: cancelada sem pagamento não é divergência; período pago em aberto continua sendo
+{
+  const conciliar = async () => (await admin("conciliar")).body.divergencias ?? [];
+  const k1 = await contratar("Cancelada sem pagamento", "k1@exemplo.test");
+  await json("/api/atendimento-ia/cancelar", { method: "POST", body: JSON.stringify({ c: k1.id, t: k1.token, confirmar: true }) });
+  ok((await row(k1)).etapa === "cancelada" && !(await conciliar()).some((x) => x.includes(ext(k1))), "conciliação: assinatura cancelada sem pagamento não gera alerta");
+  const k2 = await contratar("Cancelada paga", "k2@exemplo.test");
+  await notify("subscription_authorized_payment", charge(k2).id);
+  await json("/api/atendimento-ia/cancelar", { method: "POST", body: JSON.stringify({ c: k2.id, t: k2.token, confirmar: true }) });
+  ok(!(await conciliar()).some((x) => x.includes(ext(k2))), "conciliação: cancelada com período pago e cliente ativo não gera alerta");
+  const guardado = zm.clients.get(ext(k2));
+  zm.clients.delete(ext(k2));
+  ok((await conciliar()).some((x) => x.includes(ext(k2)) && x.includes("ausente")), "conciliação: cancelada com período pago e sem cliente gera alerta");
+  zm.clients.set(ext(k2), guardado);
+  const k3 = await contratar("Ativa sem cliente", "k3@exemplo.test");
+  await notify("subscription_authorized_payment", charge(k3).id);
+  const g3 = zm.clients.get(ext(k3));
+  zm.clients.delete(ext(k3));
+  ok((await conciliar()).some((x) => x.includes(ext(k3))), "conciliação: acesso criado e cliente ausente continua gerando alerta");
+  zm.clients.set(ext(k3), g3);
+  const { deveTerAcesso } = await import("../src/lib/ia/acesso-esperado.ts");
+  const ag = new Date("2026-06-15T12:00:00Z");
+  ok(
+    deveTerAcesso({ etapa: "acesso_criado", primeiroPagamentoEm: "x", pagoAte: "2026-07-01T00:00:00Z" }, ag) &&
+      deveTerAcesso({ etapa: "cancelada", primeiroPagamentoEm: "x", pagoAte: "2026-07-01T00:00:00Z" }, ag) &&
+      deveTerAcesso({ etapa: "cancelada", primeiroPagamentoEm: "x", pagoAte: null }, ag) &&
+      !deveTerAcesso({ etapa: "cancelada", primeiroPagamentoEm: "x", pagoAte: "2026-06-01T00:00:00Z" }, ag) &&
+      !deveTerAcesso({ etapa: "cancelada", primeiroPagamentoEm: null, pagoAte: null }, ag) &&
+      !deveTerAcesso({ etapa: "suspensa", primeiroPagamentoEm: "x", pagoAte: "2026-07-01T00:00:00Z" }, ag),
+    "regra: período pago encerrado e etapas sem acesso não contam; pago sem período conta",
+  );
 }
 // Sem nenhuma notificação: só a página de acompanhamento aberta libera o acesso, com no máximo uma
 // leitura no Mercado Pago a cada 25 s mesmo com várias consultas seguidas.
