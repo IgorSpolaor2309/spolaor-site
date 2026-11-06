@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import { deveTerAcesso } from "./acesso-esperado";
 import { iaConfig, cycleLabel } from "./config";
 import { mp, type AuthorizedPayment } from "./mercadopago";
 import { zm, ZmError, type ZmClient } from "./zappmillion";
@@ -539,7 +540,7 @@ export async function reconcile() {
     else if (c.etapa === "suspensa") problemas.push(`${ext}: ativo no ZappMillion, suspenso no site (${c.motivoSuspensao})`);
   }
   for (const [ext, c] of ours) {
-    if ((c.etapa === "acesso_criado" || c.etapa === "cancelada") && theirs.get(ext)?.status !== "ACTIVE") problemas.push(`${ext}: ativo no site, ${theirs.get(ext)?.status ?? "ausente"} no ZappMillion`);
+    if (deveTerAcesso(c) && theirs.get(ext)?.status !== "ACTIVE") problemas.push(`${ext}: ativo no site, ${theirs.get(ext)?.status ?? "ausente"} no ZappMillion`);
   }
   if (problemas.length) await notifyOps(`Conciliação: ${problemas.length} divergência(s)`, problemas.join("\n"));
   return problemas;
