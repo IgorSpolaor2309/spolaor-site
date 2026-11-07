@@ -63,39 +63,126 @@ export function loadAnalytics() {
 
 /** Visualização de página (a cada navegação) e, nas páginas de oferta, ViewContent. */
 export function trackPageView(pathname: string) {
-  const win = w();
-  win.fbq?.("track", "PageView");
-  win.gtag?.("event", "page_view", { page_path: pathname });
-  const origem = origemFromPath(pathname);
-  if (origem && origem !== "home" && origem !== "contato" && origem !== "pagina-analise") {
-    win.fbq?.("track", "ViewContent", { content_name: INTERESSES[origem], content_category: origem });
+  // Falha do Pixel ou do gtag nunca derruba a página.
+  try {
+    const win = w();
+    win.fbq?.("track", "PageView");
+    win.gtag?.("event", "page_view", { page_path: pathname });
+    const origem = origemFromPath(pathname);
+    if (origem && origem !== "home" && origem !== "contato" && origem !== "pagina-analise") {
+      win.fbq?.("track", "ViewContent", { content_name: INTERESSES[origem], content_category: origem });
+    }
+  } catch {
+    // medição indisponível
   }
 }
 
 const sent = new Set<string>();
 
+/* ─────────────── Funil do Atendimento com IA (docs/ATENDIMENTO-IA.md, "Medição do funil") ───────────────
+ * InitiateCheckout → CompleteRegistration → PaymentRedirect (personalizado) → Subscribe + Purchase.
+ * Regras: inicializa a medição antes de enfileirar; marca como enviado só depois de enfileirar; nenhuma falha
+ * de Pixel, script bloqueado ou armazenamento indisponível interrompe a contratação; nenhum dado pessoal nos
+ * parâmetros (só nome da oferta, categoria, valor e moeda; o eventID é o id da contratação). */
+
+const IA = { content_name: "Atendimento com IA no WhatsApp", content_category: "atendimento-ia" } as const;
+
+const store = {
+  get(key: string) {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  set(key: string) {
+    try {
+      localStorage.setItem(key, "1");
+    } catch {
+      // armazenamento indisponível: vale a marcação em memória desta página
+    }
+  },
+};
+const alreadySent = (key: string) => sent.has(key) || !!store.get(key);
+
 /**
- * Conversão: chamada SOMENTE depois que a API aceitou o lead (resposta 200), uma vez por lead.
- * `leadId` é o ID devolvido pela API e serve de eventID (deduplicação).
+ * Enfileira no Pixel (e no GA4, se configurado) depois de garantir a inicialização. Devolve true só quando
+ * algo foi enfileirado; erros do Pixel ou do gtag nunca escapam.
  */
+function emit(fire: (win: Win) => void): boolean {
+  if (!analyticsEnabled) return false;
+  try {
+    loadAnalytics();
+    const win = w();
+    if (!win.fbq && !win.gtag) return false;
+    fire(win);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Dispara uma única vez por chave: confere, enfileira e só então marca (memória e, se houver, localStorage). */
+function once(key: string, fire: (win: Win) => void, persist = true) {
+  if (alreadySent(key)) return false;
+  if (!emit(fire)) return false;
+  sent.add(key);
+  if (persist) store.set(key);
+  return true;
+}
+
+/** Entrada no checkout disponível. `aberturaId` é gerado uma vez por abertura da tela (não persiste). */
+export function trackCheckoutView(aberturaId: string, value: number) {
+  return once(
+    `checkout-${aberturaId}`,
+    (win) => {
+      win.fbq?.("track", "InitiateCheckout", { ...IA, value, currency: "BRL", num_items: 1 }, { eventID: `checkout-${aberturaId}` });
+      if (GA_ID) win.gtag?.("event", "begin_checkout", { value, currency: "BRL", items: [{ item_name: IA.content_name }] });
+    },
+    false,
+  );
+}
+
+/** Cadastro aceito: a API devolveu o id da contratação e o link de pagamento. Uma vez por contratação. */
+export function trackCheckoutRegistered(contratacaoId: string) {
+  return once(`registro-${contratacaoId}`, (win) => {
+    win.fbq?.("track", "CompleteRegistration", { ...IA, status: "pagamento_pendente" }, { eventID: `registro-${contratacaoId}` });
+    if (GA_ID) win.gtag?.("event", "sign_up", { method: "checkout_atendimento_ia" });
+  });
+}
+
 /**
- * Compra: chamada SOMENTE quando o servidor confirmou a primeira cobrança aprovada da assinatura
- * (página de acompanhamento). O id da contratação é o eventID/transaction_id: uma conversão por
- * contratação, mesmo que a página seja aberta de novo.
+ * Encaminhamento ao Mercado Pago, imediatamente antes de abrir o link. Indica que o site encaminhou o
+ * comprador; NÃO comprova que o checkout do Mercado Pago carregou. Uma vez por contratação.
+ */
+export function trackPaymentRedirect(contratacaoId: string) {
+  return once(`redirecionamento-${contratacaoId}`, (win) => {
+    win.fbq?.("trackCustom", "PaymentRedirect", { ...IA }, { eventID: `redirecionamento-${contratacaoId}` });
+    if (GA_ID) win.gtag?.("event", "payment_redirect", { content_category: IA.content_category });
+  });
+}
+
+/**
+ * Primeiro pagamento aprovado e confirmado pelo servidor (página de acompanhamento): Subscribe, para o
+ * objetivo "Assinar" das campanhas, e Purchase, mantido como antes. Os dois descrevem a MESMA assinatura,
+ * não duas vendas. Uma vez por contratação, também ao reabrir: se o marcador antigo `purchase-<id>` existir,
+ * nada é enviado de novo. Validação interna nunca chega aqui (quem chama confere `interna`).
  */
 export function trackPurchase(contratacaoId: string, value: number) {
-  const key = `purchase-${contratacaoId}`;
-  try {
-    if (localStorage.getItem(key)) return;
-    localStorage.setItem(key, "1");
-  } catch {
-    if (sent.has(key)) return;
+  const purchaseKey = `purchase-${contratacaoId}`;
+  if (alreadySent(purchaseKey) || alreadySent(`subscribe-${contratacaoId}`)) return false;
+  const ok = emit((win) => {
+    const params = { ...IA, value, currency: "BRL" };
+    win.fbq?.("track", "Subscribe", { ...params, predicted_ltv: value }, { eventID: `subscribe-${contratacaoId}` });
+    win.fbq?.("track", "Purchase", params, { eventID: contratacaoId });
+    if (GA_ID) win.gtag?.("event", "purchase", { transaction_id: contratacaoId, value, currency: "BRL", items: [{ item_name: IA.content_name }] });
+  });
+  if (!ok) return false;
+  for (const k of [purchaseKey, `subscribe-${contratacaoId}`]) {
+    sent.add(k);
+    store.set(k);
   }
-  sent.add(key);
-  const win = w();
-  const params = { content_name: "Atendimento com IA no WhatsApp", content_category: "atendimento-ia", value, currency: "BRL" };
-  win.fbq?.("track", "Purchase", params, { eventID: contratacaoId });
-  if (GA_ID) win.gtag?.("event", "purchase", { transaction_id: contratacaoId, value, currency: "BRL", items: [{ item_name: params.content_name }] });
+  return true;
 }
 
 export function trackLead(origemRaw: string, leadId: string | undefined) {
@@ -104,8 +191,12 @@ export function trackLead(origemRaw: string, leadId: string | undefined) {
   if (sent.has(key)) return;
   sent.add(key);
   const params = { content_name: origem ? INTERESSES[origem] : origemRaw, content_category: origemRaw };
-  const win = w();
-  win.fbq?.("track", "Lead", params, { eventID: key });
-  if (ADS_ID && ADS_LEAD_LABEL) win.gtag?.("event", "conversion", { send_to: `${ADS_ID}/${ADS_LEAD_LABEL}`, transaction_id: key });
-  if (GA_ID) win.gtag?.("event", "generate_lead", { ...params, transaction_id: key });
+  try {
+    const win = w();
+    win.fbq?.("track", "Lead", params, { eventID: key });
+    if (ADS_ID && ADS_LEAD_LABEL) win.gtag?.("event", "conversion", { send_to: `${ADS_ID}/${ADS_LEAD_LABEL}`, transaction_id: key });
+    if (GA_ID) win.gtag?.("event", "generate_lead", { ...params, transaction_id: key });
+  } catch {
+    // medição indisponível: o lead já foi aceito pela API
+  }
 }

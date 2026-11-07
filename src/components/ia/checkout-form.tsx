@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { context } from "@/lib/leads/client";
+import { trackCheckoutRegistered, trackCheckoutView, trackPaymentRedirect } from "@/lib/analytics";
 import { arrependimentoTexto, renewalTerms, type Meio } from "@/lib/ia/terms";
 
 // Dados mínimos da assinatura e do acesso: o nome completo vira o nome do cliente no ZappMillion, o e-mail
@@ -54,6 +55,14 @@ export function CheckoutForm({ price, cycle, methods, acesso = null }: { price: 
   const [state, setState] = useState<"idle" | "sending" | "error" | "ja_contratada">("idle");
   const enviando = useRef(false);
   const brl = price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  // Id desta abertura da tela: o estado sobrevive à reexecução de efeitos do React, então o evento sai uma vez.
+  const [abertura] = useState(() => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
+
+  // Entrada no checkout disponível (a página só monta o formulário com a contratação aberta). Validação
+  // interna não é medida.
+  useEffect(() => {
+    if (!acesso) trackCheckoutView(abertura, price);
+  }, [abertura, acesso, price]);
 
   async function enviar(body: Record<string, unknown>, tentativa = 0): Promise<void> {
     const res = await fetch("/api/atendimento-ia/contratar", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
@@ -74,11 +83,18 @@ export function CheckoutForm({ price, cycle, methods, acesso = null }: { price: 
       enviando.current = false;
       return;
     }
-    if (!res.ok || !data.checkoutUrl) throw new Error(String(res.status));
+    if (!res.ok || !data.ok || !data.checkoutUrl || !data.id) throw new Error(String(res.status));
     try {
       if (data.acompanhar) localStorage.setItem("spolaor:atendimento-ia", data.acompanhar);
     } catch {
       // sem localStorage: o link de retorno do Mercado Pago continua funcionando
+    }
+    // Cadastro aceito e encaminhamento: medidos só com o id e o link devolvidos pela API, nunca na
+    // validação interna. Um intervalo curto dá tempo de o Pixel enviar; a navegação acontece de qualquer jeito.
+    if (!acesso) {
+      const registrou = trackCheckoutRegistered(String(data.id));
+      const encaminhou = trackPaymentRedirect(String(data.id));
+      if (registrou || encaminhou) await new Promise((r) => setTimeout(r, 300));
     }
     window.location.assign(data.checkoutUrl);
   }
