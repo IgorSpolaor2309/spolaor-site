@@ -12,7 +12,11 @@ export function Analytics() {
   useEffect(() => {
     if (!analyticsEnabled || last.current === pathname) return;
     last.current = pathname;
-    loadAnalytics();
+    try {
+      loadAnalytics();
+    } catch {
+      // script de medição indisponível: a página segue normalmente
+    }
     trackPageView(pathname);
   }, [pathname]);
 

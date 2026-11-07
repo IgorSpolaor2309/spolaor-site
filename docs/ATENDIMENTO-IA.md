@@ -237,3 +237,39 @@ Ver `docs/ATENDIMENTO-IA-LANCAMENTO.md` (prévia da Vercel com bypass, banco Neo
 ## Validação controlada antes dos anúncios
 
 Proposta (exige autorização específica antes de qualquer cobrança real): ver o item 8 em `docs/ATENDIMENTO-IA-LANCAMENTO.md`. O link `/atendimento-ia?acesso=<IA_TOKEN_VALIDACAO>` permite a compra interna com a contratação pública desligada, sem disparar `Purchase`.
+
+## Medição do funil (Meta Pixel; GA4 se `NEXT_PUBLIC_GA_ID` existir)
+
+Código em `src/lib/analytics.ts`, chamado por `checkout-form.tsx` e `follow-up.tsx`. Teste: `scripts/teste-medicao-funil.mjs`.
+
+| Etapa | Evento no Pixel | Quando dispara | GA4 (se configurado) |
+|---|---|---|---|
+| Entrada no checkout | `InitiateCheckout` (value 297, BRL) | Ao abrir `/atendimento-ia/checkout` com a contratação disponível; uma vez por abertura da tela | `begin_checkout` |
+| Cadastro aceito | `CompleteRegistration` | Só quando a API devolve `ok`, o id da contratação e o link de pagamento; uma vez por contratação | `sign_up` |
+| Encaminhamento ao pagamento | `PaymentRedirect` (personalizado) | Imediatamente antes de abrir o link do Mercado Pago; uma vez por contratação | `payment_redirect` |
+| Assinatura paga | `Subscribe` (value 297, BRL) e `Purchase` (value 297, BRL) | Quando o servidor confirma o primeiro pagamento aprovado, na página de acompanhamento; uma vez por contratação | `purchase` |
+
+Regras:
+- `PaymentRedirect` indica que o site encaminhou o comprador. **Não comprova** que o checkout do Mercado Pago carregou
+  nem que houve pagamento.
+- `Subscribe` e `Purchase` descrevem **a mesma assinatura**: não some os dois como vendas. As campanhas usam "Assinar"
+  (`Subscribe`); `Purchase` fica por compatibilidade.
+- Nenhum evento é enviado em validação interna (`?acesso=`), erro de validação, erro do provedor, resposta sem link
+  ou pagamento ainda não confirmado. Clique, tentativa, cadastro e assinatura pendente nunca viram compra, assinatura
+  paga ou Lead.
+- Deduplicação: `eventID` com o id da contratação (`registro-<id>`, `redirecionamento-<id>`, `subscribe-<id>` e `<id>`
+  no Purchase, como antes) e marcadores no `localStorage`. O marcador antigo `purchase-<id>` continua valendo: quem já
+  enviou Purchase não reenvia nada.
+- A medição é inicializada antes de enfileirar, e o evento só é marcado como enviado depois de enfileirado. Pixel com
+  falha, script bloqueado ou armazenamento indisponível não impedem a contratação nem o redirecionamento (no último
+  caso, a deduplicação vale só na página aberta).
+- Parâmetros: nome da oferta, categoria, valor e moeda. Nunca nome, e-mail, telefone, conteúdo do formulário, token
+  ou URL privada. As UTMs seguem como antes, no cadastro da contratação.
+
+Limitações:
+- Sem CAPI (conversões pelo servidor): bloqueador de anúncios ou navegador sem cookies impedem o envio, e a assinatura
+  paga só é medida se o comprador abrir a página de acompanhamento depois do pagamento.
+- Nada disso reconstrói o histórico: antes desta versão, entrada no checkout, cadastro e encaminhamento não eram
+  medidos, e Purchase podia se perder se disparado antes da inicialização do Pixel.
+- Teste local: `NEXT_PUBLIC_META_PIXEL_ID=000000000000001 npm run build`, depois os servidores descritos no início de
+  `scripts/teste-medicao-funil.mjs`.

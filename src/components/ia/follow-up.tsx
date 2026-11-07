@@ -108,7 +108,8 @@ export function FollowUp({ id, token }: { id: string; token: string }) {
     }
   }
 
-  // Conversão de compra só com o primeiro pagamento confirmado pelo servidor; uma vez por contratação.
+  // Subscribe (objetivo "Assinar") e Purchase, só com o primeiro pagamento confirmado pelo servidor e fora da
+  // validação interna; uma vez por contratação, também ao atualizar ou reabrir a página.
   useEffect(() => {
     if (status?.pagamentoConfirmado && !status.interna) trackPurchase(id, status.valor);
   }, [status?.pagamentoConfirmado, status?.interna, status?.valor, id]);
