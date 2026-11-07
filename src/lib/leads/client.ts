@@ -1,7 +1,21 @@
 "use client";
 
+import type { SyntheticEvent } from "react";
 import type { LeadPayload } from "./schema";
-import { trackLead } from "../analytics";
+import { trackFormStart, trackLead } from "../analytics";
+
+const FIELD = "input:not([type=hidden]):not([name=website]), textarea, select, button, label";
+
+/**
+ * Props do <form> de lead para medir o início do formulário (FormStart, uma vez por origem): primeiro
+ * foco ou toque num campo, opção ou botão do formulário. Não lê nem envia o conteúdo dos campos.
+ */
+export function formStartProps(origem: string) {
+  const start = (e: SyntheticEvent) => {
+    if ((e.target as Element | null)?.closest?.(FIELD)) trackFormStart(origem);
+  };
+  return { onFocus: start, onClick: start };
+}
 
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "fbclid"];
 const ENTRY_KEY = "spolaor:entrada";
@@ -67,7 +81,15 @@ export async function submitLead(data: LeadPayload, honeypot?: string): Promise<
   const body = await res.json().catch(() => ({}));
   // 503: o site está sem destino de leads configurado; nada foi guardado.
   if (!res.ok) return { ok: false, errors: body.errors, unavailable: res.status === 503 };
-  // Conversão medida só aqui, depois da resposta 200 da API (envio aceito), e uma vez por lead.
-  trackLead(data.origem, body.id);
+  // Conversão medida só aqui: resposta 200 COM o id do lead registrado (envio aceito), uma vez por lead
+  // (o id é o eventID). Sem id não há lead registrado (ex.: envio descartado pelo anti-spam), então não há
+  // Lead. Uma falha da medição nunca transforma um envio aceito em erro na tela.
+  if (typeof body.id === "string" && body.id) {
+    try {
+      trackLead(data.origem, body.id);
+    } catch {
+      // medição indisponível: o lead já foi aceito
+    }
+  }
   return { ok: true, id: body.id };
 }

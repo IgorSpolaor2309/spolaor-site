@@ -9,6 +9,7 @@ import { LeadAttribution } from "@/components/layout/lead-attribution";
 import { Analytics } from "@/components/layout/analytics";
 import { RevealReady } from "@/components/layout/reveal-ready";
 import { isIndexable, site, siteBaseUrl } from "@/lib/site";
+import { headPixelId, pixelHeadScript } from "@/lib/pixel-head";
 import "./globals.css";
 
 // Sora nos títulos (geométrica, ecoa o "SPOLAOR" da logo); Manrope no texto corrido.
@@ -87,6 +88,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Marca que há JavaScript antes da primeira pintura: sem ele, as entradas [data-reveal]
             aparecem direto (globals.css). */}
         <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+        {/* Meta Pixel: PageView da primeira página antes da hidratação (veja lib/pixel-head.ts). */}
+        {headPixelId && <script dangerouslySetInnerHTML={{ __html: pixelHeadScript(headPixelId) }} />}
       </head>
       <body className="min-h-dvh overflow-x-clip">
         <a

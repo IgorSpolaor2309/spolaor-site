@@ -21,6 +21,8 @@ type Win = Window & {
   _fbq?: unknown;
   dataLayer?: unknown[];
   gtag?: (...a: unknown[]) => void;
+  /** Marcado pelo código base do Pixel no <head> (lib/pixel-head.ts): o PageView da primeira página já saiu. */
+  __spolaorPageView?: number;
 };
 const w = () => window as Win;
 
@@ -66,7 +68,9 @@ export function trackPageView(pathname: string) {
   // Falha do Pixel ou do gtag nunca derruba a página.
   try {
     const win = w();
-    win.fbq?.("track", "PageView");
+    // A primeira página da visita já teve o PageView enfileirado pelo <head>, antes da hidratação: não repete.
+    if (win.__spolaorPageView) delete win.__spolaorPageView;
+    else win.fbq?.("track", "PageView");
     win.gtag?.("event", "page_view", { page_path: pathname });
     const origem = origemFromPath(pathname);
     if (origem && origem !== "home" && origem !== "contato" && origem !== "pagina-analise") {
@@ -198,5 +202,24 @@ export function trackLead(origemRaw: string, leadId: string | undefined) {
     if (GA_ID) win.gtag?.("event", "generate_lead", { ...params, transaction_id: key });
   } catch {
     // medição indisponível: o lead já foi aceito pela API
+  }
+}
+
+/**
+ * Início do formulário: o visitante entrou num campo de um formulário de lead. Uma vez por origem a
+ * cada carregamento da página. Evento personalizado (FormStart), NÃO é conversão nem Lead e não leva
+ * nada do que foi digitado: só a origem do formulário. Serve para separar "ninguém chegou ao
+ * formulário" de "começou e não terminou".
+ */
+export function trackFormStart(origemRaw: string) {
+  const key = `form-start-${origemRaw}`;
+  if (sent.has(key)) return;
+  sent.add(key);
+  try {
+    const win = w();
+    win.fbq?.("trackCustom", "FormStart", { content_category: origemRaw });
+    if (GA_ID) win.gtag?.("event", "form_start", { form_id: origemRaw });
+  } catch {
+    // medição indisponível: o formulário segue normalmente
   }
 }
