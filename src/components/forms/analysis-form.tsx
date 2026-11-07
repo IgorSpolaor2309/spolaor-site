@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { maskPhone, validateLead, type LeadOrigem, type LeadPayload } from "@/lib/leads/schema";
-import { submitLead } from "@/lib/leads/client";
+import { formStartProps, submitLead } from "@/lib/leads/client";
 import { PROBLEMAS, SEGMENTOS, SEGMENTO_DA_ORIGEM } from "@/lib/segments";
 import { FormUnavailable, SubmitError } from "./submit-error";
 import { whatsappLink } from "@/lib/site";
@@ -128,7 +128,7 @@ export function AnalysisForm({
         </div>
       )}
 
-      <form onSubmit={submit} noValidate className="p-6 md:p-8" aria-label="Solicitar diagnóstico gratuito">
+      <form {...formStartProps(origem)} onSubmit={submit} noValidate className="p-6 md:p-8" aria-label="Solicitar diagnóstico gratuito">
         <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
         {!available && step < 3 && (
           <div className="mb-6">

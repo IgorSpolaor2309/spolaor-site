@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { maskPhone, validateLead, type LeadPayload } from "@/lib/leads/schema";
-import { submitLead } from "@/lib/leads/client";
+import { formStartProps, submitLead } from "@/lib/leads/client";
 import { FormUnavailable, SubmitError } from "@/components/forms/submit-error";
 import { whatsappLink } from "@/lib/site";
 
@@ -133,7 +133,7 @@ export function SiteDiagnosisForm({ available = true }: { /** false enquanto nã
           )}
         </div>
       ) : (
-        <form ref={formRef} onSubmit={submit} noValidate aria-label="Solicitar diagnóstico gratuito" className="grid gap-7 p-5 sm:p-8">
+        <form ref={formRef} {...formStartProps(data.origem)} onSubmit={submit} noValidate aria-label="Solicitar diagnóstico gratuito" className="grid gap-7 p-5 sm:p-8">
           <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
           {!available && <FormUnavailable />}
 

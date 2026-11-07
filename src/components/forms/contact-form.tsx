@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { maskPhone, validateLead, type LeadOrigem, type LeadPayload } from "@/lib/leads/schema";
-import { submitLead } from "@/lib/leads/client";
+import { formStartProps, submitLead } from "@/lib/leads/client";
 import { FormUnavailable, SubmitError } from "./submit-error";
 
 const contactInterests = ["Site ou landing page", "Automação de processos", "Outro (sistema, loja virtual, consultoria)"];
@@ -108,7 +108,7 @@ export function ContactForm({
   ] as const;
 
   return (
-    <form onSubmit={submit} noValidate className="grid gap-6 rounded-[16px] border border-line-strong bg-ink-900/90 p-6 md:p-9" aria-label={formLabel}>
+    <form {...formStartProps(origem)} onSubmit={submit} noValidate className="grid gap-6 rounded-[16px] border border-line-strong bg-ink-900/90 p-6 md:p-9" aria-label={formLabel}>
       <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
       {!available && <FormUnavailable />}
       <div>

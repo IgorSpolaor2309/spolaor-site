@@ -112,6 +112,14 @@ A linguagem fala do que melhora no trabalho (orçamentos sem retorno, informaç�
 
 **Captação.** Sem destino configurado, os formulários mostram desde o início que o envio está sendo configurado e não deixam enviar (`leadsAvailable()`, lido no build: depois de ligar um conector, faça Redeploy). Se ainda assim a API responder 503, a mensagem diz que nada foi enviado. Sucesso só aparece com resposta 200, que só sai depois de um conector persistente guardar o lead.
 
+**Medição dos leads (Meta Pixel).** Ordem dos eventos: `PageView` → `ViewContent` (páginas de oferta) → `FormStart` (personalizado) → `Lead`.
+
+- `PageView` da primeira página sai do código base do Pixel no `<head>` (`src/lib/pixel-head.ts`, inline no `layout.tsx`), antes da hidratação. Antes ele dependia da hidratação e só saía depois do evento `load` (≈2,8 s em 4G e 9–11 s em 3G simulados, com o texto já na tela em ≈1,3 s e ≈3 s). Com isso, a "visualização da página de destino" da Meta deixava de contar quem lia a abertura e saía antes. As navegações internas seguem com `trackPageView` (componente `Analytics`), que não repete o primeiro PageView (`window.__spolaorPageView`).
+- `FormStart`: primeiro foco ou toque num campo, opção ou botão de um formulário de lead (`formStartProps` em `lib/leads/client.ts`), uma vez por origem. Leva só `content_category` (a origem); não é conversão nem Lead e não lê o que foi digitado.
+- `Lead`: só com resposta 200 **e** o `id` do lead registrado, que vira o `eventID` (uma conversão por lead). Não dispara em clique, formulário inválido, falha do provedor (502), destino ausente (503) nem envio descartado pelo anti-spam (200 sem id). Uma falha da medição não troca o sucesso por erro na tela.
+- Nenhum evento leva nome, telefone, e-mail, site ou mensagem. Origem, página do envio, primeira página da visita e UTMs vão só no lead (e-mail), nunca no Pixel.
+- Teste local: `node scripts/teste-medicao-leads.mjs` (Pixel e provedor de e-mail simulados; instruções no topo do arquivo).
+
 ## 8. Landing de diagnóstico de site (outubro/2026)
 
 `/diagnostico-site` é destino de anúncios e de conteúdo orgânico (inclusive o vídeo dos lápis), então foi refeita para o celular primeiro, com peças próprias em `src/components/diagnostico/` e sem mexer nos componentes compartilhados das outras landings.
