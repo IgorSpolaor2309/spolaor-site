@@ -8,6 +8,8 @@
 //   IA_MEIOS_PAGAMENTO=cartao   (IA_CARENCIA_DIAS no padrão decidido: 10)
 //   MP_ACCESS_TOKEN=teste-local MP_WEBHOOK_SECRET=segredo-teste MP_API_URL=http://localhost:4020
 //   ZM_API_KEY=zm_test_local ZM_API_URL=http://localhost:4021 IA_ADMIN_TOKEN=admin-teste CRON_SECRET=cron-teste
+//   RESEND_API_KEY=teste-local RESEND_API_URL=http://localhost:4022/emails LEAD_EMAIL_TO=ops@exemplo.test
+//   LEAD_EMAIL_FROM=site@exemplo.test   (e-mail simulado: aviso interno de novo cadastro)
 // Segundo servidor (validação interna) em :3211 com as mesmas variáveis, exceto IA_CONTRATACAO_ATIVA, e com
 //   IA_TOKEN_VALIDACAO=validacao-interna-teste-0123456789 NEXT_PUBLIC_SITE_URL=http://localhost:3211
 // Uso: node scripts/teste-atendimento-ia.mjs
@@ -38,6 +40,7 @@ http
       let m;
       if (/\/falha-/.test(u.pathname)) return send(503, { message: "indisponível" });
       if (/\/limite-/.test(u.pathname)) return send(429, { message: "local_rate_limited" });
+      if (req.method === "POST" && u.pathname === "/preapproval" && mp.failCreate) return send(400, { message: "User bad request" });
       if (req.method === "POST" && u.pathname === "/preapproval") {
         const body = JSON.parse(b);
         mp.creates.push(body);
@@ -72,6 +75,23 @@ http
     });
   })
   .listen(4020);
+
+/* ─────────────── E-mail (Resend) simulado ─────────────── */
+const mail = { sent: [], fail: 0 };
+http
+  .createServer((req, res) => {
+    let b = "";
+    req.on("data", (c) => (b += c));
+    req.on("end", () => {
+      res.writeHead(mail.fail ? 500 : 200, { "content-type": "application/json" });
+      if (mail.fail) return res.end("{}");
+      const m = JSON.parse(b || "{}");
+      mail.sent.push({ ...m, key: req.headers["idempotency-key"] ?? null });
+      res.end(JSON.stringify({ id: `email_${mail.sent.length}` }));
+    });
+  })
+  .listen(4022);
+const avisos = (id) => mail.sent.filter((m) => m.subject?.startsWith("Atendimento IA · Novo cadastro") && (!id || m.text.includes(id)));
 
 /* ─────────────── ZappMillion simulado ─────────────── */
 const zm = { clients: new Map(), charges: new Map(), creates: [], suspends: [], reactivates: [], failCreate: 0 };
@@ -507,6 +527,64 @@ ok((await json("/api/atendimento-ia/configuracao", { method: "POST", body: "{}" 
       !deveTerAcesso({ etapa: "suspensa", primeiroPagamentoEm: "x", pagoAte: "2026-07-01T00:00:00Z" }, ag),
     "regra: período pago encerrado e etapas sem acesso não contam; pago sem período conta",
   );
+}
+// Aviso interno de novo cadastro (pagamento pendente)
+{
+  const esperaAviso = async (pred, ms = 6000) => {
+    for (let t = 0; t < ms && !pred(); t += 250) await new Promise((r) => setTimeout(r, 250));
+  };
+  const post = (extra, base = "") => json(base + "/api/atendimento-ia/contratar", { method: "POST", body: JSON.stringify({ responsavel: "Ana Aviso", email: "ana.aviso@exemplo.test", telefone: "(11) 91234-5678", aceite: true, utm: { utm_source: "meta", utm_medium: "paid_social", utm_campaign: "whatsapp_ia", utm_content: "imagem", utm_term: "52543155169450", fbclid: "IwSEGREDOFBCLID" }, ...extra }) });
+  const linha = async (id) => (await admin("listar")).body.contratacoes.find((x) => x.id === id);
+  const total0 = avisos().length;
+  const a1 = await post({ chavePedido: "aviso-pedido-0001-abcdef" });
+  await esperaAviso(() => avisos(a1.body.id).length > 0);
+  const m = avisos(a1.body.id)[0];
+  ok(a1.status === 200 && avisos(a1.body.id).length === 1 && (await linha(a1.body.id)).avisoCadastro === "enviado", "cadastro válido com link salvo: um aviso interno, estado enviado");
+  ok(m?.subject === "Atendimento IA · Novo cadastro — pagamento pendente" && m?.to?.includes("ops@exemplo.test") && m?.key === `aviso-cadastro-${a1.body.id}`, "aviso: assunto, destinatário interno e chave de idempotência");
+  ok(["Ana Aviso", "ana.aviso@exemplo.test", "(11) 91234-5678", "https://wa.me/5511912345678", a1.body.id, "R$ 297,00", "Campanha: whatsapp_ia", "utm_content): imagem", "52543155169450", "(Brasília)", "pagamento ainda não confirmado", "Este aviso não confirma uma venda nem abandono."].every((t) => m?.text.replace(/ /g, " ").includes(t)), "aviso: dados do interessado, oferta, origem, situação e ressalva");
+  ok(!/IwSEGREDOFBCLID|fbclid|mp\.simulado|https?:\/\/(?!wa\.me)|acompanhar|[?&]t=/.test(m?.text ?? "x"), "aviso sem fbclid, link de pagamento, link de acompanhamento ou token");
+  const [d1, d2] = await Promise.all([post({ chavePedido: "aviso-pedido-0001-abcdef" }), post({ chavePedido: "aviso-pedido-0001-abcdef" })]);
+  await new Promise((r) => setTimeout(r, 1500));
+  ok(d1.body.id === a1.body.id && d2.body.id === a1.body.id && avisos(a1.body.id).length === 1, "pedido repetido e concorrente: sem aviso duplicado");
+  const [c1, c2] = await Promise.all([post({ chavePedido: "aviso-pedido-0002-abcdef", email: "beto.aviso@exemplo.test" }), post({ chavePedido: "aviso-pedido-0002-abcdef", email: "beto.aviso@exemplo.test" })]);
+  const idc = [c1, c2].find((x) => x.status === 200)?.body.id;
+  await esperaAviso(() => avisos(idc).length > 0);
+  await cron();
+  ok(avisos(idc).length === 1, "cliques concorrentes de um pedido novo: um aviso, também depois da rotina");
+  const antes = avisos().length;
+  await post({ email: "invalido", chavePedido: "aviso-pedido-0003-abcdef" });
+  mp.failCreate = 1;
+  const f = await post({ chavePedido: "aviso-pedido-0004-abcdef", email: "falha.mp@exemplo.test" });
+  mp.failCreate = 0;
+  await new Promise((r) => setTimeout(r, 1500));
+  await cron();
+  ok(f.status === 502 && avisos().length === antes, "formulário inválido e falha do Mercado Pago: sem aviso");
+  const bodyInterno = { responsavel: "Interno", email: "interno.aviso@exemplo.test", telefone: "11987654321", aceite: true, acesso: "validacao-interna-teste-0123456789" };
+  const vi = await (await fetch(BV + "/api/atendimento-ia/contratar", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(bodyInterno) })).json();
+  await new Promise((r) => setTimeout(r, 1500));
+  ok(vi.ok && avisos(vi.id).length === 0 && avisos().length === antes, "validação interna: sem aviso comercial");
+  mail.fail = 1;
+  const e1 = await post({ chavePedido: "aviso-pedido-0005-abcdef", email: "falha.email@exemplo.test" });
+  await new Promise((r) => setTimeout(r, 1500));
+  ok(e1.status === 200 && !!e1.body.checkoutUrl && (await linha(e1.body.id)).avisoCadastro === "falhou" && avisos(e1.body.id).length === 0, "falha do e-mail: checkout segue com o link; aviso fica como falhou");
+  mail.fail = 0;
+  await cron();
+  ok(avisos(e1.body.id).length === 1 && (await linha(e1.body.id)).avisoCadastro === "enviado", "rotina repete o aviso que falhou: um envio");
+  mail.fail = 1;
+  const e2 = await post({ chavePedido: "aviso-pedido-0006-abcdef", email: "pagou.antes@exemplo.test" });
+  await new Promise((r) => setTimeout(r, 1500));
+  mail.fail = 0;
+  const q2 = new URL(B + e2.body.acompanhar).searchParams;
+  await notify("subscription_authorized_payment", charge({ id: q2.get("c") }).id);
+  const criadasAntes = mp.creates.length;
+  await cron();
+  const l2 = await linha(e2.body.id);
+  ok(avisos(e2.body.id).length === 0 && l2.avisoCadastro === "descartado" && mp.creates.length === criadasAntes, "repetição após pagamento confirmado: aviso descartado, sem nova contratação");
+  for (let i = 0; i < 6; i++) await cron();
+  ok(avisos().length - total0 === 3, "rotinas seguintes não reenviam nada");
+  const ant = await json(`/api/atendimento-ia/cron?aviso-anterior=${a1.body.id}`, { headers: { authorization: "Bearer cron-teste" } });
+  ok(ant.body.aviso?.estado === "ja_tem_estado_enviado" && avisos(a1.body.id).length === 1, "aviso anterior não se aplica a quem já tem estado de aviso");
+  ok((await json(`/api/atendimento-ia/cron?aviso-anterior=${a1.body.id}`)).status === 401, "aviso anterior exige o segredo da rotina");
 }
 // Sem nenhuma notificação: só a página de acompanhamento aberta libera o acesso, com no máximo uma
 // leitura no Mercado Pago a cada 25 s mesmo com várias consultas seguidas.

@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     const all = await s.list({});
     return NextResponse.json({
       ok: true,
-      contratacoes: all.map((c) => ({ id: c.id, empresa: c.empresa, etapa: c.etapa, mpStatus: c.mpStatus, zmStatus: c.zmStatus, pagoAte: c.pagoAte, whatsapp: c.whatsappStatus, confirmadoPor: c.confirmadoPor ?? null, ultimoErro: c.ultimoErro, preAvisoPara: c.preAvisoPara, avisoFornecedorPara: c.avisoFornecedorPara })),
+      contratacoes: all.map((c) => ({ id: c.id, empresa: c.empresa, etapa: c.etapa, avisoCadastro: c.avisoCadastroStatus ?? null, avisoTentativas: c.avisoCadastroTentativas ?? 0, mpStatus: c.mpStatus, zmStatus: c.zmStatus, pagoAte: c.pagoAte, whatsapp: c.whatsappStatus, confirmadoPor: c.confirmadoPor ?? null, ultimoErro: c.ultimoErro, preAvisoPara: c.preAvisoPara, avisoFornecedorPara: c.avisoFornecedorPara })),
     });
   }
   const c = body.id ? await s.get(body.id) : null;
