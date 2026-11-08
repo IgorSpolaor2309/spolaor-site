@@ -273,3 +273,30 @@ Limitações:
   medidos, e Purchase podia se perder se disparado antes da inicialização do Pixel.
 - Teste local: `NEXT_PUBLIC_META_PIXEL_ID=000000000000001 npm run build`, depois os servidores descritos no início de
   `scripts/teste-medicao-funil.mjs`.
+
+## Aviso interno de novo cadastro (pagamento pendente)
+
+Código em `src/lib/ia/aviso-cadastro.ts`. Para a Spolaor conferir a situação e conversar pessoalmente com o
+interessado. Não é "checkout abandonado": a pessoa pode estar pagando. Nada é enviado ao interessado.
+
+- **Quando:** só depois de formulário válido, contratação gravada, link válido do Mercado Pago e vínculo salvo. O
+  estado `pendente` é gravado na mesma escrita que salva a assinatura e o link. Abrir o checkout, clicar,
+  preencher pela metade ou falhar no Mercado Pago não gera aviso. Validação interna fica `ignorado`.
+- **Envio:** logo após a resposta (`after` do Next), pelo Resend, para `IA_OPERACAO_EMAIL` ou `LEAD_EMAIL_TO`. Uma
+  falha do e-mail nunca impede a contratação nem o encaminhamento ao pagamento.
+- **Repetição:** a rotina do QStash (a cada 15 min) reenvia `pendente`, `falhou` e `enviando` interrompido há 10 min,
+  até 5 tentativas. Cada tentativa reserva o registro de forma atômica e relê a situação: pagamento confirmado,
+  cancelamento ou etapa diferente viram `descartado`, sem enviar.
+- **Um aviso por contratação:** o pedido repetido reaproveita a contratação, sem novo aviso; a chave
+  `aviso-cadastro-<id>` vai como `Idempotency-Key` ao Resend.
+- **Estado:** colunas `aviso_cadastro_*` (status, tentativas, horários, motivo sem dados pessoais, id no Resend).
+  `listar` do admin mostra `avisoCadastro`.
+- **Conteúdo:** nome, e-mail, WhatsApp (com link `wa.me` sem mensagem), data em Brasília, id, oferta e valor,
+  campanha e anúncio das UTMs, situação no momento do aviso e a ressalva de que não confirma venda nem
+  abandono. Sem fbclid, link de pagamento, link de acompanhamento, token ou credencial. Não há página
+  administrativa: a conferência é pelo Mercado Pago (referência externa = id da contratação).
+- **Registros antigos:** ficam com estado nulo (sem aviso retroativo). Um cadastro anterior pode receber um aviso
+  único, com `?aviso-anterior=<id>` na rotina, só se ainda não tiver estado, não for validação interna e o
+  pagamento continuar pendente.
+- **Logs:** só id e estado, nunca nome, telefone, e-mail ou links.
+

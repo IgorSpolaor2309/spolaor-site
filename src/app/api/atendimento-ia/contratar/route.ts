@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
+import { processarAvisoCadastro } from "@/lib/ia/aviso-cadastro";
 import { readiness, validationOk } from "@/lib/ia/config";
 import { PedidoError, startContratacao } from "@/lib/ia/process";
 
@@ -43,6 +44,9 @@ export async function POST(req: Request) {
   try {
     const chavePedido = typeof body.chavePedido === "string" && CHAVE.test(body.chavePedido) ? body.chavePedido : null;
     const r = await startContratacao({ ...data, chavePedido, utm: validation ? { ...utm, validacao: "interna" } : utm });
+    // Aviso interno só para contratação nova (o token só existe na criação); roda depois da resposta e nunca
+    // atrasa nem bloqueia o encaminhamento ao pagamento. A rotina repete se falhar.
+    if (r.token) after(() => processarAvisoCadastro(r.id));
     return NextResponse.json({ ok: true, id: r.id, checkoutUrl: r.checkoutUrl, acompanhar: r.token ? `/atendimento-ia/acompanhar?c=${r.id}&t=${r.token}` : null });
   } catch (e) {
     if (e instanceof PedidoError) return NextResponse.json({ ok: false, error: e.codigo }, { status: 409 });

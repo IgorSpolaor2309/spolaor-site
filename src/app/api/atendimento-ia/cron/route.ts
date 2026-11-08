@@ -4,6 +4,7 @@ import { bearerOk } from "@/lib/ia/access";
 import { registerSchedule } from "@/lib/ia/agendador";
 import { healthReport, mpAccount } from "@/lib/ia/health";
 import { comCanal, reconcile, runCron } from "@/lib/ia/process";
+import { avisoCadastroAnterior, rotinaAvisosCadastro } from "@/lib/ia/aviso-cadastro";
 
 // Rotina periódica (Vercel Cron envia Authorization: Bearer CRON_SECRET): novas tentativas de
 // ativação, conferência direta no Mercado Pago, sincronização com o ZappMillion e guarda de renovação.
@@ -15,6 +16,14 @@ export async function GET(req: Request) {
     const agendador = await registerSchedule();
     console.info(`[atendimento-ia] agendador ${JSON.stringify(agendador)}`);
     return NextResponse.json({ ok: true, agendador });
+  }
+  // ?aviso-anterior=<id>: aviso único de um cadastro anterior à implantação do aviso (só sem estado de aviso,
+  // fora da validação interna e com pagamento pendente). Não executa a rotina.
+  const anterior = new URL(req.url).searchParams.get("aviso-anterior");
+  if (anterior) {
+    const r = /^[0-9a-f-]{36}$/.test(anterior) ? await avisoCadastroAnterior(anterior) : { estado: "id_invalido" };
+    console.info(`[atendimento-ia] aviso anterior ${JSON.stringify(r)}`);
+    return NextResponse.json({ ok: true, aviso: r });
   }
   // ?saude=1: diagnóstico só de leitura, gravado no log privado da Vercel (nunca na resposta, pois a rotina
   // roda em repositório público); não executa a rotina.
@@ -30,6 +39,7 @@ export async function GET(req: Request) {
   // Registro de cada execução, para comprovar a frequência real pelo log.
   console.info(`[atendimento-ia] rotina executada origem=${(req.headers.get("user-agent") ?? "?").slice(0, 24)}`);
   const report = await comCanal("rotina", () => runCron(fake ? new Date(fake) : new Date()));
+  report.push(...(await rotinaAvisosCadastro()));
   // Conciliação com os clientes do ZappMillion: no cron diário da Vercel (user-agent vercel-cron) ou com
   // ?conciliar=1. Uma falha aqui não derruba a rotina (fica no relatório e no log).
   const daily = (req.headers.get("user-agent") ?? "").startsWith("vercel-cron") || new URL(req.url).searchParams.get("conciliar") === "1";

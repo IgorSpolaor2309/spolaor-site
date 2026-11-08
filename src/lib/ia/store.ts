@@ -60,6 +60,14 @@ export type Contratacao = {
   chavePedido?: string | null;
   /** link do checkout do Mercado Pago, para reutilizar no mesmo pedido */
   mpCheckoutUrl?: string | null;
+  /** aviso interno de novo cadastro: pendente | enviando | enviado | falhou | descartado | ignorado (null = sem aviso) */
+  avisoCadastroStatus?: string | null;
+  avisoCadastroTentativas?: number;
+  avisoCadastroTentadoEm?: string | null;
+  avisoCadastroEnviadoEm?: string | null;
+  avisoCadastroErro?: string | null;
+  avisoCadastroRef?: string | null;
+  avisoCadastroAnterior?: boolean;
   criadoEm: string;
   atualizadoEm: string;
 };
@@ -115,6 +123,11 @@ export interface Store {
   eventStats(): Promise<{ total: number; ultima: string | null }>;
   /** Reserva a conferência no Mercado Pago (no máximo uma a cada `seconds`, entre instâncias). */
   claimMpCheck(id: string, seconds: number): Promise<boolean>;
+  /** Reserva o envio do aviso de cadastro (pendente, falhou ou envio interrompido há 10 min) e devolve a contratação atualizada. */
+  claimNotice(id: string, maxTentativas: number): Promise<Contratacao | null>;
+  pendingNotices(maxTentativas: number): Promise<Contratacao[]>;
+  /** Marca um cadastro anterior à implantação como pendente, só se ele ainda não tem estado de aviso. */
+  claimLegacyNotice(id: string): Promise<boolean>;
   /** Cria o pedido de arrependimento; null se a contratação já tem um (idempotência). */
   createRefund(r: { contratacaoId: string; pagamentoId: string; valor: number }): Promise<Reembolso | null>;
   refundOf(contratacaoId: string): Promise<Reembolso | null>;
@@ -202,6 +215,25 @@ const memoryStore: Store = {
   },
   async unmarkEvent(key) {
     mem().ev.delete(key);
+  },
+  async claimNotice(id, max) {
+    const c = mem().c.get(id);
+    if (!c) return null;
+    const st = c.avisoCadastroStatus;
+    const t = c.avisoCadastroTentativas ?? 0;
+    const travado = st === "enviando" && c.avisoCadastroTentadoEm && Date.now() - new Date(c.avisoCadastroTentadoEm).getTime() > 600_000;
+    if (!(st === "pendente" || ((st === "falhou" || travado) && t < max))) return null;
+    Object.assign(c, { avisoCadastroStatus: "enviando", avisoCadastroTentativas: t + 1, avisoCadastroTentadoEm: now() });
+    return { ...c };
+  },
+  async pendingNotices(max) {
+    return [...mem().c.values()].filter((c) => c.avisoCadastroStatus === "pendente" || (["falhou", "enviando"].includes(c.avisoCadastroStatus ?? "") && (c.avisoCadastroTentativas ?? 0) < max));
+  },
+  async claimLegacyNotice(id) {
+    const c = mem().c.get(id);
+    if (!c || c.avisoCadastroStatus) return false;
+    Object.assign(c, { avisoCadastroStatus: "pendente", avisoCadastroAnterior: true });
+    return true;
   },
   async claimMpCheck(id, seconds) {
     const c = mem().c.get(id);
@@ -350,6 +382,25 @@ const pgStore: Store = {
   async unmarkEvent(key) {
     const db = await sql();
     await db`delete from ia_eventos where chave = ${key}`;
+  },
+  async claimNotice(id, max) {
+    const db = await sql();
+    const [row] = await db`update ia_contratacoes set aviso_cadastro_status = 'enviando', aviso_cadastro_tentativas = aviso_cadastro_tentativas + 1, aviso_cadastro_tentado_em = now()
+      where id = ${id} and (aviso_cadastro_status = 'pendente'
+        or (aviso_cadastro_status = 'falhou' and aviso_cadastro_tentativas < ${max})
+        or (aviso_cadastro_status = 'enviando' and aviso_cadastro_tentado_em < now() - interval '10 minutes' and aviso_cadastro_tentativas < ${max}))
+      returning *`;
+    return row ? fromRow<Contratacao>(row) : null;
+  },
+  async pendingNotices(max) {
+    const db = await sql();
+    const rows = await db`select * from ia_contratacoes where aviso_cadastro_status = 'pendente' or (aviso_cadastro_status in ('falhou', 'enviando') and aviso_cadastro_tentativas < ${max}) order by criado_em limit 20`;
+    return rows.map((r) => fromRow<Contratacao>(r));
+  },
+  async claimLegacyNotice(id) {
+    const db = await sql();
+    const res = await db`update ia_contratacoes set aviso_cadastro_status = 'pendente', aviso_cadastro_anterior = true where id = ${id} and aviso_cadastro_status is null returning id`;
+    return res.length > 0;
   },
   async claimMpCheck(id, seconds) {
     const db = await sql();

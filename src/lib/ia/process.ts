@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { deveTerAcesso } from "./acesso-esperado";
+import { estadoInicialAviso } from "./aviso-cadastro";
 import { iaConfig, cycleLabel } from "./config";
 import { mp, type AuthorizedPayment } from "./mercadopago";
 import { zm, ZmError, type ZmClient } from "./zappmillion";
@@ -125,7 +126,8 @@ export async function startContratacao(input: { empresa: string; responsavel: st
     if (chavePedido) await s.update(contratacao.id, { chavePedido: null }).catch(() => {});
     throw e;
   }
-  await s.update(contratacao.id, { mpPreapprovalId: pre.id, mpStatus: pre.status, mpCheckoutUrl: pre.init_point });
+  // Assinatura e link salvos na mesma escrita que agenda o aviso interno de novo cadastro (validação interna não avisa).
+  await s.update(contratacao.id, { mpPreapprovalId: pre.id, mpStatus: pre.status, mpCheckoutUrl: pre.init_point, avisoCadastroStatus: estadoInicialAviso(input.utm) });
   return { id: contratacao.id, token, checkoutUrl: pre.init_point };
 }
 

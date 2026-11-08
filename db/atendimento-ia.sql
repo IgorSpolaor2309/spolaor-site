@@ -89,3 +89,13 @@ alter table ia_reembolsos enable row level security;
 alter table ia_contratacoes add column if not exists chave_pedido text;
 alter table ia_contratacoes add column if not exists mp_checkout_url text;
 create unique index if not exists ia_contratacoes_chave_pedido on ia_contratacoes (chave_pedido) where chave_pedido is not null;
+
+-- Aviso interno de novo cadastro (pagamento pendente). NULL nos registros antigos: nenhum aviso retroativo.
+alter table ia_contratacoes add column if not exists aviso_cadastro_status text;        -- pendente | enviando | enviado | falhou | descartado | ignorado
+alter table ia_contratacoes add column if not exists aviso_cadastro_tentativas integer not null default 0;
+alter table ia_contratacoes add column if not exists aviso_cadastro_tentado_em timestamptz;
+alter table ia_contratacoes add column if not exists aviso_cadastro_enviado_em timestamptz;
+alter table ia_contratacoes add column if not exists aviso_cadastro_erro text;
+alter table ia_contratacoes add column if not exists aviso_cadastro_ref text;           -- id do e-mail no provedor
+alter table ia_contratacoes add column if not exists aviso_cadastro_anterior boolean not null default false;
+create index if not exists ia_contratacoes_aviso_pendente on ia_contratacoes (aviso_cadastro_status) where aviso_cadastro_status in ('pendente', 'falhou', 'enviando');
