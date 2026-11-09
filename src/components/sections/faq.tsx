@@ -6,7 +6,7 @@ export type QA = { q: string; a: string };
 export const homeFaq: QA[] = [
   {
     q: "Quanto custa um projeto?",
-    a: "Cada projeto tem orçamento próprio, definido pela necessidade, pela complexidade e pelo prazo. Por isso não publicamos tabela de preços. O diagnóstico é o melhor ponto de partida para chegar a um valor realista.",
+    a: "O site de uma página tem preço fechado: 12× de R$ 47,90 (total R$ 574,80) ou R$ 449,90 no Pix ou cartão à vista, com domínio e hospedagem pagos à parte. Os demais projetos têm orçamento próprio, definido pela necessidade, pela complexidade e pelo prazo; para eles, o diagnóstico é o melhor ponto de partida para chegar a um valor realista.",
   },
   {
     q: "O diagnóstico tem custo?",

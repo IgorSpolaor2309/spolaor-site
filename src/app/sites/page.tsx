@@ -11,6 +11,7 @@ import Link from "next/link";
 import { ContactForm } from "@/components/forms/contact-form";
 import { leadsAvailable } from "@/lib/leads/server/pipeline";
 import { Faq, homeFaq } from "@/components/sections/faq";
+import { PacoteChamada } from "@/components/sites/pacote-chamada";
 
 export const metadata: Metadata = {
   title: "Sites e landing pages",
@@ -76,6 +77,8 @@ export default function SitesPage() {
         primary={{ href: "#orcamento", label: "Pedir orçamento de site" }}
         secondary={{ href: "/analise", label: "Prefiro começar pelo diagnóstico" }}
       />
+
+      <PacoteChamada />
 
       <SameProduct index="01" label="A escolha" showLink={false} />
 
