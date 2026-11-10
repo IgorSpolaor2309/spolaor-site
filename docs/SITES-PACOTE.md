@@ -274,7 +274,7 @@ Nenhuma mensagem automática vai para o comprador.
 A rota de notificações da IA só repassa o `type` `order`. Os tipos da IA (`payment`, `subscription_*`,
 chargebacks) seguem como antes. Uma order sem referência `site_<id>` é ignorada.
 
-## Para abrir em produção (pendente, decisão do Igor)
+## Para abrir em produção (autorizado pelo Igor em 10/11/2026)
 
 1. No painel do Mercado Pago, aplicação "Spolaor Tecnologia" > Webhooks > **modo produção** (a URL atual, que é a
    rota da IA): marcar também o evento **"Order (Mercado Pago)"** e salvar. Os eventos da IA continuam marcados.
@@ -288,6 +288,59 @@ chargebacks) seguem como antes. Uma order sem referência `site_<id>` é ignorad
    cobrança real, salvo autorização explícita.
 4. Rodar de novo `scripts/sondar-parcelamento.mjs` com a Public Key de produção se a configuração de parcelamento
    mudar.
+
+## Pedido em "Pagamento em verificação": como identificar e conferir à mão
+
+O pedido fica assim quando uma tentativa de cartão foi enviada ao Mercado Pago e a resposta não chegou (rede, timeout,
+erro 5xx/409/423/429 ou falha nossa depois da chamada). Pode ter cobrado ou não. **O sistema nunca libera outra
+cobrança por prazo.** A tentativa mantém a mesma chave até algo esclarecer.
+
+**Como identificar**
+- **Comprador:** a página do pedido mostra "Pagamento em verificação", sem formulário de cartão e sem convite a outro
+  pedido.
+- **E-mail da operação:** chega o "Sites · Novo pedido — pagamento pendente" de sempre, com nome, WhatsApp e o id do
+  pedido. Não existe aviso próprio para "em verificação".
+- **Banco (Neon, somente leitura):**
+
+  ```sql
+  select id, criado_em, nome, email, whatsapp, condicao, total, tentativas,
+         tentativa_chave, tentativa_estado, tentativa_em, mp_payment_id, ultimo_erro
+  from site_pedidos
+  where status = 'pagamento_pendente' and tentativa_estado in ('incerta', 'em_curso')
+  order by tentativa_em;
+  ```
+
+  `tentativa_estado = 'incerta'` (ou `em_curso` há mais de 90 s) é o caso. `ultimo_erro` começa com "resultado
+  desconhecido". `tentativa_chave` é `site-<pedido>-cartao-<n>`.
+
+**Como conferir no Mercado Pago**
+- A referência da cobrança é `site_<id do pedido>`.
+- Na conta (Atividade), procure pagamentos de cartão do valor da condição (ex.: R$ 574,80 em 12×) a partir do
+  horário de `tentativa_em` e abra o detalhe para ver a referência.
+- A busca do Mercado Pago pode levar alguns minutos para enxergar uma cobrança nova. Uma busca vazia logo em seguida
+  NÃO prova que nada foi cobrado: confira de novo depois de 30 minutos.
+
+**O que fazer**
+1. **Achou pagamento aprovado com essa referência:** foi cobrado. O sistema adota o pagamento sozinho quando chega a
+   notificação "Order", quando o comprador reabre o link do pedido ou na próxima conferência. Pode falar com o
+   comprador normalmente; o aviso "Pagamento confirmado" sai quando o sistema adotar.
+2. **Achou pagamento recusado:** nada foi cobrado. O comprador pode tentar de novo pelo mesmo link; a próxima tentativa
+   abre com chave nova.
+3. **Não achou nada, mesmo depois de 30 minutos:** fale com o comprador pelo WhatsApp e peça que **reabra o mesmo link
+   do pedido e envie o cartão de novo**.
+   - A nova submissão usa a MESMA chave: o Mercado Pago cria a única cobrança dessa chave, ou responde que ela já
+     existe.
+   - Nunca saem duas cobranças.
+   - Não crie outro pedido e não ofereça Pix para o mesmo comprador enquanto a tentativa estiver em verificação: seria
+     uma cobrança independente.
+4. **Não edite o banco à mão** para "liberar" a tentativa (`tentativa_estado`, `tentativa_chave`, `status`): isso
+   desliga a proteção contra cobrança em dobro.
+
+**Limitação atual:** em produção não há agendamento da rotina `GET /api/sites-pacote/rotina`; só a rotina da IA está
+no `vercel.json`. A conciliação automática acontece:
+- pela notificação "Order (Mercado Pago)";
+- pela página do pedido aberta (confere a cada ~12 s);
+- por uma chamada manual da rotina com `Authorization: Bearer <CRON_SECRET>`.
 
 ## Duas validações diferentes
 
