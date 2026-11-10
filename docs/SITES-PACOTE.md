@@ -60,25 +60,36 @@ os juros do parcelamento seguem a configuração da conta.
   condição. Se não baterem, vira "divergente": não conta como pago e a operação recebe um aviso para estornar no
   painel.
 
-## O que precisa ser conferido na conta do Mercado Pago (bloqueio real)
+## Conta do Mercado Pago: o que foi lido e o que falta (bloqueio real)
 
-Não há acesso à conta neste ambiente.
+**Leitura de 09/11/2026, sem alterar nada** (Seu negócio > Taxas e parcelas, aba Checkout):
+- a conta oferece **"parcelado cliente"**: em 2× ou mais o Mercado Pago soma juros ao total do comprador
+  (2× +9,64%, 3× +11,23%, 6× +14,32%, 12× +22,11%; o 12× de R$ 574,80 sairia ≈ R$ 701,89);
+- com isso, hoje só **Pix** e **cartão 1×** saem pelo total aprovado. A pré-checagem do checkout recusa 2×, 3×, 6×
+  e 12× (ninguém paga a mais, mas o 12× do anúncio não é vendável);
+- para vender 2×–12× pelo total aprovado é preciso ativar **"Parcelado vendedor" → Oferecer** na aba **Checkout**
+  (o vendedor paga a taxa de parcelamento; o comprador paga exatamente o total);
+- taxas lidas (recebimento "na hora"): crédito 1× 4,98%; 2×–6× 2,99% e 7×–12× 3,09%, mais a taxa de parcelamento
+  do parcelado vendedor (2× 4,52%, 3× 6,61%, 6× 11,95%, 12× 19,17%); Pix 0,99%.
 
-1. **Parcelamento sem acréscimo para o comprador até 12× em pagamentos online.** O Mercado Pago chama de "parcelado
-   vendedor"; fica em Seu negócio > Custos. O padrão é "parcelado comprador": os juros vão para o comprador.
-   - Sem isso, a pré-checagem recusa 2×, 3×, 6× e 12× em todos os cartões. Ninguém é cobrado a mais, mas o 12×
-     anunciado não pode ser vendido.
-   - Conferir também o custo dessas taxas para a Spolaor.
-2. **Chave Pix cadastrada na conta** (pré-requisito do Pix via API).
-3. **Public Key** da mesma aplicação do Access Token (`NEXT_PUBLIC_MP_PUBLIC_KEY`).
-4. **Segredo de Webhooks** (o mesmo `MP_WEBHOOK_SECRET` da IA).
+Ainda a conferir no painel de desenvolvedor (pede validação de telefone da conta): Webhooks da aplicação (tópico
+Pagamentos e segredo) e as credenciais de teste.
 
-Se o parcelamento sem acréscimo não puder ser ativado, há duas alternativas concretas. Em nenhum caso o preço é
-alterado em silêncio.
-- **(a)** Abrir só Pix e cartão 1× (`SITES_CONDICOES=pix,cartao-1x`). Nesse caso o anúncio não pode mostrar
-  "12× de R$ 47,90"; o vídeo precisa de outra versão com o preço à vista.
-- **(b)** Pedir ao Mercado Pago uma configuração de preço diferenciado (`differential_pricing`). Exige integrar o id
-  e testar de novo.
+Outros pré-requisitos: chave Pix cadastrada (Pix via API) e a Public Key da mesma aplicação do Access Token
+(`NEXT_PUBLIC_MP_PUBLIC_KEY`).
+
+**Como validar o parcelamento sem cobrar nada:** `scripts/sondar-parcelamento.mjs` só lê
+`GET /v1/payment_methods/installments`, a mesma consulta do formulário de cartão. Com a Public Key de produção
+(APP_USR-, que é pública e vai no próprio site) ele mostra o que o comprador real pagaria em cada condição e
+bandeira; sai com erro se alguma não bater com o total aprovado.
+
+```bash
+# .env.parcelas.local (fora do git) com NEXT_PUBLIC_MP_PUBLIC_KEY=APP_USR-...  ou  TEST-...
+node --no-warnings scripts/sondar-parcelamento.mjs --env .env.parcelas.local
+```
+
+Se o parcelado vendedor não for ativado, o anúncio de 12× não pode rodar. Em nenhum caso o preço é alterado em
+silêncio; a decisão de preço é do Igor.
 
 ## Variáveis de ambiente (Vercel, por ambiente)
 
@@ -140,19 +151,21 @@ Nenhuma mensagem automática vai para o comprador.
 Pagamentos desta oferta que chegarem à rota de notificações da IA são ignorados lá
 (`external_reference` = `site:<id>`).
 
-## Validação na prévia (credenciais de TESTE)
+## Teste real no sandbox do Mercado Pago (localhost, credenciais de TESTE)
 
-1. Na Vercel, ambiente Preview, configurar:
-   - `SITES_CONTRATACAO_ATIVA=true`;
-   - `SITES_CONDICOES` com as condições a validar;
-   - `NEXT_PUBLIC_MP_PUBLIC_KEY` (TEST-).
-   - `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` e o banco da prévia já existem para a IA.
-2. **Cartão:** cada condição com os cartões de teste do Mercado Pago (titular APRO aprovado, OTHE recusado, CONT
-   pendente). Conferir no painel que o comprador paga exatamente o total. A recusa por acréscimo aparece como
-   "o Mercado Pago cobraria mais que R$ …".
-3. **Pix:** gerar o Pix de R$ 449,90 e confirmar que o QR Code aparece. Pagamentos de teste podem não enviar
-   notificação: a página do pedido confere sozinha.
-4. Só liste em `SITES_CONDICOES` de produção as condições aprovadas nesse teste.
+O ambiente Preview da Vercel **não tem** `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` nem banco (lido em 09/11/2026:
+essas variáveis existem só em Production). Por isso a prévia do PR mostra a oferta com a contratação fechada, e o
+teste real com o Mercado Pago roda nesta máquina:
+
+1. Criar `.env.sandbox.local` (fora do git) com `MP_ACCESS_TOKEN=TEST-...` e `NEXT_PUBLIC_MP_PUBLIC_KEY=TEST-...`
+   (painel do Mercado Pago > Suas integrações > aplicação > Credenciais de teste).
+2. `bash scripts/sandbox-local.sh` sobe em `http://localhost:3230` com banco em memória, sem e-mail, com Pixel
+   falso e sem notificação (a página do pedido confere o pagamento sozinha). Recusa credenciais que não sejam TEST-.
+3. **Cartão:** cada condição com os cartões de teste do Mercado Pago (titular APRO aprovado, OTHE recusado, CONT
+   pendente; CPF 12345678909). A recusa por acréscimo aparece como "o Mercado Pago cobraria mais que R$ …".
+4. **Pix:** gerar o Pix de R$ 449,90 e conferir o QR Code.
+5. Só liste em `SITES_CONDICOES` de produção as condições aprovadas no teste **e** confirmadas pela sondagem com a
+   Public Key de produção.
 
 ## Testes locais (provedores simulados, nada sai da máquina)
 
