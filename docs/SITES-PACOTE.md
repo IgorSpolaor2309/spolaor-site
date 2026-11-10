@@ -163,6 +163,10 @@ Testes:
   - em curso parada é retomada;
   - pedido pago ou Pix não abre tentativa.
 
+  Em 10/11/2026, num Postgres 16.15 local (contêiner `postgres:16-alpine` em 127.0.0.1): **8/8**, incluindo o
+  esquema idempotente. O teste completo do checkout contra um servidor usando esse Postgres deu **111/111**; ficaram
+  de fora só as 2 conferências de "oferta fechada", que precisam de um segundo servidor e não usam o banco.
+
 ## Conta do Mercado Pago: parcelamento (resolvido em 10/11/2026)
 
 - **Até 09/11** a conta oferecia "parcelado cliente": em 2× ou mais o comprador pagava juros (12× de R$ 574,80
@@ -354,7 +358,8 @@ node scripts/teste-sites-pacote.mjs
 O Mercado Pago simulado do teste responde no formato da API de Orders. Em 10/11/2026, depois da migração, rodando
 contra servidores locais (`bash ../servidores-teste.sh`):
 - `teste-sites-pacote`: 113/113 (inclui a proteção contra cobrança em dobro);
-- `teste-sites-banco --memoria`: 7/7;
+- `teste-sites-banco`: memória 7/7; Postgres 16 local 8/8;
+- `teste-sites-pacote` contra servidor com Postgres: 111/111 (sem as 2 conferências de oferta fechada);
 - `teste-atendimento-ia`: 114/114;
 - `teste-medicao-funil`: 27/27;
 - `teste-ofertas-local`: 63/63;

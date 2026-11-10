@@ -37,7 +37,7 @@ if (!memoria) {
   raw = postgres(url, { max: 2, onnotice: () => {} });
   await raw.unsafe(SITES_SCHEMA_SQL);
   await raw.unsafe(SITES_SCHEMA_SQL); // o esquema é idempotente (alter table … add column if not exists)
-  const cols = await raw`select column_name from information_schema.columns where table_name = 'site_pedidos' and column_name like 'tentativa_%' order by 1`;
+  const cols = await raw`select column_name from information_schema.columns where table_name = 'site_pedidos' and column_name in ('tentativa_chave', 'tentativa_estado', 'tentativa_em') order by 1`;
   ok(cols.map((c) => c.column_name).join(",") === "tentativa_chave,tentativa_em,tentativa_estado", "esquema: colunas da tentativa criadas, e o DDL roda duas vezes sem erro");
 }
 
