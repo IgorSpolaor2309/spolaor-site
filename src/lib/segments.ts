@@ -82,7 +82,7 @@ export function pageCta(pathname: string): { href: string; target: string | null
   if (pathname.startsWith("/atendimento-ia/")) return { href: "/contato", target: null, label: "Falar com a Spolaor" };
   if (OFFER_FORMS[pathname]) return { href: "#formulario", target: "formulario", label: OFFER_FORMS[pathname] };
   if (pathname === "/sites") return { href: "#orcamento", target: "orcamento", label: "Pedir orçamento" };
-  if (pathname === "/sites/pacote") return { href: "/sites/pacote/checkout", target: null, label: "Contratar meu site" };
+  if (pathname === "/sites/pacote") return { href: "/sites/pacote/checkout", target: null, label: "Quero meu site" };
   if (pathname === "/automacao") return { href: "#analise", target: "analise", label: "Diagnóstico do processo" };
   if (PAGES_WITH_FORM.includes(pathname)) return { href: "#analise", target: "analise", label: "Analisar minha empresa" };
   return { href: "/analise", target: null, label: "Analisar minha empresa" };
