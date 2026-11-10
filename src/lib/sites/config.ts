@@ -29,14 +29,6 @@ export const sitesConfig = {
     const v = Number(env("SITES_PIX_MINUTOS"));
     return Number.isInteger(v) && v >= 30 && v <= 1440 ? v : 60;
   },
-  /**
-   * Segundos sem NENHUMA order no Mercado Pago depois dos quais uma tentativa de cartão incerta é dada como não
-   * realizada (nada cobrado; o comprador pode tentar de novo). Padrão 900 (15 min); só testes usam menos.
-   */
-  incertaLiberaSeg: () => {
-    const v = Number(env("SITES_INCERTA_LIBERA_SEG"));
-    return Number.isInteger(v) && v >= 10 && v <= 86400 ? v : 900;
-  },
   siteUrl: () => {
     const explicit = env("SITES_URL_PUBLICA") || env("IA_URL_PUBLICA");
     if (explicit) return explicit.replace(/\/+$/, "");

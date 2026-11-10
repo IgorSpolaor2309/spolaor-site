@@ -135,9 +135,15 @@ A proteção fica no servidor e no banco, não no botão do navegador (`pagarCar
 4. **Recusa definitiva.** O Mercado Pago responde 402 com a order `failed`, ou 400/401/403/404/422 sem criar nada.
    A tentativa é fechada e a próxima abre outra, com chave nova. A order recusada fica só no histórico
    (`site_pagamentos`).
-5. **Tentativa incerta sem nenhuma order na referência do pedido depois de 15 min** (`SITES_INCERTA_LIBERA_SEG`,
-   padrão 900): não chegou ao Mercado Pago. O pedido volta a "recusado", com "A tentativa anterior não chegou a ser
-   registrada no Mercado Pago, e nada foi cobrado. Você pode tentar de novo".
+5. **Nada é liberado por tempo.** Uma busca vazia não prova que nada foi cobrado: a busca do Mercado Pago pode
+   demorar a enxergar uma order nova. A tentativa incerta mantém a chave e o "Pagamento em verificação", bloqueando
+   qualquer cobrança independente, até que algo esclareça:
+   - a order aparece na busca: é adotada;
+   - a notificação da order chega: é adotada;
+   - o comprador submete de novo e o Mercado Pago cria a única order daquela chave, ou responde 409 porque ela já
+     existe.
+
+   O pedido nunca mostra "nada foi cobrado" sem essa confirmação.
 6. **Tentativa `em_curso` parada há mais de 90 s** (ex.: o servidor caiu no meio da chamada): é tratada como incerta
    e retomada com a mesma chave.
 7. **Notificação de uma order que o pedido ainda não conhecia,** durante uma tentativa aberta ou incerta: é a order
@@ -151,7 +157,9 @@ Testes:
   - order criada e resposta perdida, seguida de nova submissão: concilia, sem nova chamada de cobrança;
   - o mesmo caso com a busca atrasada: retoma com a mesma chave, 409, sem nova order;
   - falha de rede antes de chegar: retoma com a mesma chave e cria a única order;
-  - prazo sem order: liberado;
+  - order que existe no Mercado Pago mas fica invisível na busca por mais de 15 min: o pedido continua em
+    verificação, sem liberar e sem "nada foi cobrado"; nova submissão usa a mesma chave (409, nenhuma order nova);
+    a notificação, ou a order aparecendo na busca, confirma normalmente;
   - duas submissões simultâneas: uma tentativa e uma order;
   - recusa definitiva seguida de nova tentativa aprovada;
   - página "em verificação".
@@ -211,7 +219,6 @@ Outros pré-requisitos: chave Pix cadastrada (Pix via API) e a Public Key da mes
 | `SITES_CONDICOES` | condições liberadas no checkout, só as VALIDADAS: `pix,cartao-1x,cartao-2x,cartao-3x,cartao-6x,cartao-12x` |
 | `NEXT_PUBLIC_MP_PUBLIC_KEY` | Public Key da mesma aplicação do `MP_ACCESS_TOKEN`, para o formulário de cartão (em teste, a do usuário de teste; em produção, a da aplicação real) |
 | `SITES_PIX_MINUTOS` | validade do Pix em minutos (padrão 60; de 30 a 1440) |
-| `SITES_INCERTA_LIBERA_SEG` | opcional: segundos sem order até liberar uma tentativa de cartão incerta (padrão 900; os testes usam 10) |
 | `SITES_URL_PUBLICA` | opcional: endereço público (padrão: `IA_URL_PUBLICA`, `VERCEL_BRANCH_URL` na prévia ou `NEXT_PUBLIC_SITE_URL`) |
 | reaproveitadas | `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `DATABASE_URL`, `RESEND_API_KEY`, `LEAD_EMAIL_FROM`, `IA_OPERACAO_EMAIL`/`LEAD_EMAIL_TO`, `CRON_SECRET` |
 
@@ -357,7 +364,7 @@ node scripts/teste-sites-pacote.mjs
 
 O Mercado Pago simulado do teste responde no formato da API de Orders. Em 10/11/2026, depois da migração, rodando
 contra servidores locais (`bash ../servidores-teste.sh`):
-- `teste-sites-pacote`: 113/113 (inclui a proteção contra cobrança em dobro);
+- `teste-sites-pacote`: 115/115 (inclui a proteção contra cobrança em dobro; com `SITES_TESTE_INVISIVEL_SEG=960`, a order fica invisível na busca por 16 min reais);
 - `teste-sites-banco`: memória 7/7; Postgres 16 local 8/8;
 - `teste-sites-pacote` contra servidor com Postgres: 111/111 (sem as 2 conferências de oferta fechada);
 - `teste-atendimento-ia`: 114/114;

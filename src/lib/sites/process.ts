@@ -334,15 +334,14 @@ export async function conferirPedido(p: Pedido, canal: string, intervalo = 12): 
   const s = sitesStore();
   if (!(await s.claimConferencia(p.id, intervalo))) return p;
   try {
-    // tentativa incerta (ou parada): procura a order dela no Mercado Pago; sem order depois de incertaLiberaSeg (15 min),
-    // a tentativa não chegou lá → nada foi cobrado e o comprador pode tentar de novo
+    // Tentativa incerta (ou parada): procura a order dela no Mercado Pago e, se achar, adota. Busca vazia NÃO prova
+    // que nada foi cobrado (a busca pode demorar a enxergar uma order nova), então nada é liberado por tempo: a
+    // tentativa e a chave ficam como estão, em "pagamento em verificação", até a order aparecer, a notificação dela
+    // chegar ou uma retomada com a mesma chave esclarecer (o Mercado Pago cria a única order dessa chave ou responde 409).
     const parada = p.tentativaEstado === "em_curso" && !!p.tentativaEm && Date.now() - Date.parse(p.tentativaEm) > TENTATIVA_PARADA_SEG * 1000;
     if (p.tentativaEstado === "incerta" || parada) {
       const achada = await ordemNovaDoPedido(p);
-      if (achada) return await adotarOrdem(p, achada, canal);
-      if (p.tentativaEm && Date.now() - Date.parse(p.tentativaEm) > sitesConfig.incertaLiberaSeg() * 1000)
-        return await s.update(p.id, { status: "recusado", tentativaEstado: null, mpStatusDetail: "tentativa_sem_cobranca", ultimoErro: "tentativa sem order no Mercado Pago" });
-      return p;
+      return achada ? await adotarOrdem(p, achada, canal) : p;
     }
     if (p.mpPaymentId) return await aplicarPagamento(p, await mpSites.getOrdem(p.mpPaymentId), canal);
     const lista = await mpSites.buscarPorPedido(p.id, p.criadoEm);
@@ -476,7 +475,6 @@ export function mensagemRecusa(detail: string | null) {
     max_attempts_exceeded: "Muitas tentativas com este cartão. Use outro cartão ou o Pix.",
     invalid_installments: "Este cartão não aceita essa quantidade de parcelas. Escolha outra condição ou outro cartão.",
     rejected_by_issuer: "O banco emissor recusou o pagamento. Nada foi cobrado. Tente outro cartão ou o Pix.",
-    tentativa_sem_cobranca: "A tentativa anterior não chegou a ser registrada no Mercado Pago, e nada foi cobrado. Você pode tentar de novo.",
   };
   return (detail && m[detail]) || "O pagamento não foi aprovado. Nada foi cobrado. Confira os dados ou tente outro cartão ou o Pix.";
 }

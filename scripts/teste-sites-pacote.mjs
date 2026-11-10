@@ -3,7 +3,7 @@
 //
 // Antes: build com Pixel fictício e o servidor em :3220:
 //   NEXT_PUBLIC_META_PIXEL_ID=000000000000001 npm run build
-//   SITES_STORE=memory SITES_INCERTA_LIBERA_SEG=10 SITES_CONTRATACAO_ATIVA=true SITES_CONDICOES=pix,cartao-1x,cartao-2x,cartao-3x,cartao-6x,cartao-12x
+//   SITES_STORE=memory SITES_CONTRATACAO_ATIVA=true SITES_CONDICOES=pix,cartao-1x,cartao-2x,cartao-3x,cartao-6x,cartao-12x
 //   MP_ACCESS_TOKEN=teste-local MP_WEBHOOK_SECRET=segredo-teste MP_API_URL=http://localhost:4040 NEXT_PUBLIC_MP_PUBLIC_KEY=TEST-publica-local
 //   RESEND_API_KEY=teste-local RESEND_API_URL=http://localhost:4042/emails LEAD_EMAIL_TO=ops@exemplo.test LEAD_EMAIL_FROM=site@exemplo.test
 //   NEXT_PUBLIC_SITE_URL=http://localhost:3220 CRON_SECRET=cron-teste-0123456789
@@ -351,18 +351,55 @@ const chamadasDe = (c) => mp.chamadas.filter((x) => x.ref === `site_${c.id}`);
     const ch = chamadasDe(rp.cred);
     ok(b.body.pedido?.status === "pago" && ch.length === 2 && ch[0].key === ch[1].key && ordensDe(rp.cred).length === 1, "nova submissão retoma com a mesma chave e cria a única order → pago");
   }
-  // ── sem nenhuma order depois do prazo (SITES_INCERTA_LIBERA_SEG no servidor de teste) → liberado ──
+  // ── a order EXISTE no Mercado Pago, mas a busca não a enxerga por muito tempo (SITES_TESTE_INVISIVEL_SEG; 960 = 16 min) ──
+  // Sem liberação por prazo: a tentativa e a chave continuam, em "pagamento em verificação", bloqueando cobrança
+  // independente, até a notificação chegar ou a order aparecer.
   {
     const rp = await pedido("cartao-2x");
-    mp.falharAntes = true;
-    await cartao(rp.cred, fd(2, { token: "tok_prazo_A" }));
-    ok((await status(rp.cred))?.emVerificacao === true, "sem order e dentro do prazo → continua em verificação");
-    await espera(13_000);
-    const st = await status(rp.cred);
-    ok(st?.status === "recusado" && /nada foi cobrado/.test(st?.motivoRecusa ?? "") && !st?.emVerificacao, 'prazo sem nenhuma order na referência → liberado com "nada foi cobrado"');
-    const c = await cartao(rp.cred, fd(2, { token: "tok_prazo_B" }));
+    mp.perderResposta = true;
+    await cartao(rp.cred, fd(2, { token: "tok_invisivel_A" }));
+    mp.atrasoBusca = true;
+    const segundos = Number(process.env.SITES_TESTE_INVISIVEL_SEG || 15);
+    const inicio = Date.now();
+    const vistos = [];
+    do {
+      vistos.push(await status(rp.cred));
+      if (Date.now() - inicio < segundos * 1000) await espera(Math.min(13_000, Math.max(0, segundos * 1000 - (Date.now() - inicio)) + 500)); // a conferência roda a cada 12 s
+    } while (Date.now() - inicio < segundos * 1000);
+    vistos.push(await status(rp.cred));
+    const minutos = ((Date.now() - inicio) / 60000).toFixed(1);
+    ok(
+      vistos.every((v) => v?.status === "pagamento_pendente" && v?.emVerificacao === true && !v?.motivoRecusa) && ordensDe(rp.cred).length === 1,
+      `order invisível na busca por ${minutos} min (${vistos.length} conferências): continua "pagamento em verificação", sem "nada foi cobrado", sem liberar`,
+    );
+    // o comprador tenta de novo: retoma com a MESMA chave → 409 do Mercado Pago, nenhuma order nova
+    const b = await cartao(rp.cred, fd(2, { token: "tok_invisivel_B" }));
     const ch = chamadasDe(rp.cred);
-    ok(c.body.pedido?.status === "pago" && ch.at(-1).key !== ch[0].key && ordensDe(rp.cred).length === 1, "nova tentativa com chave nova → pago, uma order só");
+    ok(
+      b.status === 200 && b.body.pedido?.emVerificacao === true && ch.length === 2 && ch[0].key === ch[1].key && ordensDe(rp.cred).length === 1,
+      "nova submissão depois disso → mesma chave, 409 no Mercado Pago, nenhuma cobrança independente; segue em verificação",
+    );
+    // a notificação da order chega → confirma normalmente
+    const ord = ordensDe(rp.cred)[0];
+    ord.status = "approved";
+    const w = await webhook(ord.id);
+    const st = await status(rp.cred);
+    ok(w.status === 200 && w.body.result?.status === "pago" && st?.status === "pago" && !st?.emVerificacao, "a notificação da order chega → pago normalmente");
+    mp.atrasoBusca = false;
+  }
+  // ── a mesma situação, mas a order aparece na busca (sem notificação) → a conferência confirma ──
+  {
+    const rp = await pedido("cartao-6x");
+    mp.perderResposta = true;
+    await cartao(rp.cred, fd(6, { token: "tok_aparece_A" }));
+    mp.atrasoBusca = true;
+    ok((await status(rp.cred))?.emVerificacao === true, "order ainda invisível → em verificação");
+    const ord = ordensDe(rp.cred)[0];
+    ord.status = "approved";
+    mp.atrasoBusca = false;
+    await espera(12_500);
+    const st = await status(rp.cred);
+    ok(st?.status === "pago" && ordensDe(rp.cred).length === 1 && chamadasDe(rp.cred).length === 1, "a order aparece na busca → a conferência adota e confirma: pago, uma order, nenhuma chamada nova");
   }
   // ── duas submissões simultâneas ao mesmo pedido ──
   {
