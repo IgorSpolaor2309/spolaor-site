@@ -89,14 +89,13 @@ export default function PacoteSitePage() {
                 <span className="text-[1.05rem] text-fg md:text-[1.2rem]">de R$</span>
                 <span className="text-[2.5rem] leading-none text-royal md:text-[3.1rem]">{brl(destaque.parcela)}</span>
               </p>
-              <p className="mt-1.5 text-[0.98rem] font-medium text-fg">Total parcelado: R$ {brl(destaque.total)}</p>
-              <p className="mt-0.5 text-[0.98rem] font-semibold text-fg">ou R$ {brl(avista.total)} no Pix ou cartão à vista</p>
+              <p className="mt-1.5 text-[0.98rem] font-semibold text-fg">Ou R$ {brl(avista.total)} no Pix ou cartão à vista</p>
               <p className="mt-1.5 text-[0.84rem] text-dim">Pagamento único pela criação do site. Não é assinatura.</p>
             </div>
             <div className="mt-4 md:mt-6">
               {oferta.aberta ? (
                 <ButtonLink href={checkoutHref} size="lg" arrow data-hero-cta className="w-full shadow-[0_10px_30px_-10px_rgb(30_91_230/0.6)] sm:w-auto">
-                  Contratar meu site
+                  Quero meu site
                 </ButtonLink>
               ) : (
                 <div data-hero-cta>
@@ -254,7 +253,7 @@ export default function PacoteSitePage() {
             </table>
             {oferta.aberta && (
               <ButtonLink href={checkoutHref} size="lg" arrow className="mt-6 w-full sm:w-auto">
-                Contratar meu site
+                Quero meu site
               </ButtonLink>
             )}
           </div>

@@ -511,11 +511,11 @@ for (const vp of larguras) {
   await page.goto(`${B}/sites/pacote`, { waitUntil: "networkidle" });
   const h1 = await visivelSemRolar(page, "O site da sua empresa, em uma página");
   const preco = await page.locator('[aria-label="Preço"]').boundingBox();
-  const cta = await page.getByRole("link", { name: "Contratar meu site" }).first().boundingBox();
+  const cta = await page.getByRole("link", { name: "Quero meu site" }).first().boundingBox();
   const vh = vp.height;
-  ok(h1 && preco && preco.y + preco.height <= vh && cta && cta.y + cta.height <= vh, `/sites/pacote ${vp.nome}: título, 12× de R$ 47,90 + total + à vista e botão de contratar na primeira tela, sem rolar`);
+  ok(h1 && preco && preco.y + preco.height <= vh && cta && cta.y + cta.height <= vh, `/sites/pacote ${vp.nome}: título, 12× de R$ 47,90 + à vista e botão "Quero meu site" na primeira tela, sem rolar`);
   const textoPreco = await page.locator('[aria-label="Preço"]').innerText();
-  ok(/12×/.test(textoPreco) && /47,90/.test(textoPreco) && /574,80/.test(textoPreco) && /449,90 no Pix ou cartão à vista/.test(textoPreco) && /Não é assinatura/.test(textoPreco), `/sites/pacote ${vp.nome}: valores legíveis e "não é assinatura"`);
+  ok(/12×/.test(textoPreco) && /47,90/.test(textoPreco) && !/Total parcelado|574,80/.test(textoPreco) && /Ou R\$ 449,90 no Pix ou cartão à vista/.test(textoPreco) && /Não é assinatura/.test(textoPreco), `/sites/pacote ${vp.nome}: 12× em destaque, à vista abaixo, sem "Total parcelado" na abertura, e "não é assinatura"`);
   ok(await semRolagemLateral(page), `/sites/pacote ${vp.nome}: sem rolagem lateral`);
   // sem animação de entrada que esconda conteúdo na primeira tela
   const opacidades = await page.evaluate(() => [...document.querySelectorAll("section:first-of-type h1, section:first-of-type [aria-label='Preço'], [data-hero-cta]")].map((el) => getComputedStyle(el).opacity));

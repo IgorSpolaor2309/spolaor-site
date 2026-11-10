@@ -227,8 +227,12 @@ conexão. Elas não tocam nas tabelas `ia_*`. Esquema em `src/lib/sites/store.ts
 
 ## Fluxo e estados
 
-1. **Página `/sites/pacote`:** a primeira tela mostra o que é, 12× de R$ 47,90 (total R$ 574,80), R$ 449,90 no Pix
-   ou cartão à vista e o botão "Contratar meu site".
+1. **Página `/sites/pacote`:** a primeira tela mostra:
+   - o que é;
+   - "12× de R$ 47,90" em destaque e, abaixo, menor, "Ou R$ 449,90 no Pix ou cartão à vista";
+   - o botão "Quero meu site", também no cabeçalho e na barra fixa do celular.
+
+   O total de cada parcelamento fica na tabela de condições e no checkout.
 2. **Checkout `/sites/pacote/checkout`:**
    - pede nome, e-mail, WhatsApp, a condição e o aceite das condições;
    - mostra a parcela e o total da condição escolhida;
