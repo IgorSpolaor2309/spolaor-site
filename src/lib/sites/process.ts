@@ -1,12 +1,13 @@
 import { sendInternalEmail } from "@/lib/ia/notify";
 import { sitesConfig } from "./config";
-import { MpError, mpSites, type MpPayment } from "./mercadopago";
+import { MpError, mpSites, normalizarOrdem, pedidoDaRef, refPedido, type MpPayment } from "./mercadopago";
 import { brl, condicao, PACOTE, rotuloCondicao } from "./oferta";
 import { hashToken, sitesStore, type Pedido, type StatusPedido } from "./store";
 
 // Regras da venda avulsa do pacote de sites. Nada aqui libera serviço automaticamente: o pedido pago vira um aviso
 // interno para a Spolaor falar com o comprador pelo WhatsApp. Pagamento só conta como confirmado quando o Mercado
-// Pago devolve o pagamento APROVADO com o valor, a moeda e as parcelas da condição aprovada.
+// Pago devolve a order PROCESSADA (aprovada) com o valor, a moeda e as parcelas da condição aprovada.
+// `mpPaymentId` guarda o id da order do Mercado Pago (ORD…), que é o que as notificações trazem.
 
 const nowIso = () => new Date().toISOString();
 
@@ -80,17 +81,15 @@ export async function pagarPix(p: Pedido): Promise<Pedido> {
     descricao: PACOTE.descricao,
     email: p.email,
     nome: p.nome,
-    expiraEm: expira,
-    notificationUrl: sitesConfig.notificationUrl(),
+    minutos: sitesConfig.pixMinutos(),
     idempotencyKey: `site-${p.id}-pix-${tentativa}`,
   });
-  const td = pay.point_of_interaction?.transaction_data;
-  if (!td?.qr_code) throw new PedidoErro("pix_indisponivel", 502, "O Mercado Pago não devolveu o código Pix.");
+  if (!pay.qr_code) throw new PedidoErro("pix_indisponivel", 502, "O Mercado Pago não devolveu o código Pix.");
   const atual = await s.update(p.id, {
     tentativas: tentativa,
     mpPaymentId: String(pay.id),
-    pixCopiaCola: td.qr_code,
-    pixQrBase64: td.qr_code_base64 ?? null,
+    pixCopiaCola: pay.qr_code,
+    pixQrBase64: pay.qr_code_base64 ?? null,
     pixExpiraEm: pay.date_of_expiration ?? expira.toISOString(),
     ultimoErro: null,
   });
@@ -100,6 +99,8 @@ export async function pagarPix(p: Pedido): Promise<Pedido> {
 export type DadosCartao = {
   token: string;
   paymentMethodId: string;
+  /** tipo informado pelo formulário do Mercado Pago (additionalData.paymentTypeId) */
+  paymentTypeId: "credit_card" | "debit_card";
   issuerId: string | null;
   installments: number;
   payer: { email: string; identification?: { type: string; number: string } };
@@ -117,6 +118,8 @@ export async function pagarCartao(p: Pedido, d: DadosCartao): Promise<Pedido> {
   if (!sitesConfig.condicoes().includes(p.condicao as never)) throw new PedidoErro("condicao_indisponivel", 422);
   if (d.installments !== p.parcelas) throw new PedidoErro("parcelas_divergentes", 422);
   if (!/^[a-z_]{2,30}$/.test(d.paymentMethodId)) throw new PedidoErro("cartao_invalido", 422);
+  if (d.paymentTypeId === "debit_card" && p.parcelas > 1)
+    throw new PedidoErro("parcelas_divergentes", 422, "Cartão de débito só aceita pagamento à vista. Escolha cartão de crédito ou outra condição.");
   const custos = await mpSites.parcelamento(p.total, d.paymentMethodId, d.issuerId);
   const custo = custos.flatMap((x) => x.payer_costs ?? []).find((pc) => pc.installments === p.parcelas);
   const semAcrescimo = !!custo && Number(custo.installment_rate) === 0 && Math.abs(Number(custo.total_amount) - p.total) < 0.005;
@@ -133,27 +136,33 @@ export async function pagarCartao(p: Pedido, d: DadosCartao): Promise<Pedido> {
   const s = sitesStore();
   const tentativa = p.tentativas + 1;
   await s.update(p.id, { tentativas: tentativa });
-  const pay = await mpSites.criarCartao({
-    pedidoId: p.id,
-    valor: p.total,
-    parcelas: p.parcelas,
-    descricao: PACOTE.descricao,
-    token: d.token,
-    paymentMethodId: d.paymentMethodId,
-    issuerId: d.issuerId,
-    payer: { email: d.payer.email || p.email, ...(d.payer.identification ? { identification: d.payer.identification } : {}) },
-    notificationUrl: sitesConfig.notificationUrl(),
-    idempotencyKey: `site-${p.id}-cartao-${tentativa}`,
-  });
+  let pay: MpPayment;
+  try {
+    pay = await mpSites.criarCartao({
+      pedidoId: p.id,
+      valor: p.total,
+      parcelas: p.parcelas,
+      descricao: PACOTE.descricao,
+      token: d.token,
+      paymentMethodId: d.paymentMethodId,
+      paymentTypeId: d.paymentTypeId,
+      payer: { email: d.payer.email || p.email, ...(d.payer.identification ? { identification: d.payer.identification } : {}) },
+      idempotencyKey: `site-${p.id}-cartao-${tentativa}`,
+    });
+  } catch (e) {
+    // cartão recusado: o Mercado Pago responde HTTP 402 com a order "failed" no corpo; vira pedido recusado
+    if (e instanceof MpError && e.ordem) pay = normalizarOrdem(e.ordem);
+    else throw e;
+  }
   const atual = await s.update(p.id, { mpPaymentId: String(pay.id) });
   return aplicarPagamento(atual, pay, "criacao");
 }
 
-/** Confere o pagamento devolvido pelo Mercado Pago contra a condição aprovada do pedido. */
+/** Confere a order devolvida pelo Mercado Pago contra a condição aprovada do pedido. */
 function confere(p: Pedido, pay: MpPayment): { ok: true } | { ok: false; motivo: string } {
   if (pay.currency_id !== "BRL") return { ok: false, motivo: `moeda ${pay.currency_id}` };
   if (Math.abs(Number(pay.transaction_amount) - p.total) >= 0.005) return { ok: false, motivo: `valor ${pay.transaction_amount} ≠ ${p.total}` };
-  const pago = pay.transaction_details?.total_paid_amount;
+  const pago = pay.total_paid_amount;
   if (pago != null && Number(pago) - p.total >= 0.005) return { ok: false, motivo: `total pago ${pago} > ${p.total}` };
   if (p.meio === "pix" && pay.payment_type_id && pay.payment_type_id !== "bank_transfer") return { ok: false, motivo: `meio ${pay.payment_type_id}` };
   if (p.meio === "cartao") {
@@ -171,7 +180,7 @@ function confere(p: Pedido, pay: MpPayment): { ok: true } | { ok: false; motivo:
 export async function aplicarPagamento(p: Pedido, pay: MpPayment, canal: string): Promise<Pedido> {
   const s = sitesStore();
   const pid = String(pay.id);
-  if (pay.external_reference && pay.external_reference !== `site:${p.id}`) throw new Error("pagamento de outro pedido");
+  if (pay.external_reference && pay.external_reference !== refPedido(p.id)) throw new Error("pagamento de outro pedido");
   await s.upsertPagamento({
     id: pid,
     pedidoId: p.id,
@@ -227,12 +236,12 @@ export async function aplicarPagamento(p: Pedido, pay: MpPayment, canal: string)
   return s.update(atual.id, { mpStatus: pay.status, mpStatusDetail: pay.status_detail ?? null });
 }
 
-/** Notificação do Mercado Pago (ou conferência): relê o pagamento e aplica ao pedido dele. */
-export async function sincronizarPagamento(paymentId: string, canal: string) {
-  const pay = await mpSites.getPayment(paymentId);
-  const ref = pay.external_reference ?? "";
-  if (!ref.startsWith("site:")) return { ignorado: "pagamento de outra oferta" };
-  const p = await sitesStore().get(ref.slice(5));
+/** Notificação do Mercado Pago (ou conferência): relê a order e aplica ao pedido dela. */
+export async function sincronizarPagamento(ordemId: string, canal: string) {
+  const pay = await mpSites.getOrdem(ordemId);
+  const pedidoId = pedidoDaRef(pay.external_reference);
+  if (!pedidoId) return { ignorado: "order de outra oferta" };
+  const p = await sitesStore().get(pedidoId);
   if (!p) return { ignorado: "pedido inexistente" };
   const r = await aplicarPagamento(p, pay, canal);
   return { ok: true, status: r.status };
@@ -248,8 +257,8 @@ export async function conferirPedido(p: Pedido, canal: string, intervalo = 12): 
   const s = sitesStore();
   if (!(await s.claimConferencia(p.id, intervalo))) return p;
   try {
-    if (p.mpPaymentId) return await aplicarPagamento(p, await mpSites.getPayment(p.mpPaymentId), canal);
-    const lista = await mpSites.buscarPorPedido(p.id);
+    if (p.mpPaymentId) return await aplicarPagamento(p, await mpSites.getOrdem(p.mpPaymentId), canal);
+    const lista = await mpSites.buscarPorPedido(p.id, p.criadoEm);
     const melhor = lista.find((x) => x.status === "approved") ?? lista[0];
     return melhor ? await aplicarPagamento(p, melhor, canal) : p;
   } catch (e) {
@@ -366,6 +375,17 @@ export function mensagemRecusa(detail: string | null) {
     cc_rejected_duplicated_payment: "Já existe um pagamento igual recente neste cartão.",
     cc_rejected_high_risk: "O pagamento foi recusado pela análise de segurança. Tente outro cartão ou o Pix.",
     cc_rejected_max_attempts: "Muitas tentativas com este cartão. Use outro cartão ou o Pix.",
+    // status_detail das transações da API de Orders
+    insufficient_amount: "O cartão não tem limite suficiente para este valor.",
+    card_insufficient_amount: "O cartão não tem limite suficiente para este valor.",
+    amount_limit_exceeded: "O valor passa do limite do cartão. Tente outro cartão ou o Pix.",
+    bad_filled_card_data: "Algum dado do cartão não confere.",
+    required_call_for_authorize: "O banco pediu autorização para este pagamento. Fale com o banco e tente de novo.",
+    card_disabled: "O cartão está desativado. Fale com o banco ou use outro cartão.",
+    high_risk: "O pagamento foi recusado pela análise de segurança. Tente outro cartão ou o Pix.",
+    max_attempts_exceeded: "Muitas tentativas com este cartão. Use outro cartão ou o Pix.",
+    invalid_installments: "Este cartão não aceita essa quantidade de parcelas. Escolha outra condição ou outro cartão.",
+    rejected_by_issuer: "O banco emissor recusou o pagamento. Nada foi cobrado. Tente outro cartão ou o Pix.",
   };
   return (detail && m[detail]) || "O pagamento não foi aprovado. Nada foi cobrado. Confira os dados ou tente outro cartão ou o Pix.";
 }

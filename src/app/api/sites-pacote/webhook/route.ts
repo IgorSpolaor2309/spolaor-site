@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { InvalidWebhookSignatureError, WebhookSignatureValidator } from "mercadopago";
-import { sitesConfig, sitesOperacional } from "@/lib/sites/config";
-import { MpError } from "@/lib/sites/mercadopago";
-import { sincronizarPagamento } from "@/lib/sites/process";
-import { sitesStore } from "@/lib/sites/store";
+import { sitesConfig } from "@/lib/sites/config";
+import { processarNotificacaoOrdem } from "@/lib/sites/notificacao";
 
-// Notificações do Mercado Pago dos pagamentos do pacote de sites (notification_url de cada pagamento). Mesmo
-// protocolo da rota da IA: (1) valida x-signature com o validador oficial; (2) ignora entregas repetidas;
-// (3) relê o pagamento no Mercado Pago. O corpo nunca é prova de pagamento. Pagamentos de outra oferta são ignorados.
+// Notificações do Mercado Pago das orders do pacote de sites (tópico "Order (Mercado Pago)"). Em produção o
+// Mercado Pago envia para a URL de Webhooks da aplicação (rota da IA), que repassa o tipo "order" para a mesma
+// função usada aqui; esta rota serve se a URL do painel apontar para cá. Protocolo: (1) valida x-signature com o
+// validador oficial; (2) ignora entregas repetidas; (3) relê a order no Mercado Pago. O corpo nunca é prova de
+// pagamento. Orders de outra origem são ignoradas.
 export async function POST(req: Request) {
   const url = new URL(req.url);
   let body: { type?: string; action?: string; data?: { id?: string | number } } = {};
@@ -21,12 +21,12 @@ export async function POST(req: Request) {
   const requestId = req.headers.get("x-request-id") ?? "";
   console.info(`[sites-pacote] notificação recebida type=${type || "?"} data.id=${dataId ?? "?"} request-id=${requestId || "?"}`);
 
-  // só precisa do segredo e do token: um pedido pendente continua sendo confirmado mesmo se a contratação for fechada depois
-  if (!sitesConfig.mpWebhookSecret() || !sitesOperacional()) return NextResponse.json({ ok: false }, { status: 503 });
+  if (!sitesConfig.mpWebhookSecret()) return NextResponse.json({ ok: false }, { status: 503 });
   try {
     WebhookSignatureValidator.validate({
       xSignature: req.headers.get("x-signature") ?? undefined,
       xRequestId: requestId || undefined,
+      // o Mercado Pago assina o data.id alfanumérico (ORD…) em minúsculas
       dataId: dataId ? dataId.toLowerCase() : undefined,
       secret: sitesConfig.mpWebhookSecret(),
       toleranceSeconds: 300,
@@ -36,17 +36,7 @@ export async function POST(req: Request) {
     console.warn(`[sites-pacote] notificação recusada (${reason}) request-id=${requestId}`);
     return NextResponse.json({ ok: false }, { status: 401 });
   }
-  if (!dataId || type !== "payment") return NextResponse.json({ ok: true, ignored: dataId ? `tipo ${type}` : "sem data.id" });
-
-  const s = sitesStore();
-  const key = `${type}:${dataId}:${requestId}`;
-  if (!(await s.markEvent(key))) return NextResponse.json({ ok: true, duplicate: true });
-  try {
-    return NextResponse.json({ ok: true, result: await sincronizarPagamento(dataId, "webhook") });
-  } catch (e) {
-    if (e instanceof MpError && e.status === 404) return NextResponse.json({ ok: true, ignored: "recurso inexistente no Mercado Pago" });
-    await s.unmarkEvent(key);
-    console.error(`[sites-pacote] falha ao processar payment ${dataId}:`, (e as Error).message);
-    return NextResponse.json({ ok: false }, { status: 500 });
-  }
+  if (type !== "order") return NextResponse.json({ ok: true, ignored: `tipo ${type || "?"}` });
+  const r = await processarNotificacaoOrdem(dataId, requestId);
+  return NextResponse.json(r.body, { status: r.status });
 }

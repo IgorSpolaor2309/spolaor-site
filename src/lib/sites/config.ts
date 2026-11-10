@@ -35,20 +35,8 @@ export const sitesConfig = {
     if (env("VERCEL_ENV") === "preview" && env("VERCEL_BRANCH_URL")) return `https://${env("VERCEL_BRANCH_URL")}`;
     return env("NEXT_PUBLIC_SITE_URL").replace(/\/+$/, "");
   },
-  /**
-   * URL de notificação dos pagamentos deste fluxo. Na prévia protegida da Vercel leva o segredo de bypass (como na
-   * IA); em produção, a própria rota. Nunca registrar esta URL em logs.
-   */
-  notificationUrl: (): string | null => {
-    if (env("SITES_MP_NOTIFICATION_URL") === "off") return null;
-    if (env("SITES_MP_NOTIFICATION_URL")) return env("SITES_MP_NOTIFICATION_URL");
-    const bypass = env("VERCEL_AUTOMATION_BYPASS_SECRET");
-    if (env("VERCEL_ENV") === "preview" && bypass && env("VERCEL_BRANCH_URL")) {
-      return `https://${env("VERCEL_BRANCH_URL")}/api/sites-pacote/webhook?x-vercel-protection-bypass=${encodeURIComponent(bypass)}`;
-    }
-    const base = sitesConfig.siteUrl();
-    return base.startsWith("https://") ? `${base}/api/sites-pacote/webhook` : null;
-  },
+  // Notificações: a API de Orders não aceita URL por pedido. O Mercado Pago envia o tópico "Order (Mercado Pago)"
+  // para a URL de Webhooks da aplicação (painel), a mesma da IA; a rota da IA repassa o tipo "order" para cá.
   isProduction: () => env("VERCEL_ENV") === "production",
 };
 

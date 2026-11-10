@@ -20,9 +20,14 @@ export async function POST(req: Request) {
   const f = (body.formData && typeof body.formData === "object" ? body.formData : {}) as Record<string, unknown>;
   const payer = (f.payer && typeof f.payer === "object" ? f.payer : {}) as Record<string, unknown>;
   const ident = (payer.identification && typeof payer.identification === "object" ? payer.identification : null) as Record<string, unknown> | null;
+  // tipo do cartão informado pelo formulário do Mercado Pago (additionalData.paymentTypeId do Card Payment Brick)
+  const extra = (body.additionalData && typeof body.additionalData === "object" ? body.additionalData : {}) as Record<string, unknown>;
+  const tipo = str(extra.paymentTypeId, 20) || str(f.payment_type_id, 20) || "credit_card";
+  if (tipo !== "credit_card" && tipo !== "debit_card") return NextResponse.json({ ok: false, error: "cartao_invalido" }, { status: 422 });
   const dados = {
     token: str(f.token, 200),
     paymentMethodId: str(f.payment_method_id, 30),
+    paymentTypeId: tipo as "credit_card" | "debit_card",
     issuerId: f.issuer_id != null && String(f.issuer_id).trim() ? String(f.issuer_id).trim().slice(0, 20) : null,
     installments: Number(f.installments),
     payer: {

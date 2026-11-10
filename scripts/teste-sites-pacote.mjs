@@ -1,12 +1,12 @@
 // Teste local da venda avulsa "Site de uma página" com Mercado Pago, e-mail e Pixel SIMULADOS (nada sai da máquina;
-// nenhum pagamento real). Não substitui o teste com as credenciais de TESTE do Mercado Pago na prévia (docs/SITES-PACOTE.md).
+// nenhum pagamento real). O teste real no sandbox do Mercado Pago (API de Orders) é scripts/teste-sandbox-mp.mjs (docs/SITES-PACOTE.md).
 //
 // Antes: build com Pixel fictício e o servidor em :3220:
 //   NEXT_PUBLIC_META_PIXEL_ID=000000000000001 npm run build
 //   SITES_STORE=memory SITES_CONTRATACAO_ATIVA=true SITES_CONDICOES=pix,cartao-1x,cartao-2x,cartao-3x,cartao-6x,cartao-12x
 //   MP_ACCESS_TOKEN=teste-local MP_WEBHOOK_SECRET=segredo-teste MP_API_URL=http://localhost:4040 NEXT_PUBLIC_MP_PUBLIC_KEY=TEST-publica-local
 //   RESEND_API_KEY=teste-local RESEND_API_URL=http://localhost:4042/emails LEAD_EMAIL_TO=ops@exemplo.test LEAD_EMAIL_FROM=site@exemplo.test
-//   NEXT_PUBLIC_SITE_URL=http://localhost:3220 CRON_SECRET=cron-teste-0123456789 SITES_MP_NOTIFICATION_URL=off
+//   NEXT_PUBLIC_SITE_URL=http://localhost:3220 CRON_SECRET=cron-teste-0123456789
 //   node node_modules/next/dist/bin/next start --port 3220
 // Opcional: SITES_TESTE_FECHADO=http://localhost:3210 (um servidor SEM as variáveis SITES_*) para conferir a oferta fechada.
 // Capturas: SITES_TESTE_CAPTURAS=<pasta>. Uso: node scripts/teste-sites-pacote.mjs
@@ -23,9 +23,31 @@ const out = [];
 const ok = (c, m) => out.push(`${c ? "OK   " : "FALHA"} ${m}`);
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/* ─────────────── Mercado Pago simulado ─────────────── */
+/* ─────────────── Mercado Pago simulado (API de Orders) ─────────────── */
+// Guarda cada order num formato "clássico" (status approved/pending/rejected/in_process/cancelled/refunded,
+// transaction_amount, installments…) que os testes manipulam, e responde no formato da API de Orders.
 const PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
-const mp = { pay: new Map(), creates: [], chaves: new Map(), modoCartao: "approved", juros: false, installmentsCalls: 0, seq: 5000 };
+const mp = { pay: new Map(), creates: [], chaves: new Map(), modoCartao: "approved", juros: false, installmentsCalls: 0, seq: Date.now() % 1e9 }; // ids únicos por rodada (o servidor guarda pedidos em memória)
+const ORD = { approved: ["processed", "accredited"], pending: ["action_required", "waiting_transfer"], in_process: ["processing", "in_process"], rejected: ["failed", "failed"], cancelled: ["canceled", "canceled"], expired: ["canceled", "expired"], refunded: ["refunded", "refunded"], charged_back: ["charged_back", "in_process"] };
+function comoOrder(p) {
+  const [status, detail] = ORD[p.status] ?? [p.status, p.status];
+  const pm = p.payment_type_id === "bank_transfer"
+    ? { id: "pix", type: "bank_transfer", qr_code: p.qr_code, qr_code_base64: p.qr_code_base64, ticket_url: "https://mp.simulado/pix" }
+    : { id: p.payment_method_id, type: p.payment_type_id ?? "credit_card", installments: p.installments, installment_amount: (p.transaction_amount / (p.installments || 1)).toFixed(2) };
+  return {
+    id: p.id,
+    type: "online",
+    external_reference: p.external_reference,
+    total_amount: Number(p.transaction_amount).toFixed(2),
+    total_paid_amount: p.status === "approved" ? Number(p.total_paid ?? p.transaction_amount).toFixed(2) : "0.00",
+    currency: p.currency_id ?? "BRL",
+    status,
+    status_detail: detail,
+    created_date: p.created ?? new Date().toISOString(),
+    last_updated_date: new Date().toISOString(),
+    transactions: { payments: [{ id: `PAY${p.id}`, amount: Number(p.transaction_amount).toFixed(2), status, status_detail: p.status_detail ?? detail, date_of_expiration: p.date_of_expiration, payment_method: pm }] },
+  };
+}
 http
   .createServer((req, res) => {
     let b = "";
@@ -38,56 +60,40 @@ http
       if (req.headers.authorization !== "Bearer teste-local") return send(401, {});
       const u = new URL(req.url, "http://x");
       let m;
-      if (req.method === "POST" && u.pathname === "/v1/payments") {
+      if (req.method === "POST" && u.pathname === "/v1/orders") {
         const key = req.headers["x-idempotency-key"];
-        if (!key) return send(400, { message: "X-Idempotency-Key obrigatório", cause: [{ code: 4292 }] });
-        if (mp.chaves.has(key)) return send(200, mp.pay.get(mp.chaves.get(key)));
+        if (!key) return send(400, { errors: [{ code: "missing_idempotency_key" }] });
+        if (mp.chaves.has(key)) return send(200, comoOrder(mp.pay.get(mp.chaves.get(key))));
         const body = JSON.parse(b);
-        mp.creates.push({ ...body, key });
-        const id = String(mp.seq++);
+        if (!/^[A-Za-z0-9_-]{1,64}$/.test(body.external_reference ?? "")) return send(400, { errors: [{ code: "property_value", details: ["'$.external_reference' - does not match pattern"] }] });
+        const t = body.transactions?.payments?.[0] ?? {};
+        const pmb = t.payment_method ?? {};
+        // visão "achatada" do pedido de cobrança, para as conferências
+        mp.creates.push({ key, transaction_amount: Number(body.total_amount), amount: Number(t.amount), payment_method_id: pmb.id, payment_type_id: pmb.type, installments: pmb.installments, token: pmb.token, statement_descriptor: pmb.statement_descriptor, expiration_time: t.expiration_time, external_reference: body.external_reference, payer: body.payer, description: body.description });
+        const id = `ORDSIM${mp.seq++}`;
         let p;
-        if (body.payment_method_id === "pix") {
-          p = {
-            id,
-            status: "pending",
-            status_detail: "pending_waiting_transfer",
-            transaction_amount: body.transaction_amount,
-            currency_id: "BRL",
-            installments: 1,
-            payment_method_id: "pix",
-            payment_type_id: "bank_transfer",
-            external_reference: body.external_reference,
-            date_of_expiration: body.date_of_expiration,
-            transaction_details: { total_paid_amount: body.transaction_amount },
-            point_of_interaction: { transaction_data: { qr_code: `00020126PIXSIMULADO${id}`, qr_code_base64: PNG, ticket_url: "https://mp.simulado/pix" } },
-          };
+        if (pmb.id === "pix") {
+          p = { id, status: "pending", status_detail: "waiting_transfer", transaction_amount: Number(body.total_amount), currency_id: "BRL", installments: 1, payment_method_id: "pix", payment_type_id: "bank_transfer", external_reference: body.external_reference, date_of_expiration: new Date(Date.now() + 3600e3).toISOString(), qr_code: `00020126PIXSIMULADO${id}`, qr_code_base64: PNG };
         } else {
           const st = mp.modoCartao;
-          p = {
-            id,
-            status: st,
-            status_detail: st === "rejected" ? "cc_rejected_insufficient_amount" : st === "in_process" ? "pending_contingency" : "accredited",
-            transaction_amount: body.transaction_amount,
-            currency_id: "BRL",
-            installments: body.installments,
-            payment_method_id: body.payment_method_id,
-            payment_type_id: "credit_card",
-            external_reference: body.external_reference,
-            date_approved: st === "approved" ? new Date().toISOString() : null,
-            transaction_details: { total_paid_amount: body.transaction_amount, installment_amount: Math.round((body.transaction_amount / body.installments) * 100) / 100 },
-          };
+          p = { id, status: st, status_detail: st === "rejected" ? "insufficient_amount" : st === "in_process" ? "in_process" : "accredited", transaction_amount: Number(body.total_amount), currency_id: "BRL", installments: pmb.installments, payment_method_id: pmb.id, payment_type_id: pmb.type ?? "credit_card", external_reference: body.external_reference };
         }
         mp.pay.set(id, p);
         mp.chaves.set(key, id);
-        return send(201, p);
+        // cartão recusado: a API de Orders responde 402 com a order "failed" em data
+        if (p.status === "rejected") return send(402, { errors: [{ code: "failed", message: "The following transactions failed", details: [`PAY${id}: ${p.status_detail}`] }], data: comoOrder(p) });
+        return send(201, comoOrder(p));
       }
-      if ((m = u.pathname.match(/^\/v1\/payments\/(\d+)$/)) && req.method === "GET") {
+      if ((m = u.pathname.match(/^\/v1\/orders\/([A-Za-z0-9]+)$/)) && req.method === "GET") {
+        // como o Mercado Pago: id fora do formato de order → 400 invalid_path_param; formato certo e inexistente → 404
+        if (!/^ORD[A-Z0-9]+$/.test(m[1])) return send(400, { errors: [{ code: "invalid_path_param", message: "path param order id is invalid" }] });
         const p = mp.pay.get(m[1]);
-        return p ? send(200, p) : send(404, { message: "not found" });
+        return p ? send(200, comoOrder(p)) : send(404, { errors: [{ code: "order_not_found" }] });
       }
-      if (u.pathname === "/v1/payments/search") {
+      if (u.pathname === "/v1/orders" && req.method === "GET") {
+        if (!u.searchParams.get("begin_date") || !u.searchParams.get("end_date")) return send(400, { errors: [{ code: "missing_required_params" }] });
         const ref = u.searchParams.get("external_reference");
-        return send(200, { results: [...mp.pay.values()].filter((p) => p.external_reference === ref).reverse() });
+        return send(200, { data: [...mp.pay.values()].filter((p) => p.external_reference === ref).reverse().map(comoOrder), paging: {} });
       }
       if (u.pathname === "/v1/payment_methods/installments") {
         mp.installmentsCalls++;
@@ -124,13 +130,13 @@ async function json(path, init = {}, base = B) {
   return { status: r.status, body: await r.json().catch(() => ({})) };
 }
 let rid = 1;
-function webhook(dataId, { sign = true, requestId = `req-${rid++}`, type = "payment" } = {}) {
+function webhook(dataId, { sign = true, requestId = `req-${rid++}`, type = "order", rota = "/api/sites-pacote/webhook" } = {}) {
   const ts = Math.floor(Date.now() / 1000);
   const sig = createHmac("sha256", sign ? SECRET : "outro").update(`id:${String(dataId).toLowerCase()};request-id:${requestId};ts:${ts};`).digest("hex");
-  return json(`/api/sites-pacote/webhook?data.id=${encodeURIComponent(dataId)}&type=${type}`, {
+  return json(`${rota}?data.id=${encodeURIComponent(dataId)}&type=${type}`, {
     method: "POST",
     headers: { "x-signature": `ts=${ts},v1=${sig}`, "x-request-id": requestId },
-    body: JSON.stringify({ type, action: "payment.updated", data: { id: dataId } }),
+    body: JSON.stringify({ type, action: `${type}.updated`, data: { id: dataId } }),
   });
 }
 let n = 0;
@@ -143,7 +149,7 @@ async function pedido(condicao, extra = {}) {
   return { ...r, cred: r.body.id ? { id: r.body.id, t: r.body.token } : null };
 }
 const status = (c) => json(`/api/sites-pacote/status?p=${c.id}&t=${c.t}`).then((r) => r.body.pedido);
-const cartao = (c, formData) => json("/api/sites-pacote/cartao", { method: "POST", body: JSON.stringify({ id: c.id, t: c.t, formData }) });
+const cartao = (c, formData, additionalData = { paymentTypeId: "credit_card" }) => json("/api/sites-pacote/cartao", { method: "POST", body: JSON.stringify({ id: c.id, t: c.t, formData, additionalData }) });
 const fd = (installments, extra = {}) => ({ token: "tok_simulado", payment_method_id: "master", issuer_id: "24", installments, payer: { email: "teste@exemplo.test", identification: { type: "CPF", number: "123.456.789-09" } }, ...extra });
 const emailsDe = (id) => emails.filter((e) => String(e.text ?? "").includes(id));
 const ultimoCreate = () => mp.creates[mp.creates.length - 1];
@@ -161,7 +167,7 @@ const ultimoCreate = () => mp.creates[mp.creates.length - 1];
   const c = ultimoCreate();
   ok(r.status === 200 && r.body.pedido?.status === "pagamento_pendente" && r.body.pedido?.pix?.copiaCola, "Pix: pedido criado e QR Code devolvido (pagamento pendente)");
   ok(mp.creates.length === antes + 1 && c.transaction_amount === 449.9 && c.payment_method_id === "pix", "Pix cobra R$ 449,90 da tabela (valor enviado pelo navegador ignorado)");
-  ok(c.external_reference === `site:${r.body.id}` && /^site-.+-pix-1$/.test(c.key) && c.date_of_expiration?.endsWith("-03:00"), "Pix: referência do pedido, chave de idempotência e validade com fuso");
+  ok(c.external_reference === `site_${r.body.id}` && /^site-.+-pix-1$/.test(c.key) && c.expiration_time === "PT60M", "Pix: referência do pedido (site_<id>), chave de idempotência e validade de 60 min");
   // repetição do envio (mesma chave do navegador): mesmo pedido, sem novo pagamento
   const chave = "chave-teste-0123456789abcdef";
   const r1 = await pedido("pix", { email: "repetido@exemplo.test", chavePedido: chave });
@@ -178,7 +184,7 @@ const ultimoCreate = () => mp.creates[mp.creates.length - 1];
   ok(/utm_campaign=site-pacote/.test(avisos[0].text), "aviso leva a origem (UTMs)");
 
   // confirmação do Pix pela notificação assinada
-  const pagId = r.body.pedido && [...mp.pay.values()].find((p) => p.external_reference === `site:${r.body.id}`).id;
+  const pagId = r.body.pedido && [...mp.pay.values()].find((p) => p.external_reference === `site_${r.body.id}`).id;
   let w = await webhook(pagId, { sign: false });
   ok(w.status === 401, "notificação sem assinatura válida → 401");
   w = await webhook(pagId);
@@ -201,7 +207,7 @@ const ultimoCreate = () => mp.creates[mp.creates.length - 1];
 
   // Pix vencido → novo Pix
   const rv = await pedido("pix");
-  const pv = [...mp.pay.values()].find((p) => p.external_reference === `site:${rv.body.id}`);
+  const pv = [...mp.pay.values()].find((p) => p.external_reference === `site_${rv.body.id}`);
   pv.status = "cancelled";
   pv.status_detail = "expired";
   await webhook(pv.id);
@@ -209,11 +215,26 @@ const ultimoCreate = () => mp.creates[mp.creates.length - 1];
   const np = await json("/api/sites-pacote/pix", { method: "POST", body: JSON.stringify({ id: rv.cred.id, t: rv.cred.t }) });
   ok(np.body.pedido?.status === "pagamento_pendente" && /-pix-2$/.test(ultimoCreate().key), "novo Pix gerado com nova chave de idempotência");
 
-  // pagamento de outra oferta (ex.: IA) chegando nesta rota
-  const outro = String(mp.seq++);
+  // order de outra origem chegando nesta rota
+  const outro = `ORDSIM${mp.seq++}`;
   mp.pay.set(outro, { id: outro, status: "approved", transaction_amount: 297, currency_id: "BRL", external_reference: "spolaor-ia-xyz" });
   w = await webhook(outro);
-  ok(w.body.result?.ignorado === "pagamento de outra oferta", "pagamento de outra oferta → ignorado");
+  ok(w.body.result?.ignorado === "order de outra oferta", "order de outra origem → ignorada");
+  w = await webhook("123456");
+  ok(w.status === 200 && /inexistente/.test(w.body.ignored ?? ""), "notificação simulada pelo painel com id inventado (400/404 no Mercado Pago) → 200 e ignorada");
+  w = await webhook("ORDSIM00000000000");
+  ok(w.status === 200 && /inexistente/.test(w.body.ignored ?? ""), "order inexistente → 200 e ignorada, sem novas tentativas");
+  w = await webhook(pagId, { type: "payment" });
+  ok(w.status === 200 && w.body.ignored === "tipo payment", "nesta rota, só o tipo order é processado");
+
+  // produção: o Mercado Pago manda o tópico Order para a URL de Webhooks da aplicação (rota da IA), que repassa
+  const ri = await pedido("pix");
+  const pi = [...mp.pay.values()].find((p) => p.external_reference === `site_${ri.body.id}`);
+  w = await webhook(pi.id, { rota: "/api/atendimento-ia/webhook", sign: false });
+  ok(w.status === 401, "rota da IA: notificação order sem assinatura válida → 401");
+  pi.status = "approved";
+  w = await webhook(pi.id, { rota: "/api/atendimento-ia/webhook" });
+  ok(w.status === 200 && w.body.result?.status === "pago" && (await status(ri.cred)).status === "pago", "rota da IA repassa o tipo order para os sites → pago");
 }
 
 /* ─────────────── 2. API: cartão ─────────────── */
@@ -230,7 +251,8 @@ const ultimoCreate = () => mp.creates[mp.creates.length - 1];
   x = await cartao(r.cred, fd(12));
   const c = ultimoCreate();
   ok(x.status === 200 && x.body.pedido?.status === "pago", "cartão 12× aprovado e conferido → pago");
-  ok(c.transaction_amount === 574.8 && c.installments === 12 && c.token === "tok_simulado" && /-cartao-1$/.test(c.key) && c.payer?.identification?.number === "12345678909", "cobra R$ 574,80 em 12× com token, CPF só com dígitos e chave de idempotência");
+  ok(c.transaction_amount === 574.8 && c.amount === 574.8 && c.installments === 12 && c.token === "tok_simulado" && /-cartao-1$/.test(c.key) && c.payer?.identification?.number === "12345678909", "cobra R$ 574,80 em 12× com token, CPF só com dígitos e chave de idempotência");
+  ok(c.payment_type_id === "credit_card" && c.statement_descriptor === "SPOLAOR" && c.external_reference === `site_${r.body.id}`, "order de cartão: crédito, SPOLAOR na fatura e referência do pedido");
   x = await cartao(r.cred, fd(12));
   ok(x.status === 409 && x.body.error === "pedido_encerrado", "pedido pago não aceita nova cobrança");
   await espera(600);
@@ -242,6 +264,14 @@ const ultimoCreate = () => mp.creates[mp.creates.length - 1];
     const y = await cartao(p.cred, fd(parc));
     ok(y.body.pedido?.status === "pago" && ultimoCreate().transaction_amount === total && ultimoCreate().installments === parc, `${cond}: cobra R$ ${total} em ${parc}× da tabela aprovada`);
   }
+
+  // débito só à vista
+  const rdb = await pedido("cartao-2x");
+  const antesDeb = mp.creates.length;
+  x = await cartao(rdb.cred, fd(2), { paymentTypeId: "debit_card" });
+  ok(x.status === 422 && x.body.error === "parcelas_divergentes" && mp.creates.length === antesDeb, "cartão de débito em 2× → recusado antes de cobrar");
+  x = await cartao(rdb.cred, fd(2), { paymentTypeId: "pix" });
+  ok(x.status === 422 && x.body.error === "cartao_invalido", "tipo de cartão desconhecido → 422");
 
   // recusado → nova tentativa aprovada
   const rr = await pedido("cartao-3x");
@@ -260,7 +290,7 @@ const ultimoCreate = () => mp.creates[mp.creates.length - 1];
   x = await cartao(ra.cred, fd(6));
   ok(x.status === 409 && x.body.error === "pagamento_em_analise", "nova cobrança bloqueada enquanto a anterior está em análise");
   mp.modoCartao = "approved";
-  const pa = [...mp.pay.values()].find((p) => p.external_reference === `site:${ra.cred.id}`);
+  const pa = [...mp.pay.values()].find((p) => p.external_reference === `site_${ra.cred.id}`);
   pa.status = "approved";
   await webhook(pa.id);
   ok((await status(ra.cred)).status === "pago", "análise aprovada (notificação) → pago");
@@ -270,7 +300,7 @@ const ultimoCreate = () => mp.creates[mp.creates.length - 1];
   mp.modoCartao = "in_process";
   await cartao(rd.cred, fd(2));
   mp.modoCartao = "approved";
-  const pd = [...mp.pay.values()].find((p) => p.external_reference === `site:${rd.cred.id}`);
+  const pd = [...mp.pay.values()].find((p) => p.external_reference === `site_${rd.cred.id}`);
   Object.assign(pd, { status: "approved", transaction_amount: 449.9 });
   await webhook(pd.id);
   const sd = await status(rd.cred);
@@ -280,7 +310,7 @@ const ultimoCreate = () => mp.creates[mp.creates.length - 1];
   mp.modoCartao = "in_process";
   await cartao(rc.cred, fd(6));
   mp.modoCartao = "approved";
-  const pc = [...mp.pay.values()].find((p) => p.external_reference === `site:${rc.cred.id}`);
+  const pc = [...mp.pay.values()].find((p) => p.external_reference === `site_${rc.cred.id}`);
   pc.status = "approved";
   await espera(12_500);
   ok((await status(rc.cred)).status === "pago", "sem notificação: o acompanhamento confere no Mercado Pago e confirma");
@@ -304,7 +334,7 @@ async function contexto(vp) {
         window.__brick = s;
         var el = document.getElementById(id);
         var b = document.createElement('button'); b.type='button'; b.id='pagar-simulado'; b.textContent='Pagar (simulado) ' + s.customization.paymentMethods.minInstallments + 'x de ' + s.initialization.amount;
-        b.onclick = function(){ s.callbacks.onSubmit({ token:'tok_simulado', payment_method_id:'master', issuer_id:'24', installments: s.customization.paymentMethods.minInstallments, payer:{ email:'comprador@exemplo.test' } }).catch(function(){}); };
+        b.onclick = function(){ s.callbacks.onSubmit({ token:'tok_simulado', payment_method_id:'master', issuer_id:'24', installments: s.customization.paymentMethods.minInstallments, payer:{ email:'comprador@exemplo.test' } }, { paymentTypeId:'credit_card', bin:'503143', lastFourDigits:'6351' }).catch(function(){}); };
         el.appendChild(b); s.callbacks.onReady && s.callbacks.onReady();
         return Promise.resolve({ unmount: function(){ el.innerHTML=''; } }); } }; } }; };`,
     }),
@@ -410,8 +440,8 @@ for (const fluxo of ["cartao-12x", "pix"]) {
     await page.locator("#pagar-simulado").click();
     await page.getByText("Pagamento confirmado").waitFor({ timeout: 8000 });
   } else {
-    ok(await page.getByAltText("QR Code do Pix").isVisible(), "pix: QR Code e copia e cola na página do pedido");
-    const p = [...mp.pay.values()].find((x) => x.external_reference === `site:${cred.id}`);
+    ok(await page.getByAltText("QR Code do Pix").waitFor({ timeout: 8000 }).then(() => true, () => false), "pix: QR Code e copia e cola na página do pedido");
+    const p = [...mp.pay.values()].find((x) => x.external_reference === `site_${cred.id}`);
     p.status = "approved";
     await webhook(p.id);
     await page.getByText("Pagamento confirmado").waitFor({ timeout: 12000 });

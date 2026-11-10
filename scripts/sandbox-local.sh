@@ -56,8 +56,7 @@ exec "${LIMPO[@]}" "${COMUM[@]}" \
   SITES_STORE=memory IA_STORE=memory \
   SITES_CONTRATACAO_ATIVA=true \
   SITES_CONDICOES=pix,cartao-1x,cartao-2x,cartao-3x,cartao-6x,cartao-12x \
-  SITES_MP_NOTIFICATION_URL=off \
-  MP_WEBHOOK_SECRET=sandbox-local-sem-notificacao \
+  MP_WEBHOOK_SECRET=sandbox-local-assinatura-simulada \
   MP_API_URL=https://api.mercadopago.com \
   MP_ACCESS_TOKEN="$TOKEN" \
   NEXT_PUBLIC_MP_PUBLIC_KEY="$PUBLICA" \

@@ -52,13 +52,63 @@ os juros do parcelamento seguem a configuração da conta.
   - consulta `GET /v1/payment_methods/installments` (valor, bandeira e emissor) e só cobra se a parcela tiver
     `installment_rate` 0 **e** `total_amount` igual ao total aprovado.
   - Se o Mercado Pago indicar acréscimo ao comprador, nada é cobrado e o comprador é avisado.
-- O servidor cria o pagamento (`POST /v1/payments`) com `transaction_amount` e `installments` da tabela e
-  `X-Idempotency-Key` por tentativa.
-- **Pix:** `POST /v1/payments` com `payment_method_id: "pix"`. O QR Code e o copia e cola aparecem na página do
-  pedido; a validade é de 60 min (`SITES_PIX_MINUTOS`).
-- **Depois de aprovado**, o pedido só vira "pago" se valor, moeda, `total_paid_amount` e parcelas baterem com a
-  condição. Se não baterem, vira "divergente": não conta como pago e a operação recebe um aviso para estornar no
-  painel.
+- O servidor cria a cobrança pela **API de Orders** (`POST /v1/orders`, ver a seção "Por que Orders e não
+  Payments"): `total_amount`, `installments` e o tipo do cartão saem da tabela e do formulário seguro. Vai também
+  `statement_descriptor` "SPOLAOR", `external_reference` `site_<pedido>` e `X-Idempotency-Key` por tentativa.
+- **Cartão recusado:** o Mercado Pago responde HTTP 402 com a order `failed` no corpo; o pedido vira "recusado", com
+  o motivo legível, e aceita nova tentativa (nova chave). Cartão de débito só em 1×.
+- **Pix:** order com `payment_method` `pix`/`bank_transfer` e `expiration_time` de 60 min (`SITES_PIX_MINUTOS`). O
+  QR Code e o copia e cola aparecem na página do pedido.
+- **Depois de aprovada** (order `processed`), o pedido só vira "pago" se valor, moeda, `total_paid_amount` e parcelas
+  baterem com a condição. Se não baterem, vira "divergente": não conta como pago e a operação recebe um aviso para
+  estornar no painel.
+
+## Por que Orders e não Payments (10/11/2026)
+
+A primeira versão usava a API de Payments (`/v1/payments`). Ela não pôde ser testada no sandbox, e a cobrança de
+sites foi migrada para Orders. **A assinatura de IA continua na API dela (`/preapproval`), sem mudança.**
+
+**De onde vêm as credenciais de teste usadas.** O painel da aplicação real "Spolaor Tecnologia" (1210226582734013),
+em Credenciais de teste, mostra as chaves de um **usuário de teste vendedor** (3819411964, marca `test_user`). Elas
+pertencem à aplicação automática dele, "TestApp-7edf2da2" (5990120057297828), com `certification_status`
+`not_certified` e `sandbox_mode` `false`.
+
+Public Key, Access Token e tokenização são do mesmo contexto, sem mistura:
+- `GET /applications/1210226582734013` com esse token: 403;
+- token de cartão criado com a Public Key de teste: lido pelo Access Token de teste (200), mas não pela Public Key de
+  produção (403);
+- 12× visa: 22,11% com a Public Key e com o Access Token de teste; 0% com a Public Key de produção.
+
+**O erro de Payments.** Com essas credenciais, `POST /v1/payments` (Pix e cartão) responde **HTTP 401
+"Unauthorized use of live credentials" (cause 7)**, com qualquer pagador, inclusive a conta de teste compradora.
+
+**Orientação oficial** ([Credenciais](https://www.mercadopago.com.br/developers/pt/docs/your-integrations/credentials)):
+- **Checkout Transparente e Checkout Pro com Orders:** as credenciais de teste são criadas automaticamente junto com
+  a aplicação. São exatamente as que o painel entrega.
+- **Outros produtos (Payments):** as credenciais de teste precisam ser ativadas em Credenciais de teste, com aceite
+  dos termos, reCAPTCHA e "Ativar credenciais".
+  - O painel desta aplicação não oferece esse caminho.
+  - reCAPTCHA e login na conta de teste não são feitos por automação.
+
+Com as mesmas credenciais, a API de Orders funciona: Pix, cartão aprovado, recusado e em análise, e consulta da
+order. Os resultados estão na seção do sandbox.
+
+**O que mudou na migração (só o checkout de sites):**
+- `src/lib/sites/mercadopago.ts` usa `/v1/orders`:
+  - cria Pix e cartão;
+  - lê por id;
+  - busca pela referência (exige período);
+  - cancela;
+  - normaliza a order para os estados do pedido.
+- `src/lib/sites/notificacao.ts` trata o tópico **"Order (Mercado Pago)"**.
+- **Rotas de notificação:**
+  - `POST /api/sites-pacote/webhook` aceita só `type` `order`.
+  - Orders não aceita URL de notificação por pedido. O Mercado Pago manda o tópico para a URL de Webhooks da
+    aplicação, que em produção é a rota da IA. Por isso `POST /api/atendimento-ia/webhook` ganhou uma linha: depois de
+    validar a assinatura, repassa o `type` `order` para a rotina de sites.
+  - Nada mais da IA mudou (assinatura, pagamentos, cobranças e provisionamento).
+- `external_reference` passou a `site_<pedido>`: Orders recusa ":".
+- O formulário de cartão envia o tipo do cartão (`additionalData.paymentTypeId`), exigido por Orders.
 
 ## Conta do Mercado Pago: parcelamento (resolvido em 10/11/2026)
 
@@ -102,9 +152,8 @@ Outros pré-requisitos: chave Pix cadastrada (Pix via API) e a Public Key da mes
 |---|---|
 | `SITES_CONTRATACAO_ATIVA=true` | abre a contratação (sem ela, a página mostra a oferta e um contato) |
 | `SITES_CONDICOES` | condições liberadas no checkout, só as VALIDADAS: `pix,cartao-1x,cartao-2x,cartao-3x,cartao-6x,cartao-12x` |
-| `NEXT_PUBLIC_MP_PUBLIC_KEY` | Public Key (TEST- na prévia, APP_USR- em produção) para o formulário de cartão |
+| `NEXT_PUBLIC_MP_PUBLIC_KEY` | Public Key da mesma aplicação do `MP_ACCESS_TOKEN`, para o formulário de cartão (em teste, a do usuário de teste; em produção, a da aplicação real) |
 | `SITES_PIX_MINUTOS` | validade do Pix em minutos (padrão 60; de 30 a 1440) |
-| `SITES_MP_NOTIFICATION_URL` | opcional: `off` (usar só a URL do painel) ou uma URL própria. Na prévia, a rota é montada com o bypass da Vercel |
 | `SITES_URL_PUBLICA` | opcional: endereço público (padrão: `IA_URL_PUBLICA`, `VERCEL_BRANCH_URL` na prévia ou `NEXT_PUBLIC_SITE_URL`) |
 | reaproveitadas | `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `DATABASE_URL`, `RESEND_API_KEY`, `LEAD_EMAIL_FROM`, `IA_OPERACAO_EMAIL`/`LEAD_EMAIL_TO`, `CRON_SECRET` |
 
@@ -124,9 +173,13 @@ conexão. Elas não tocam nas tabelas `ia_*`. Esquema em `src/lib/sites/store.ts
    - Pix com QR Code, ou o formulário de cartão (`POST /api/sites-pacote/cartao`);
    - acompanhamento por `GET /api/sites-pacote/status`, que confere no Mercado Pago no máximo a cada ~12 s;
    - depois de pago, explica que a coleta das informações é pelo WhatsApp e que o prazo conta a partir dos materiais.
-4. **Confirmação:** notificações em `POST /api/sites-pacote/webhook` (assinatura validada, entregas repetidas
-   ignoradas, pagamento relido no Mercado Pago). A rotina `GET /api/sites-pacote/rotina` (Bearer `CRON_SECRET`)
-   confere os pendentes; pode ser chamada pelo agendador já usado pela IA.
+4. **Confirmação:**
+   - notificações do tópico "Order (Mercado Pago)", que chegam pela URL de Webhooks da aplicação (rota da IA, que
+     repassa) ou por `POST /api/sites-pacote/webhook`;
+   - a assinatura é validada, entregas repetidas são ignoradas e a order é relida no Mercado Pago;
+   - a página do pedido também confere sozinha;
+   - a rotina `GET /api/sites-pacote/rotina` (Bearer `CRON_SECRET`) confere os pendentes e pode ser chamada pelo
+     agendador já usado pela IA.
 
 **Estados do pedido:**
 - `criado`: dados aceitos, sem pagamento;
@@ -153,38 +206,88 @@ Nenhuma mensagem automática vai para o comprador.
   (`eventID site-<id>`).
 - Sem `Subscribe` e sem dados pessoais. Os eventos da IA não mudaram.
 
-Pagamentos desta oferta que chegarem à rota de notificações da IA são ignorados lá
-(`external_reference` = `site:<id>`).
+A rota de notificações da IA só repassa o `type` `order`. Os tipos da IA (`payment`, `subscription_*`,
+chargebacks) seguem como antes. Uma order sem referência `site_<id>` é ignorada.
 
-## Teste real no sandbox do Mercado Pago (localhost, credenciais de TESTE)
+## Para abrir em produção (pendente, decisão do Igor)
 
-O ambiente Preview da Vercel **não tem** `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` nem banco (lido em 09/11/2026:
-essas variáveis existem só em Production). Por isso o teste real roda nesta máquina:
-- `.env.sandbox.local` (fora do git) com as credenciais de teste da aplicação;
-- `bash scripts/sandbox-local.sh` sobe o checkout em `http://localhost:3230` com banco em memória, sem e-mail e com
-  Pixel falso;
-- o script só sobe se o Access Token for de um usuário de teste (`/users/me` com a marca `test_user`) e se a Public
-  Key não for a de produção;
-- `node --no-warnings scripts/teste-sandbox-mp.mjs` faz Pix, cartão 1× (aprovado, recusado e pendente) e os
-  parcelados.
+1. No painel do Mercado Pago, aplicação "Spolaor Tecnologia" > Webhooks > **modo produção** (a URL atual, que é a
+   rota da IA): marcar também o evento **"Order (Mercado Pago)"** e salvar. Os eventos da IA continuam marcados.
+2. Na Vercel, Production:
+   - `NEXT_PUBLIC_MP_PUBLIC_KEY` com a Public Key de produção, da mesma aplicação do `MP_ACCESS_TOKEN` atual;
+   - `SITES_CONTRATACAO_ATIVA=true`;
+   - `SITES_CONDICOES=pix,cartao-1x,cartao-2x,cartao-3x,cartao-6x,cartao-12x`.
 
-**Resultado em 10/11/2026: o teste de ponta a ponta NÃO roda com a integração atual.**
-- Hoje o painel do Mercado Pago entrega como "credenciais de teste" as credenciais de um usuário de teste vendedor
-  (APP_USR-…, conta TESTUSER…), não mais as TEST-…;
-- com elas, `POST /v1/payments` (a API usada aqui, Pix e cartão) responde **HTTP 401 "Unauthorized use of live
-  credentials"**, com qualquer pagador, inclusive a conta de teste compradora;
-- com as mesmas credenciais, a **API de Orders** (`POST /v1/orders`) funcionou:
-  - Pix criado, aguardando pagamento;
-  - cartão de teste Visa aprovado, R$ 449,90 em 1×.
-- A conta de teste tem configuração de parcelamento própria ("parcelado cliente"):
-  - o checkout deve recusar 2× a 12× nela, sem cobrar;
-  - pela API de Orders, 12× de R$ 574,80 voltou "invalid_transaction_amount".
+   O banco e o `MP_WEBHOOK_SECRET` já existem.
+3. Merge do PR #23 e conferência em produção (Pix gerado; formulário de cartão abrindo com a parcela certa). Sem
+   cobrança real, salvo autorização explícita.
+4. Rodar de novo `scripts/sondar-parcelamento.mjs` com a Public Key de produção se a configuração de parcelamento
+   mudar.
 
-Caminhos para validar a cobrança antes de abrir a venda (decisão do Igor):
-- **(a)** migrar `src/lib/sites/mercadopago.ts` para a API de Orders, a recomendada pelo Mercado Pago, e testar aqui
-  no sandbox;
-- **(b)** manter a API de Payments e fazer um pagamento real de baixo valor em produção, com estorno. Cobrança real:
-  só com autorização explícita.
+## Duas validações diferentes
+
+| | Consulta de parcelamento (produção) | Testes de cobrança (sandbox) |
+|---|---|---|
+| O que prova | quanto o comprador real paga em cada condição | que o checkout cobra, recusa, confirma e não duplica |
+| Conta | a real (Public Key de produção) | a de teste (usuário de teste vendedor) |
+| Cobra algo? | não: só `GET /v1/payment_methods/installments` | não: dinheiro de teste |
+| Script | `scripts/sondar-parcelamento.mjs` | `scripts/teste-sandbox-mp.mjs` |
+| Resultado (10/11/2026) | 1×, 2×, 3×, 6× e 12× pelos totais aprovados, 0% de acréscimo | ver abaixo |
+
+A conta de teste tem configuração de parcelamento própria ("parcelado cliente": 12× com 22,11% ao comprador). Por
+isso, no sandbox, o checkout recusa 2×, 3×, 6× e 12× antes de cobrar. A cobrança parcelada sem acréscimo só existe na
+conta real, e é a consulta de produção que a confirma.
+
+## Teste real no sandbox do Mercado Pago (localhost, credenciais de teste)
+
+O ambiente Preview da Vercel **não tem** `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` nem banco (essas variáveis existem só
+em Production). Por isso o teste real roda nesta máquina:
+
+```bash
+# .env.sandbox.local (fora do git): MP_ACCESS_TOKEN e NEXT_PUBLIC_MP_PUBLIC_KEY das credenciais de teste do painel
+bash scripts/sandbox-local.sh                      # checkout em http://localhost:3230
+node --no-warnings scripts/teste-sandbox-mp.mjs    # SANDBOX_CENARIOS=1,6 roda só alguns cenários
+```
+
+- O launcher só sobe se o Access Token for de um usuário de teste (`/users/me` com a marca `test_user`) e se a Public
+  Key não for a de produção. Ele usa banco em memória, nenhum e-mail e um Pixel falso.
+- O cartão é digitado no **formulário seguro do próprio Mercado Pago** (Card Payment Brick, SDK JS v2), dentro do
+  checkout do PR, com os cartões de teste de Orders:
+  - Mastercard 5480 8328 0103 3311 ou Visa 4235 6477 2802 5682, CVV 123, validade 11/30;
+  - titular APRO aprova, OTHE recusa, CONT fica em análise;
+  - CPF 12345678909.
+- O Pix de teste com o nome "APRO …" é aprovado sozinho pelo sandbox, entre alguns segundos e cerca de 2 minutos.
+- Capturas e ids das orders: `../previa-pacote-site/sandbox-orders/` (`RESULTADO.txt`).
+
+**Resultado em 10/11/2026 (orders reais no sandbox):**
+
+29/29 conferências numa única rodada completa (`RESULTADO.txt`):
+
+| Cenário | Resultado |
+|---|---|
+| Pix pelo checkout no navegador | QR Code e copia e cola na página; uma order de R$ 449,90 com referência `site_<pedido>` e validade de 60 min; aprovada pelo sandbox, a página confirmou sozinha |
+| Cartão 1× aprovado (Mastercard, APRO, Brick) | pedido pago; order `processed`/`accredited`, R$ 449,90 pagos, 1× no crédito, SPOLAOR na fatura |
+| Segunda cobrança no pedido pago | recusada (409 `pedido_encerrado`), continua uma order só |
+| Cartão recusado (Visa, OTHE, Brick) | pedido recusado, com "O banco emissor recusou o pagamento. Nada foi cobrado…" na página |
+| Nova tentativa no mesmo pedido (APRO) | pago; orders `failed` → `processed` |
+| Cartão em análise (Mastercard, CONT, Brick) | "Pagamento em análise", não conta como pago; nova cobrança bloqueada (409 `pagamento_em_analise`) |
+| 12× pelo Brick na conta de teste | o Brick mostrou 12× de R$ 58,49 (R$ 701,89, juros da conta de teste); o servidor recusou ANTES de cobrar ("o Mercado Pago cobraria mais que R$ 574,80 em 12×"); zero orders |
+| 2×, 3× e 6× (token da Public Key de teste) | recusados antes de cobrar; zero orders |
+| Notificação com assinatura inválida | 401 |
+| `type` `payment` na rota de sites | ignorado (só `order`) |
+| Notificação `order` pela rota de Webhooks da aplicação (a da IA, a de produção) | Pix pendente → pedido pago, sem consultar o status antes |
+| A mesma entrega repetida | ignorada; nova entrega não muda nada |
+| Order inexistente (ex.: simulação do painel) | 200 e ignorada, sem novas tentativas |
+| Mesmo envio do checkout repetido (clique duplo) | mesmo pedido e um Pix só |
+
+**O que este teste não cobre:**
+- **A entrega das notificações pelo próprio Mercado Pago:** ele não alcança localhost. As notificações do teste têm
+  assinatura `x-signature` válida, gerada com o segredo local, e apontam para orders reais do sandbox, que o servidor
+  relê no Mercado Pago. Em produção, a entrega depende do evento "Order (Mercado Pago)" marcado no painel (ver "Para
+  abrir em produção"); o painel tem "Simular notificação" para conferir.
+- **Os avisos internos por e-mail:** o sandbox roda sem provedor de e-mail. Estão cobertos com provedor simulado em
+  `scripts/teste-sites-pacote.mjs`.
+- **O Pixel:** coberto em `scripts/teste-sites-pacote.mjs`, com `Purchase` só depois de pago e sem `Subscribe`.
 
 ## Testes locais (provedores simulados, nada sai da máquina)
 
@@ -194,8 +297,9 @@ NEXT_PUBLIC_META_PIXEL_ID=000000000000001 npm run build
 node scripts/teste-sites-pacote.mjs
 ```
 
-Na entrega de 09/11/2026, rodando contra servidores locais:
-- `teste-sites-pacote`: 92/92;
+O Mercado Pago simulado do teste responde no formato da API de Orders. Em 10/11/2026, depois da migração, rodando
+contra servidores locais (`bash ../servidores-teste.sh`):
+- `teste-sites-pacote`: 100/100;
 - `teste-atendimento-ia`: 114/114;
 - `teste-medicao-funil`: 27/27;
 - `teste-ofertas-local`: 63/63;

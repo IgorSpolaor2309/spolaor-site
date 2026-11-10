@@ -117,13 +117,14 @@ export function PedidoPagamento({ publicKey, whatsappLink }: { publicKey: string
           callbacks: {
             onReady: () => {},
             onError: () => setAviso("O formulário do cartão teve um problema. Recarregue a página ou use o Pix."),
-            onSubmit: (formData: unknown) =>
+            onSubmit: (formData: unknown, additionalData?: { paymentTypeId?: string }) =>
               new Promise<void>((resolve, reject) => {
                 setAviso(null);
                 fetch("/api/sites-pacote/cartao", {
                   method: "POST",
                   headers: { "content-type": "application/json" },
-                  body: JSON.stringify({ id: cred.p, t: cred.t, formData }),
+                  // só o tipo do cartão (crédito/débito) vai junto; o resto do additionalData (BIN, final) não é enviado
+                  body: JSON.stringify({ id: cred.p, t: cred.t, formData, additionalData: { paymentTypeId: additionalData?.paymentTypeId } }),
                 })
                   .then((r) => r.json())
                   .then((data: { ok?: boolean; pedido?: Estado; message?: string; error?: string }) => {
