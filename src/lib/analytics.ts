@@ -189,6 +189,33 @@ export function trackPurchase(contratacaoId: string, value: number) {
   return true;
 }
 
+/* ── Pacote "Site de uma página" (venda avulsa): eventos próprios, sem Subscribe e sem tocar nos da IA ── */
+
+const SITES = { content_name: "Site de uma página", content_category: "sites-pacote", content_type: "product" } as const;
+
+/** Entrada válida no checkout do pacote (contratação aberta). Uma vez por abertura da tela; valor = total da condição exibida. */
+export function trackSiteCheckoutView(aberturaId: string, value: number) {
+  return once(
+    `site-checkout-${aberturaId}`,
+    (win) => {
+      win.fbq?.("track", "InitiateCheckout", { ...SITES, value, currency: "BRL", num_items: 1 }, { eventID: `site-checkout-${aberturaId}` });
+      if (GA_ID) win.gtag?.("event", "begin_checkout", { value, currency: "BRL", items: [{ item_name: SITES.content_name }] });
+    },
+    false,
+  );
+}
+
+/**
+ * Pagamento do pacote APROVADO e conferido pelo servidor (página do pedido). Só Purchase, com o total da condição
+ * comprada; nada de dados pessoais. Uma vez por pedido, também ao reabrir a página (marcador persistente).
+ */
+export function trackSitePurchase(pedidoId: string, value: number) {
+  return once(`site-purchase-${pedidoId}`, (win) => {
+    win.fbq?.("track", "Purchase", { ...SITES, value, currency: "BRL" }, { eventID: `site-${pedidoId}` });
+    if (GA_ID) win.gtag?.("event", "purchase", { transaction_id: `site-${pedidoId}`, value, currency: "BRL", items: [{ item_name: SITES.content_name }] });
+  });
+}
+
 export function trackLead(origemRaw: string, leadId: string | undefined) {
   const origem: LeadOrigem | undefined = isOrigem(origemRaw) ? origemRaw : undefined;
   const key = leadId ?? `${origemRaw}-${Date.now()}`;

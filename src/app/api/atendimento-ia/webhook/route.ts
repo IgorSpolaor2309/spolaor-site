@@ -4,6 +4,7 @@ import { iaConfig } from "@/lib/ia/config";
 import { store } from "@/lib/ia/store";
 import { MpError } from "@/lib/ia/mercadopago";
 import { comCanal, syncAuthorizedPayment, syncChargeback, syncPayment, syncPreapproval } from "@/lib/ia/process";
+import { processarNotificacaoOrdem } from "@/lib/sites/notificacao";
 
 // Notificações do Mercado Pago (Webhooks). Ordem: (1) valida a assinatura x-signature com o
 // validador oficial do SDK (HMAC-SHA256 de "id:<data.id>;request-id:<x-request-id>;ts:<ts>;",
@@ -39,6 +40,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
   if (!dataId) return NextResponse.json({ ok: true, ignored: "sem data.id" });
+  // Tópico "Order (Mercado Pago)": só o checkout avulso do pacote de sites usa a API de Orders. A IA não cria orders;
+  // repassa para a rotina de sites (mesma assinatura já validada acima) e não toca no estado da IA.
+  if (type === "order") {
+    const r = await processarNotificacaoOrdem(dataId, requestId);
+    return NextResponse.json(r.body, { status: r.status });
+  }
 
   const s = store();
   const key = `${type}:${dataId}:${requestId}`;

@@ -32,7 +32,7 @@ export function MobileCtaBar() {
     };
   }, [pathname, cta.target]);
 
-  if (pathname === "/analise" || pathname === "/atendimento-ia/checkout") return null;
+  if (pathname === "/analise" || pathname === "/atendimento-ia/checkout" || pathname.startsWith("/sites/pacote/")) return null;
   const wa = whatsappLink();
 
   return (
