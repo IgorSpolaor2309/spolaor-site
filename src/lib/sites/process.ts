@@ -106,15 +106,60 @@ export type DadosCartao = {
   payer: { email: string; identification?: { type: string; number: string } };
 };
 
+/** Tentativa "em_curso" sem resposta há mais que isto é tratada como incerta (a chamada ao Mercado Pago tem limite
+ * de 15 s e até 2 novas tentativas em 429/423). */
+const TENTATIVA_PARADA_SEG = 90;
+
+/**
+ * Falhas em que a cobrança pode ter sido criada: rede/timeout, 5xx, 409 (chave de idempotência já usada: a tentativa
+ * anterior chegou ao Mercado Pago), 423, 429 e qualquer falha nossa depois de chamar. Recusa com a order devolvida
+ * (402) e erros de validação (400/401/403/404/422) são definitivos: a order não foi criada ou foi recusada.
+ */
+function resultadoIncerto(e: unknown) {
+  if (!(e instanceof MpError)) return true;
+  if (e.ordem) return false;
+  return e.status >= 500 || e.status === 408 || e.status === 409 || e.status === 423 || e.status === 429;
+}
+
+/** A order desta tentativa no Mercado Pago, se existir: a mais nova que ainda não está no histórico do pedido. */
+async function ordemNovaDoPedido(p: Pedido): Promise<MpPayment | null> {
+  const conhecidas = new Set((await sitesStore().pagamentos(p.id)).map((x) => x.id));
+  const lista = (await mpSites.buscarPorPedido(p.id, p.criadoEm)).filter((o) => !conhecidas.has(String(o.id)));
+  return lista.find((x) => x.status === "approved") ?? lista[0] ?? null;
+}
+
+/** Associa a order à tentativa (fecha a tentativa) e aplica o estado dela ao pedido. */
+async function adotarOrdem(p: Pedido, pay: MpPayment, canal: string) {
+  const atual = await sitesStore().update(p.id, { mpPaymentId: String(pay.id), tentativaEstado: null });
+  return aplicarPagamento(atual, pay, canal);
+}
+
+/** Resultado desconhecido: o comprador vê "pagamento em verificação" (não "nada foi cobrado"); a tentativa fica com a
+ * mesma chave para ser conciliada ou retomada. */
+async function marcarIncerta(p: Pedido, e: unknown) {
+  const msg = (e as Error)?.message ?? String(e);
+  console.warn(`[sites-pacote] resultado desconhecido na cobrança do pedido ${p.id}: ${msg}`);
+  return sitesStore().update(p.id, { status: "pagamento_pendente", tentativaEstado: "incerta", ultimoErro: `resultado desconhecido: ${msg.slice(0, 160)}` });
+}
+
 /**
  * Cobra no cartão a condição aprovada. Recusa (sem cobrar) se: o pedido não for de cartão; as parcelas do
  * formulário forem outras; já houver pagamento aprovado ou em análise; ou o Mercado Pago indicar acréscimo ao
  * comprador para essa parcela, bandeira e emissor (o total cobrado seria maior que o aprovado).
+ *
+ * Proteção contra cobrança dupla (no servidor e no banco, não no botão):
+ * 1. A tentativa é reservada no banco ANTES de chamar o Mercado Pago (abrirTentativaCartao: um UPDATE com a linha
+ *    travada). Duas submissões ao mesmo pedido nunca abrem tentativas independentes: a segunda recebe 409.
+ * 2. A chave de idempotência é a da tentativa e fica gravada. Se a resposta da criação se perder, a tentativa fica
+ *    "incerta" e o comprador vê "pagamento em verificação". Uma nova submissão retoma A MESMA tentativa: primeiro
+ *    procura a order no Mercado Pago (referência do pedido); se não achar, cria com a MESMA chave. O Mercado Pago
+ *    devolve a mesma order (mesmo corpo) ou 409 (a chave já gerou uma order), e nunca cria uma segunda.
+ * 3. Recusa definitiva (402 com a order "failed") fecha a tentativa: a próxima abre outra, com chave nova.
  */
 export async function pagarCartao(p: Pedido, d: DadosCartao): Promise<Pedido> {
   if (p.meio !== "cartao") throw new PedidoErro("condicao_errada", 422);
   if (STATUS_FINAL.includes(p.status)) throw new PedidoErro("pedido_encerrado");
-  if (p.status === "pagamento_pendente") throw new PedidoErro("pagamento_em_analise");
+  if (p.status === "pagamento_pendente" && !p.tentativaEstado) throw new PedidoErro("pagamento_em_analise");
   if (!sitesConfig.condicoes().includes(p.condicao as never)) throw new PedidoErro("condicao_indisponivel", 422);
   if (d.installments !== p.parcelas) throw new PedidoErro("parcelas_divergentes", 422);
   if (!/^[a-z_]{2,30}$/.test(d.paymentMethodId)) throw new PedidoErro("cartao_invalido", 422);
@@ -134,28 +179,55 @@ export async function pagarCartao(p: Pedido, d: DadosCartao): Promise<Pedido> {
     );
   }
   const s = sitesStore();
-  const tentativa = p.tentativas + 1;
-  await s.update(p.id, { tentativas: tentativa });
-  let pay: MpPayment;
-  try {
-    pay = await mpSites.criarCartao({
-      pedidoId: p.id,
-      valor: p.total,
-      parcelas: p.parcelas,
-      descricao: PACOTE.descricao,
-      token: d.token,
-      paymentMethodId: d.paymentMethodId,
-      paymentTypeId: d.paymentTypeId,
-      payer: { email: d.payer.email || p.email, ...(d.payer.identification ? { identification: d.payer.identification } : {}) },
-      idempotencyKey: `site-${p.id}-cartao-${tentativa}`,
-    });
-  } catch (e) {
-    // cartão recusado: o Mercado Pago responde HTTP 402 com a order "failed" no corpo; vira pedido recusado
-    if (e instanceof MpError && e.ordem) pay = normalizarOrdem(e.ordem);
-    else throw e;
+  const t = await s.abrirTentativaCartao(p.id, TENTATIVA_PARADA_SEG);
+  if (!t) {
+    const atual = (await s.get(p.id)) ?? p;
+    if (STATUS_FINAL.includes(atual.status)) throw new PedidoErro("pedido_encerrado");
+    if (atual.tentativaEstado === "em_curso")
+      throw new PedidoErro(
+        "pagamento_em_andamento",
+        409,
+        "Já existe um pagamento deste pedido sendo processado. Não pague de novo: o resultado aparece nesta página em instantes.",
+      );
+    throw new PedidoErro("pagamento_em_analise");
   }
-  const atual = await s.update(p.id, { mpPaymentId: String(pay.id) });
-  return aplicarPagamento(atual, pay, "criacao");
+  try {
+    // retomada de tentativa incerta: a order pode já existir (a resposta é que se perdeu)
+    if (t.retomada) {
+      const achada = await ordemNovaDoPedido(t.pedido).catch(() => null);
+      if (achada) return await adotarOrdem(t.pedido, achada, "conciliacao");
+    }
+    let pay: MpPayment;
+    try {
+      pay = await mpSites.criarCartao({
+        pedidoId: p.id,
+        valor: p.total,
+        parcelas: p.parcelas,
+        descricao: PACOTE.descricao,
+        token: d.token,
+        paymentMethodId: d.paymentMethodId,
+        paymentTypeId: d.paymentTypeId,
+        payer: { email: d.payer.email || p.email, ...(d.payer.identification ? { identification: d.payer.identification } : {}) },
+        idempotencyKey: t.chave,
+      });
+    } catch (e) {
+      // cartão recusado: o Mercado Pago responde HTTP 402 com a order "failed" no corpo; vira pedido recusado
+      if (e instanceof MpError && e.ordem) pay = normalizarOrdem(e.ordem);
+      else if (resultadoIncerto(e)) return await marcarIncerta(t.pedido, e);
+      else {
+        // erro de validação: a order não foi criada → fecha a tentativa, pode tentar de novo
+        await s.update(p.id, { tentativaEstado: null, ultimoErro: (e as Error).message.slice(0, 200) });
+        throw e;
+      }
+    }
+    return await adotarOrdem(t.pedido, pay, "criacao");
+  } catch (e) {
+    if (e instanceof MpError || e instanceof PedidoErro) throw e;
+    // falha nossa no meio do caminho (ex.: banco depois de criar a order): não dá para afirmar se cobrou
+    return marcarIncerta(t.pedido, e).catch(() => {
+      throw e;
+    });
+  }
 }
 
 /** Confere a order devolvida pelo Mercado Pago contra a condição aprovada do pedido. */
@@ -181,6 +253,7 @@ export async function aplicarPagamento(p: Pedido, pay: MpPayment, canal: string)
   const s = sitesStore();
   const pid = String(pay.id);
   if (pay.external_reference && pay.external_reference !== refPedido(p.id)) throw new Error("pagamento de outro pedido");
+  const conhecida = (await s.pagamentos(p.id)).some((x) => x.id === pid);
   await s.upsertPagamento({
     id: pid,
     pedidoId: p.id,
@@ -191,8 +264,11 @@ export async function aplicarPagamento(p: Pedido, pay: MpPayment, canal: string)
     valor: Number(pay.transaction_amount),
     atualizadoEm: nowIso(),
   });
-  const atual = (await s.get(p.id)) ?? p;
-  const doPagamentoAtual = !atual.mpPaymentId || atual.mpPaymentId === pid;
+  let atual = (await s.get(p.id)) ?? p;
+  // Order que o pedido ainda não conhecia durante uma tentativa aberta ou incerta (ex.: a resposta da criação se
+  // perdeu e a notificação chegou antes): é a order dessa tentativa → passa a ser a atual e fecha a tentativa.
+  if (atual.tentativaEstado && !conhecida && atual.mpPaymentId !== pid) atual = await s.update(atual.id, { mpPaymentId: pid, tentativaEstado: null });
+  const doPagamentoAtual = atual.mpPaymentId === pid || (!atual.mpPaymentId && !atual.tentativaEstado);
 
   if (pay.status === "approved") {
     if (atual.status === "pago") return atual;
@@ -209,6 +285,7 @@ export async function aplicarPagamento(p: Pedido, pay: MpPayment, canal: string)
       mpStatusDetail: pay.status_detail ?? null,
       pagoEm: pay.date_approved ?? nowIso(),
       confirmadoPor: canal,
+      tentativaEstado: null,
       ultimoErro: null,
     });
     await avisar(r, "pago");
@@ -257,6 +334,16 @@ export async function conferirPedido(p: Pedido, canal: string, intervalo = 12): 
   const s = sitesStore();
   if (!(await s.claimConferencia(p.id, intervalo))) return p;
   try {
+    // tentativa incerta (ou parada): procura a order dela no Mercado Pago; sem order depois de incertaLiberaSeg (15 min),
+    // a tentativa não chegou lá → nada foi cobrado e o comprador pode tentar de novo
+    const parada = p.tentativaEstado === "em_curso" && !!p.tentativaEm && Date.now() - Date.parse(p.tentativaEm) > TENTATIVA_PARADA_SEG * 1000;
+    if (p.tentativaEstado === "incerta" || parada) {
+      const achada = await ordemNovaDoPedido(p);
+      if (achada) return await adotarOrdem(p, achada, canal);
+      if (p.tentativaEm && Date.now() - Date.parse(p.tentativaEm) > sitesConfig.incertaLiberaSeg() * 1000)
+        return await s.update(p.id, { status: "recusado", tentativaEstado: null, mpStatusDetail: "tentativa_sem_cobranca", ultimoErro: "tentativa sem order no Mercado Pago" });
+      return p;
+    }
     if (p.mpPaymentId) return await aplicarPagamento(p, await mpSites.getOrdem(p.mpPaymentId), canal);
     const lista = await mpSites.buscarPorPedido(p.id, p.criadoEm);
     const melhor = lista.find((x) => x.status === "approved") ?? lista[0];
@@ -359,6 +446,9 @@ export function estadoPublico(p: Pedido) {
         ? { copiaCola: p.pixCopiaCola, qrBase64: p.pixQrBase64, expiraEm: p.pixExpiraEm }
         : null,
     motivoRecusa: p.status === "recusado" ? mensagemRecusa(p.mpStatusDetail) : null,
+    // não dá para afirmar se houve cobrança (resposta perdida, tentativa em andamento): a página mostra
+    // "pagamento em verificação" e não oferece nova cobrança
+    emVerificacao: p.meio === "cartao" && !!p.tentativaEstado && p.status !== "pago",
     interna: p.utm?.validacao === "interna",
   };
 }
@@ -386,6 +476,7 @@ export function mensagemRecusa(detail: string | null) {
     max_attempts_exceeded: "Muitas tentativas com este cartão. Use outro cartão ou o Pix.",
     invalid_installments: "Este cartão não aceita essa quantidade de parcelas. Escolha outra condição ou outro cartão.",
     rejected_by_issuer: "O banco emissor recusou o pagamento. Nada foi cobrado. Tente outro cartão ou o Pix.",
+    tentativa_sem_cobranca: "A tentativa anterior não chegou a ser registrada no Mercado Pago, e nada foi cobrado. Você pode tentar de novo.",
   };
   return (detail && m[detail]) || "O pagamento não foi aprovado. Nada foi cobrado. Confira os dados ou tente outro cartão ou o Pix.";
 }

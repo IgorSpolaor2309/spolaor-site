@@ -22,6 +22,8 @@ type Estado = {
   whatsapp: string;
   pix: { copiaCola: string; qrBase64: string | null; expiraEm: string | null } | null;
   motivoRecusa: string | null;
+  /** não dá para afirmar se houve cobrança (resposta do Mercado Pago perdida ou tentativa em andamento) */
+  emVerificacao: boolean;
   interna: boolean;
 };
 
@@ -87,10 +89,10 @@ export function PedidoPagamento({ publicKey, whatsappLink }: { publicKey: string
 
   // enquanto o pagamento estiver pendente, confere a cada 5 s (o servidor consulta o Mercado Pago no máximo a cada ~12 s)
   useEffect(() => {
-    if (e?.status !== "pagamento_pendente") return;
+    if (e?.status !== "pagamento_pendente" && !e?.emVerificacao) return;
     const id = setInterval(atualizar, 5000);
     return () => clearInterval(id);
-  }, [e?.status, atualizar]);
+  }, [e?.status, e?.emVerificacao, atualizar]);
 
   // Purchase só com o pagamento confirmado pelo servidor; uma vez por pedido (marcador persistente)
   useEffect(() => {
@@ -98,7 +100,7 @@ export function PedidoPagamento({ publicKey, whatsappLink }: { publicKey: string
   }, [e?.status, e?.id, e?.total, e?.interna]);
 
   // formulário de cartão do Mercado Pago: só quando o pedido é de cartão e ainda não há pagamento em andamento
-  const precisaCartao = !!e && e.meio === "cartao" && (e.status === "criado" || e.status === "recusado");
+  const precisaCartao = !!e && e.meio === "cartao" && (e.status === "criado" || e.status === "recusado") && !e.emVerificacao;
   useEffect(() => {
     if (!precisaCartao || !e || !cred || !publicKey) return;
     let cancelado = false;
@@ -132,7 +134,7 @@ export function PedidoPagamento({ publicKey, whatsappLink }: { publicKey: string
                       setE(data.pedido);
                       resolve();
                     } else {
-                      setAviso(data.message ?? "Não foi possível concluir o pagamento. Nada foi cobrado. Tente de novo.");
+                      setAviso(data.message ?? "Não foi possível concluir o pagamento. Confira o status nesta página antes de tentar de novo.");
                       atualizar();
                       reject();
                     }
@@ -276,7 +278,20 @@ export function PedidoPagamento({ publicKey, whatsappLink }: { publicKey: string
         </div>
       )}
 
-      {e.meio === "cartao" && e.status === "pagamento_pendente" && (
+      {e.meio === "cartao" && e.emVerificacao && (
+        <div className="grid gap-2 rounded-[10px] border border-[#f07a12] px-4 py-3" role="status" aria-live="polite">
+          <p className="flex items-center gap-2 font-semibold">
+            <span aria-hidden className="h-2 w-2 animate-pulse rounded-full bg-[#f07a12]" />
+            Pagamento em verificação
+          </p>
+          <p className="text-sm leading-relaxed">
+            Não conseguimos confirmar com o Mercado Pago se a cobrança foi feita. Não pague de novo nem faça outro pedido: estamos
+            conferindo, e o resultado aparece aqui sozinho. Você pode fechar a página e voltar pelo mesmo link.
+          </p>
+        </div>
+      )}
+
+      {e.meio === "cartao" && e.status === "pagamento_pendente" && !e.emVerificacao && (
         <p className="flex items-center gap-2 font-medium" role="status" aria-live="polite">
           <span aria-hidden className="h-2 w-2 animate-pulse rounded-full bg-[#f07a12]" />
           Pagamento em análise pelo Mercado Pago. A confirmação aparece aqui; você pode fechar a página e voltar pelo mesmo link.
@@ -305,13 +320,17 @@ export function PedidoPagamento({ publicKey, whatsappLink }: { publicKey: string
         </p>
       )}
 
-      <p className="text-sm leading-relaxed text-dim">
-        Quer mudar a forma de pagamento?{" "}
-        <Link href="/sites/pacote/checkout" className="font-semibold text-sky underline underline-offset-4">
-          Voltar ao checkout
-        </Link>{" "}
-        (cria outro pedido; nada é cobrado em dobro). Dúvidas? {contato}.
-      </p>
+      {e.emVerificacao ? (
+        <p className="text-sm leading-relaxed text-dim">Dúvidas? {contato}.</p>
+      ) : (
+        <p className="text-sm leading-relaxed text-dim">
+          Quer mudar a forma de pagamento?{" "}
+          <Link href="/sites/pacote/checkout" className="font-semibold text-sky underline underline-offset-4">
+            Voltar ao checkout
+          </Link>{" "}
+          (cria outro pedido; nada é cobrado em dobro). Dúvidas? {contato}.
+        </p>
+      )}
     </div>
   );
 }

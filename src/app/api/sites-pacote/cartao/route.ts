@@ -41,6 +41,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, pedido: estadoPublico(r) });
   } catch (e) {
     if (e instanceof PedidoErro) return NextResponse.json({ ok: false, error: e.codigo, message: e.mensagem }, { status: e.http });
+    // só chegam aqui os erros DEFINITIVOS do Mercado Pago (validação: a order não foi criada); resultado incerto
+    // vira pedido "em verificação" dentro de pagarCartao
     if (e instanceof MpError && e.status >= 400 && e.status < 500) {
       console.warn("[sites-pacote] cartão recusado na criação:", e.message);
       return NextResponse.json(
@@ -49,6 +51,13 @@ export async function POST(req: Request) {
       );
     }
     console.error("[sites-pacote] falha no pagamento com cartão:", (e as Error).message);
-    return NextResponse.json({ ok: false, error: "falha_pagamento" }, { status: 502 });
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "falha_pagamento",
+        message: "Não foi possível confirmar o pagamento agora. Antes de tentar de novo, aguarde: o resultado aparece nesta página.",
+      },
+      { status: 502 },
+    );
   }
 }

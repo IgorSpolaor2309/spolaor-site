@@ -110,6 +110,59 @@ order. Os resultados estão na seção do sandbox.
 - `external_reference` passou a `site_<pedido>`: Orders recusa ":".
 - O formulário de cartão envia o tipo do cartão (`additionalData.paymentTypeId`), exigido por Orders.
 
+## Proteção contra cobrança em dobro no cartão
+
+A proteção fica no servidor e no banco, não no botão do navegador (`pagarCartao` em `src/lib/sites/process.ts` e
+`abrirTentativaCartao` em `src/lib/sites/store.ts`).
+
+1. **A tentativa é reservada no banco antes de chamar o Mercado Pago.**
+   - Um único `UPDATE`, com a linha do pedido travada (`for update`), abre a tentativa: `tentativas + 1`, chave de
+     idempotência `site-<pedido>-cartao-<n>` gravada em `tentativa_chave` e `tentativa_estado` = `em_curso`.
+   - Duas submissões simultâneas ao mesmo pedido nunca abrem tentativas independentes. A segunda recebe 409
+     `pagamento_em_andamento`: "Já existe um pagamento deste pedido sendo processado. Não pague de novo".
+2. **Resultado desconhecido.** Rede, timeout, 5xx, 409, 423 e 429 do Mercado Pago, ou falha nossa depois de chamar,
+   não fecham a tentativa:
+   - ela fica `incerta`, com a mesma chave;
+   - o pedido fica `pagamento_pendente`, e a página mostra **"Pagamento em verificação"** (não "nada foi cobrado"),
+     sem formulário e sem convite a outro pedido.
+3. **Conciliar ou retomar com a mesma identidade.** Uma nova submissão do comprador, ou a conferência da página e da
+   rotina:
+   - primeiro procura a order pela referência do pedido (`site_<pedido>`) e adota a que ainda não está no histórico;
+   - se a busca ainda não a enxerga (ela demora alguns segundos), a nova submissão cria com a MESMA chave.
+   - Comportamento medido no sandbox em 10/11/2026: a mesma chave com o mesmo corpo devolve a mesma order; a mesma
+     chave com outro token de cartão devolve 409 `idempotency_key_already_used`, sem criar outra. Ou seja, nunca há
+     duas orders para uma tentativa.
+4. **Recusa definitiva.** O Mercado Pago responde 402 com a order `failed`, ou 400/401/403/404/422 sem criar nada.
+   A tentativa é fechada e a próxima abre outra, com chave nova. A order recusada fica só no histórico
+   (`site_pagamentos`).
+5. **Tentativa incerta sem nenhuma order na referência do pedido depois de 15 min** (`SITES_INCERTA_LIBERA_SEG`,
+   padrão 900): não chegou ao Mercado Pago. O pedido volta a "recusado", com "A tentativa anterior não chegou a ser
+   registrada no Mercado Pago, e nada foi cobrado. Você pode tentar de novo".
+6. **Tentativa `em_curso` parada há mais de 90 s** (ex.: o servidor caiu no meio da chamada): é tratada como incerta
+   e retomada com a mesma chave.
+7. **Notificação de uma order que o pedido ainda não conhecia,** durante uma tentativa aberta ou incerta: é a order
+   dessa tentativa. Ela passa a ser a atual, e a tentativa fecha.
+
+O Pix já tem a mesma garantia: a chave `site-<pedido>-pix-<n>` só avança depois de gravar o Pix, e o corpo é sempre o
+mesmo. Uma resposta perdida, ou duas chamadas juntas, recebe do Mercado Pago a mesma order.
+
+Testes:
+- `scripts/teste-sites-pacote.mjs` (Mercado Pago simulado, com o comportamento de idempotência medido no sandbox):
+  - order criada e resposta perdida, seguida de nova submissão: concilia, sem nova chamada de cobrança;
+  - o mesmo caso com a busca atrasada: retoma com a mesma chave, 409, sem nova order;
+  - falha de rede antes de chegar: retoma com a mesma chave e cria a única order;
+  - prazo sem order: liberado;
+  - duas submissões simultâneas: uma tentativa e uma order;
+  - recusa definitiva seguida de nova tentativa aprovada;
+  - página "em verificação".
+- `scripts/teste-sites-banco.mjs`: a mesma trava direto no banco. Em memória (`--memoria`) ou em um Postgres local
+  (`SITES_TESTE_DATABASE_URL`, só localhost):
+  - 20 reservas simultâneas, só 1 abre;
+  - 10 retomadas simultâneas de uma incerta, só 1, com a mesma chave;
+  - nova chave depois de recusa;
+  - em curso parada é retomada;
+  - pedido pago ou Pix não abre tentativa.
+
 ## Conta do Mercado Pago: parcelamento (resolvido em 10/11/2026)
 
 - **Até 09/11** a conta oferecia "parcelado cliente": em 2× ou mais o comprador pagava juros (12× de R$ 574,80
@@ -154,6 +207,7 @@ Outros pré-requisitos: chave Pix cadastrada (Pix via API) e a Public Key da mes
 | `SITES_CONDICOES` | condições liberadas no checkout, só as VALIDADAS: `pix,cartao-1x,cartao-2x,cartao-3x,cartao-6x,cartao-12x` |
 | `NEXT_PUBLIC_MP_PUBLIC_KEY` | Public Key da mesma aplicação do `MP_ACCESS_TOKEN`, para o formulário de cartão (em teste, a do usuário de teste; em produção, a da aplicação real) |
 | `SITES_PIX_MINUTOS` | validade do Pix em minutos (padrão 60; de 30 a 1440) |
+| `SITES_INCERTA_LIBERA_SEG` | opcional: segundos sem order até liberar uma tentativa de cartão incerta (padrão 900; os testes usam 10) |
 | `SITES_URL_PUBLICA` | opcional: endereço público (padrão: `IA_URL_PUBLICA`, `VERCEL_BRANCH_URL` na prévia ou `NEXT_PUBLIC_SITE_URL`) |
 | reaproveitadas | `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `DATABASE_URL`, `RESEND_API_KEY`, `LEAD_EMAIL_FROM`, `IA_OPERACAO_EMAIL`/`LEAD_EMAIL_TO`, `CRON_SECRET` |
 
@@ -183,7 +237,7 @@ conexão. Elas não tocam nas tabelas `ia_*`. Esquema em `src/lib/sites/store.ts
 
 **Estados do pedido:**
 - `criado`: dados aceitos, sem pagamento;
-- `pagamento_pendente`: Pix gerado ou cartão em análise;
+- `pagamento_pendente`: Pix gerado, cartão em análise ou cartão em verificação (resultado desconhecido);
 - `pago`: aprovado e conferido;
 - `recusado`: pode tentar de novo;
 - `expirado`: o Pix venceu; dá para gerar outro;
@@ -299,7 +353,8 @@ node scripts/teste-sites-pacote.mjs
 
 O Mercado Pago simulado do teste responde no formato da API de Orders. Em 10/11/2026, depois da migração, rodando
 contra servidores locais (`bash ../servidores-teste.sh`):
-- `teste-sites-pacote`: 100/100;
+- `teste-sites-pacote`: 113/113 (inclui a proteção contra cobrança em dobro);
+- `teste-sites-banco --memoria`: 7/7;
 - `teste-atendimento-ia`: 114/114;
 - `teste-medicao-funil`: 27/27;
 - `teste-ofertas-local`: 63/63;

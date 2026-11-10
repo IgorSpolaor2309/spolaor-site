@@ -38,6 +38,15 @@ export type Pedido = {
   pixQrBase64: string | null;
   pixExpiraEm: string | null;
   tentativas: number;
+  /**
+   * Tentativa de cobrança no cartão (identidade + estado), gravada ANTES de chamar o Mercado Pago:
+   * - tentativaChave: chave de idempotência da tentativa aberta; é a mesma ao retomar uma tentativa incerta;
+   * - tentativaEstado: "em_curso" (chamada em andamento) | "incerta" (o resultado não chegou: pode ter cobrado) | null;
+   * - tentativaEm: quando a tentativa foi aberta/retomada.
+   */
+  tentativaChave: string | null;
+  tentativaEstado: "em_curso" | "incerta" | null;
+  tentativaEm: string | null;
   pagoEm: string | null;
   confirmadoPor: string | null;
   avisoPendenteEm: string | null;
@@ -95,6 +104,9 @@ create table if not exists site_eventos (
   chave       text primary key,
   recebido_em timestamptz not null default now()
 );
+alter table site_pedidos add column if not exists tentativa_chave text;
+alter table site_pedidos add column if not exists tentativa_estado text;
+alter table site_pedidos add column if not exists tentativa_em timestamptz;
 alter table site_pedidos enable row level security;
 alter table site_pagamentos enable row level security;
 alter table site_eventos enable row level security;
@@ -103,7 +115,7 @@ alter table site_eventos enable row level security;
 export type PagamentoRegistro = { id: string; pedidoId: string; status: string; statusDetail: string | null; meio: string | null; parcelas: number | null; valor: number | null; atualizadoEm: string };
 
 export interface SitesStore {
-  create(p: Omit<Pedido, "id" | "tokenHash" | "criadoEm" | "atualizadoEm" | "status" | "mpPaymentId" | "mpStatus" | "mpStatusDetail" | "pixCopiaCola" | "pixQrBase64" | "pixExpiraEm" | "tentativas" | "pagoEm" | "confirmadoPor" | "avisoPendenteEm" | "avisoPagoEm" | "ultimoErro" | "mpConferidoEm">): Promise<{ pedido: Pedido; token: string }>;
+  create(p: Omit<Pedido, "id" | "tokenHash" | "criadoEm" | "atualizadoEm" | "status" | "mpPaymentId" | "mpStatus" | "mpStatusDetail" | "pixCopiaCola" | "pixQrBase64" | "pixExpiraEm" | "tentativas" | "tentativaChave" | "tentativaEstado" | "tentativaEm" | "pagoEm" | "confirmadoPor" | "avisoPendenteEm" | "avisoPagoEm" | "ultimoErro" | "mpConferidoEm">): Promise<{ pedido: Pedido; token: string }>;
   get(id: string): Promise<Pedido | null>;
   byChave(chave: string): Promise<Pedido | null>;
   /** grava só os campos informados (sempre com atualizadoEm) */
@@ -111,6 +123,14 @@ export interface SitesStore {
   /** reserva atômica: marca o campo de aviso se ainda estiver vazio; devolve true só para quem marcou */
   claimAviso(id: string, campo: "avisoPendenteEm" | "avisoPagoEm"): Promise<boolean>;
   releaseAviso(id: string, campo: "avisoPendenteEm" | "avisoPagoEm"): Promise<void>;
+  /**
+   * Abre (ou retoma) a tentativa de cobrança no cartão, de forma atômica no banco. Só uma requisição por vez consegue:
+   * - abre uma tentativa NOVA (tentativas + 1, chave nova) se o pedido está "criado" ou "recusado" e sem tentativa;
+   * - RETOMA a tentativa incerta (mesma chave, mesmo número) se o resultado anterior não chegou, ou se uma tentativa
+   *   "em_curso" ficou parada há mais de `retomarAposSeg` (ex.: o servidor caiu no meio da chamada).
+   * Devolve null se outra requisição já está com a tentativa (concorrência) ou se o pedido não aceita cobrança.
+   */
+  abrirTentativaCartao(id: string, retomarAposSeg: number): Promise<{ pedido: Pedido; chave: string; retomada: boolean } | null>;
   /** reserva atômica de uma conferência no Mercado Pago (no máximo uma a cada `segundos`) */
   claimConferencia(id: string, segundos: number): Promise<boolean>;
   upsertPagamento(p: PagamentoRegistro): Promise<void>;
@@ -139,6 +159,9 @@ function novo(p: Parameters<SitesStore["create"]>[0]) {
     pixQrBase64: null,
     pixExpiraEm: null,
     tentativas: 0,
+    tentativaChave: null,
+    tentativaEstado: null,
+    tentativaEm: null,
     pagoEm: null,
     confirmadoPor: null,
     avisoPendenteEm: null,
@@ -191,6 +214,23 @@ const memStore: SitesStore = {
   async releaseAviso(id, campo) {
     const p = mem().pedidos.get(id);
     if (p) p[campo] = null;
+  },
+  async abrirTentativaCartao(id, retomarAposSeg) {
+    // sem await entre ler e gravar: atômico no laço de eventos do Node (equivale ao UPDATE condicional do Postgres)
+    const p = mem().pedidos.get(id);
+    if (!p || p.meio !== "cartao") return null;
+    const parada = p.tentativaEstado === "em_curso" && !!p.tentativaEm && Date.now() - Date.parse(p.tentativaEm) > retomarAposSeg * 1000;
+    const retomar = p.tentativaEstado === "incerta" || parada;
+    if (!retomar && !(["criado", "recusado"].includes(p.status) && p.tentativaEstado === null)) return null;
+    if (!retomar) {
+      p.tentativas += 1;
+      p.tentativaChave = `site-${p.id}-cartao-${p.tentativas}`;
+      p.mpPaymentId = null; // a order da tentativa anterior (recusada) fica só no histórico de pagamentos
+    }
+    p.tentativaEstado = "em_curso";
+    p.tentativaEm = nowIso();
+    p.atualizadoEm = p.tentativaEm;
+    return { pedido: { ...p }, chave: p.tentativaChave!, retomada: retomar };
   },
   async claimConferencia(id, segundos) {
     const p = mem().pedidos.get(id);
@@ -290,6 +330,34 @@ const pgStore: SitesStore = {
   async releaseAviso(id, campo) {
     const db = await sql();
     await db`update site_pedidos set ${db(toSnake(campo))} = null where id = ${id}`;
+  },
+  async abrirTentativaCartao(id, retomarAposSeg) {
+    if (!UUID.test(id)) return null;
+    const db = await sql();
+    // Um único UPDATE com a linha travada (for update): duas requisições ao mesmo pedido nunca abrem tentativas
+    // independentes. A segunda espera a trava, relê a linha (já "em_curso") e não casa com o where → 0 linhas.
+    const [r] = await db`
+      with alvo as (
+        select id,
+          (tentativa_estado = 'incerta'
+            or (tentativa_estado = 'em_curso' and tentativa_em < now() - make_interval(secs => ${retomarAposSeg}))) as retomar
+        from site_pedidos where id = ${id} for update
+      )
+      update site_pedidos p set
+        tentativas = case when a.retomar then p.tentativas else p.tentativas + 1 end,
+        tentativa_chave = case when a.retomar then p.tentativa_chave else 'site-' || p.id || '-cartao-' || (p.tentativas + 1) end,
+        mp_payment_id = case when a.retomar then p.mp_payment_id else null end,
+        tentativa_estado = 'em_curso',
+        tentativa_em = now(),
+        atualizado_em = now()
+      from alvo a
+      where p.id = a.id and p.meio = 'cartao'
+        and (a.retomar or (p.status in ('criado', 'recusado') and p.tentativa_estado is null))
+      returning p.*, a.retomar as retomada`;
+    if (!r) return null;
+    const { retomada, ...row } = r;
+    const pedido = fromRow<Pedido>(row);
+    return { pedido, chave: pedido.tentativaChave!, retomada: Boolean(retomada) };
   },
   async claimConferencia(id, segundos) {
     const db = await sql();

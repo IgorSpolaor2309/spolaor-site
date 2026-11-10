@@ -3,7 +3,7 @@
 //
 // Antes: build com Pixel fictício e o servidor em :3220:
 //   NEXT_PUBLIC_META_PIXEL_ID=000000000000001 npm run build
-//   SITES_STORE=memory SITES_CONTRATACAO_ATIVA=true SITES_CONDICOES=pix,cartao-1x,cartao-2x,cartao-3x,cartao-6x,cartao-12x
+//   SITES_STORE=memory SITES_INCERTA_LIBERA_SEG=10 SITES_CONTRATACAO_ATIVA=true SITES_CONDICOES=pix,cartao-1x,cartao-2x,cartao-3x,cartao-6x,cartao-12x
 //   MP_ACCESS_TOKEN=teste-local MP_WEBHOOK_SECRET=segredo-teste MP_API_URL=http://localhost:4040 NEXT_PUBLIC_MP_PUBLIC_KEY=TEST-publica-local
 //   RESEND_API_KEY=teste-local RESEND_API_URL=http://localhost:4042/emails LEAD_EMAIL_TO=ops@exemplo.test LEAD_EMAIL_FROM=site@exemplo.test
 //   NEXT_PUBLIC_SITE_URL=http://localhost:3220 CRON_SECRET=cron-teste-0123456789
@@ -28,6 +28,10 @@ const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 // transaction_amount, installments…) que os testes manipulam, e responde no formato da API de Orders.
 const PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 const mp = { pay: new Map(), creates: [], chaves: new Map(), modoCartao: "approved", juros: false, installmentsCalls: 0, seq: Date.now() % 1e9 }; // ids únicos por rodada (o servidor guarda pedidos em memória)
+// Comportamentos para os testes de resultado desconhecido (todos de uso único, exceto atrasoBusca/atrasoCriacao):
+// perderResposta: cria a order e derruba a conexão sem responder; falharAntes: derruba a conexão sem criar;
+// atrasoBusca: a busca por referência ainda não enxerga orders novas; atrasoCriacao: ms antes de responder.
+Object.assign(mp, { chamadas: [], tokensDaChave: new Map(), perderResposta: false, falharAntes: false, atrasoBusca: false, atrasoCriacao: 0 });
 const ORD = { approved: ["processed", "accredited"], pending: ["action_required", "waiting_transfer"], in_process: ["processing", "in_process"], rejected: ["failed", "failed"], cancelled: ["canceled", "canceled"], expired: ["canceled", "expired"], refunded: ["refunded", "refunded"], charged_back: ["charged_back", "in_process"] };
 function comoOrder(p) {
   const [status, detail] = ORD[p.status] ?? [p.status, p.status];
@@ -63,8 +67,19 @@ http
       if (req.method === "POST" && u.pathname === "/v1/orders") {
         const key = req.headers["x-idempotency-key"];
         if (!key) return send(400, { errors: [{ code: "missing_idempotency_key" }] });
-        if (mp.chaves.has(key)) return send(200, comoOrder(mp.pay.get(mp.chaves.get(key))));
         const body = JSON.parse(b);
+        const tok = body.transactions?.payments?.[0]?.payment_method?.token ?? null;
+        mp.chamadas.push({ key, ref: body.external_reference, token: tok });
+        if (mp.falharAntes) {
+          mp.falharAntes = false;
+          return req.socket.destroy(); // a requisição não chegou a criar nada
+        }
+        // como o Mercado Pago (medido no sandbox): mesma chave e mesmo corpo → a mesma order; mesma chave e outro
+        // corpo (ex.: token de cartão novo) → 409 idempotency_key_already_used, sem criar outra
+        if (mp.chaves.has(key)) {
+          if (mp.tokensDaChave.get(key) !== tok) return send(409, { errors: [{ code: "idempotency_key_already_used", message: "X-Idempotency-Key already used. Please retry with a different value." }] });
+          return send(200, comoOrder(mp.pay.get(mp.chaves.get(key))));
+        }
         if (!/^[A-Za-z0-9_-]{1,64}$/.test(body.external_reference ?? "")) return send(400, { errors: [{ code: "property_value", details: ["'$.external_reference' - does not match pattern"] }] });
         const t = body.transactions?.payments?.[0] ?? {};
         const pmb = t.payment_method ?? {};
@@ -80,9 +95,19 @@ http
         }
         mp.pay.set(id, p);
         mp.chaves.set(key, id);
-        // cartão recusado: a API de Orders responde 402 com a order "failed" em data
-        if (p.status === "rejected") return send(402, { errors: [{ code: "failed", message: "The following transactions failed", details: [`PAY${id}: ${p.status_detail}`] }], data: comoOrder(p) });
-        return send(201, comoOrder(p));
+        mp.tokensDaChave.set(key, tok);
+        const responder = () => {
+          if (mp.perderResposta) {
+            mp.perderResposta = false;
+            return req.socket.destroy(); // a order FOI criada, mas a resposta se perde
+          }
+          // cartão recusado: a API de Orders responde 402 com a order "failed" em data
+          if (p.status === "rejected") return send(402, { errors: [{ code: "failed", message: "The following transactions failed", details: [`PAY${id}: ${p.status_detail}`] }], data: comoOrder(p) });
+          return send(201, comoOrder(p));
+        };
+        if (mp.atrasoCriacao) setTimeout(responder, mp.atrasoCriacao);
+        else responder();
+        return;
       }
       if ((m = u.pathname.match(/^\/v1\/orders\/([A-Za-z0-9]+)$/)) && req.method === "GET") {
         // como o Mercado Pago: id fora do formato de order → 400 invalid_path_param; formato certo e inexistente → 404
@@ -93,6 +118,7 @@ http
       if (u.pathname === "/v1/orders" && req.method === "GET") {
         if (!u.searchParams.get("begin_date") || !u.searchParams.get("end_date")) return send(400, { errors: [{ code: "missing_required_params" }] });
         const ref = u.searchParams.get("external_reference");
+        if (mp.atrasoBusca) return send(200, { data: [], paging: {} });
         return send(200, { data: [...mp.pay.values()].filter((p) => p.external_reference === ref).reverse().map(comoOrder), paging: {} });
       }
       if (u.pathname === "/v1/payment_methods/installments") {
@@ -153,6 +179,8 @@ const cartao = (c, formData, additionalData = { paymentTypeId: "credit_card" }) 
 const fd = (installments, extra = {}) => ({ token: "tok_simulado", payment_method_id: "master", issuer_id: "24", installments, payer: { email: "teste@exemplo.test", identification: { type: "CPF", number: "123.456.789-09" } }, ...extra });
 const emailsDe = (id) => emails.filter((e) => String(e.text ?? "").includes(id));
 const ultimoCreate = () => mp.creates[mp.creates.length - 1];
+const ordensDe = (c) => [...mp.pay.values()].filter((o) => o.external_reference === `site_${c.id}`);
+const chamadasDe = (c) => mp.chamadas.filter((x) => x.ref === `site_${c.id}`);
 
 /* ─────────────── 1. API: validações, preço no servidor, Pix ─────────────── */
 {
@@ -281,6 +309,74 @@ const ultimoCreate = () => mp.creates[mp.creates.length - 1];
   mp.modoCartao = "approved";
   x = await cartao(rr.cred, fd(3));
   ok(x.body.pedido?.status === "pago" && /-cartao-2$/.test(ultimoCreate().key), "nova tentativa (outra chave) aprovada → pago");
+
+  ok(ordensDe(rr.cred).length === 2 && ordensDe(rr.cred).map((o) => o.status).join(",") === "rejected,approved", "recusa definitiva fecha a tentativa: a nova abre outra order (chave -cartao-2), e a recusada fica no histórico");
+
+  // ── resultado desconhecido: a order FOI criada, mas a resposta se perdeu ──
+  {
+    const rp = await pedido("cartao-12x");
+    mp.perderResposta = true;
+    const a = await cartao(rp.cred, fd(12, { token: "tok_perdida_A" }));
+    ok(
+      a.status === 200 && a.body.pedido?.status === "pagamento_pendente" && a.body.pedido?.emVerificacao === true && !a.body.pedido?.motivoRecusa && ordensDe(rp.cred).length === 1,
+      'resposta perdida depois de criar a order → "pagamento em verificação" (sem "nada foi cobrado"); 1 order no Mercado Pago',
+    );
+    const b = await cartao(rp.cred, fd(12, { token: "tok_perdida_B" }));
+    const ch = chamadasDe(rp.cred);
+    ok(b.body.pedido?.status === "pago" && ordensDe(rp.cred).length === 1 && ch.length === 1, "nova submissão do comprador → concilia pela referência e adota a order existente: pago, nenhuma chamada de cobrança nova");
+  }
+  // ── a mesma coisa, mas a busca do Mercado Pago ainda não enxerga a order: retomada com a MESMA chave ──
+  {
+    const rp = await pedido("cartao-3x");
+    mp.perderResposta = true;
+    await cartao(rp.cred, fd(3, { token: "tok_lag_A" }));
+    mp.atrasoBusca = true;
+    const b = await cartao(rp.cred, fd(3, { token: "tok_lag_B" }));
+    mp.atrasoBusca = false;
+    const ch = chamadasDe(rp.cred);
+    ok(
+      b.status === 200 && b.body.pedido?.emVerificacao === true && ch.length === 2 && ch[0].key === ch[1].key && ordensDe(rp.cred).length === 1,
+      "retomada com a mesma chave de idempotência → o Mercado Pago responde 409 e não cria outra; segue em verificação",
+    );
+    const st = await status(rp.cred);
+    ok(st?.status === "pago" && !st?.emVerificacao, "a conferência acha a order pela referência do pedido → pago");
+  }
+  // ── a conexão caiu ANTES de chegar ao Mercado Pago (nada foi criado) ──
+  {
+    const rp = await pedido("cartao-1x");
+    mp.falharAntes = true;
+    const a = await cartao(rp.cred, fd(1, { token: "tok_rede_A" }));
+    ok(a.body.pedido?.emVerificacao === true, "falha de rede sem resposta → também em verificação (não dá para afirmar nada)");
+    const b = await cartao(rp.cred, fd(1, { token: "tok_rede_B" }));
+    const ch = chamadasDe(rp.cred);
+    ok(b.body.pedido?.status === "pago" && ch.length === 2 && ch[0].key === ch[1].key && ordensDe(rp.cred).length === 1, "nova submissão retoma com a mesma chave e cria a única order → pago");
+  }
+  // ── sem nenhuma order depois do prazo (SITES_INCERTA_LIBERA_SEG no servidor de teste) → liberado ──
+  {
+    const rp = await pedido("cartao-2x");
+    mp.falharAntes = true;
+    await cartao(rp.cred, fd(2, { token: "tok_prazo_A" }));
+    ok((await status(rp.cred))?.emVerificacao === true, "sem order e dentro do prazo → continua em verificação");
+    await espera(13_000);
+    const st = await status(rp.cred);
+    ok(st?.status === "recusado" && /nada foi cobrado/.test(st?.motivoRecusa ?? "") && !st?.emVerificacao, 'prazo sem nenhuma order na referência → liberado com "nada foi cobrado"');
+    const c = await cartao(rp.cred, fd(2, { token: "tok_prazo_B" }));
+    const ch = chamadasDe(rp.cred);
+    ok(c.body.pedido?.status === "pago" && ch.at(-1).key !== ch[0].key && ordensDe(rp.cred).length === 1, "nova tentativa com chave nova → pago, uma order só");
+  }
+  // ── duas submissões simultâneas ao mesmo pedido ──
+  {
+    const rp = await pedido("cartao-6x");
+    mp.atrasoCriacao = 800;
+    const [x1, x2] = await Promise.all([cartao(rp.cred, fd(6, { token: "tok_conc_A" })), cartao(rp.cred, fd(6, { token: "tok_conc_B" }))]);
+    mp.atrasoCriacao = 0;
+    const cods = [x1.status, x2.status].sort().join(",");
+    ok(
+      cods === "200,409" && [x1, x2].some((x) => x.body.error === "pagamento_em_andamento") && chamadasDe(rp.cred).length === 1 && ordensDe(rp.cred).length === 1,
+      "duas submissões simultâneas → uma tentativa e uma order; a outra recebe 409 (pagamento em andamento)",
+    );
+    ok((await status(rp.cred))?.status === "pago", "o pedido fica pago pela tentativa única");
+  }
 
   // em análise → bloqueia nova tentativa; confirmação pela notificação
   const ra = await pedido("cartao-6x");
@@ -413,6 +509,23 @@ for (const vp of larguras) {
   ok(!/não publicamos tabela de preços/.test(html) && /preço fechado/.test(html), "/sites: FAQ não diz mais que não há preço publicado");
   ok(await page.getByRole("link", { name: /Pedir orçamento de site/ }).first().isVisible(), "/sites: orçamento para projetos maiores continua");
   if (CAPT) await page.screenshot({ path: `${CAPT}/sites-390-chamada.png`, fullPage: true });
+  await ctx.close();
+}
+
+// Página do pedido com resultado desconhecido: "pagamento em verificação", sem formulário e sem convite a outro pedido
+{
+  const rp = await pedido("cartao-1x");
+  mp.perderResposta = true;
+  await cartao(rp.cred, fd(1, { token: "tok_pagina_verificacao" }));
+  mp.atrasoBusca = true; // mantém o pedido em verificação durante a conferência da página
+  const { ctx } = await contexto({ width: 390, height: 844 });
+  const page = await ctx.newPage();
+  await page.goto(`${B}/sites/pacote/pedido?p=${rp.cred.id}&t=${rp.cred.t}`, { waitUntil: "networkidle" });
+  const verif = await page.getByText("Pagamento em verificação").waitFor({ timeout: 8000 }).then(() => true, () => false);
+  const html = await page.content();
+  ok(verif && (await page.locator("#site-cartao").count()) === 0 && !/nada foi cobrado/i.test(html) && !/Voltar ao checkout/.test(html), 'página do pedido: "Pagamento em verificação", sem formulário de cartão, sem "nada foi cobrado" e sem convite a outro pedido');
+  if (CAPT) await page.screenshot({ path: `${CAPT}/pedido-em-verificacao-390.png`, fullPage: true });
+  mp.atrasoBusca = false;
   await ctx.close();
 }
 
