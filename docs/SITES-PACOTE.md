@@ -60,36 +60,41 @@ os juros do parcelamento seguem a configuração da conta.
   condição. Se não baterem, vira "divergente": não conta como pago e a operação recebe um aviso para estornar no
   painel.
 
-## Conta do Mercado Pago: o que foi lido e o que falta (bloqueio real)
+## Conta do Mercado Pago: parcelamento (resolvido em 10/11/2026)
 
-**Leitura de 09/11/2026, sem alterar nada** (Seu negócio > Taxas e parcelas, aba Checkout):
-- a conta oferece **"parcelado cliente"**: em 2× ou mais o Mercado Pago soma juros ao total do comprador
-  (2× +9,64%, 3× +11,23%, 6× +14,32%, 12× +22,11%; o 12× de R$ 574,80 sairia ≈ R$ 701,89);
-- com isso, hoje só **Pix** e **cartão 1×** saem pelo total aprovado. A pré-checagem do checkout recusa 2×, 3×, 6×
-  e 12× (ninguém paga a mais, mas o 12× do anúncio não é vendável);
-- para vender 2×–12× pelo total aprovado é preciso ativar **"Parcelado vendedor" → Oferecer** na aba **Checkout**
-  (o vendedor paga a taxa de parcelamento; o comprador paga exatamente o total);
-- taxas lidas (recebimento "na hora"): crédito 1× 4,98%; 2×–6× 2,99% e 7×–12× 3,09%, mais a taxa de parcelamento
-  do parcelado vendedor (2× 4,52%, 3× 6,61%, 6× 11,95%, 12× 19,17%); Pix 0,99%.
+- **Até 09/11** a conta oferecia "parcelado cliente": em 2× ou mais o comprador pagava juros (12× de R$ 574,80
+  sairia ≈ R$ 701,89).
+- **Em 10/11/2026**, com autorização do Igor, foi ativado em Taxas e parcelas > aba **Checkout** > Por parcelamento
+  > **Parcelado vendedor até 12×**:
+  - a tela grava ao mexer na opção, sem botão de salvar;
+  - o recebimento continua "na hora";
+  - link de pagamento, maquininha Point, Tap e QR Code continuam em "parcelado cliente";
+  - de 13× em diante, o comprador volta a pagar juros (o checkout do site nunca oferece 13× ou mais).
+- **Custo para a Spolaor** (taxa por venda + taxa de parcelamento, recebendo na hora):
+  1× 4,98%; 2× 7,51%; 3× 9,60%; 6× 14,94%; 12× 22,26%; Pix 0,99%.
+- **Líquido por venda:**
+  - Pix ≈ R$ 445,45; 1× ≈ R$ 427,49; 2× ≈ R$ 434,52; 3× ≈ R$ 433,65; 6× ≈ R$ 433,30; 12× ≈ R$ 446,85.
+- **A assinatura de IA não muda:** é cobrança recorrente em 1×.
 
-Ainda a conferir no painel de desenvolvedor (pede validação de telefone da conta): Webhooks da aplicação (tópico
-Pagamentos e segredo) e as credenciais de teste.
+**Consulta real em 10/11/2026:** `scripts/sondar-parcelamento.mjs` com a Public Key de produção. É só leitura
+(`GET /v1/payment_methods/installments`) e não cobra nada.
+- Em Mastercard, Visa, Elo e Amex, o comprador paga exatamente R$ 449,90 (1×), R$ 469,80 (2×), R$ 479,70 (3×),
+  R$ 509,40 (6×) e R$ 574,80 (12×), com 0% de acréscimo.
+- Exceções do próprio cartão:
+  - pré-pago só 1×;
+  - cartão de loja Pernambucanas até 10×.
 
-Outros pré-requisitos: chave Pix cadastrada (Pix via API) e a Public Key da mesma aplicação do Access Token
-(`NEXT_PUBLIC_MP_PUBLIC_KEY`).
-
-**Como validar o parcelamento sem cobrar nada:** `scripts/sondar-parcelamento.mjs` só lê
-`GET /v1/payment_methods/installments`, a mesma consulta do formulário de cartão. Com a Public Key de produção
-(APP_USR-, que é pública e vai no próprio site) ele mostra o que o comprador real pagaria em cada condição e
-bandeira; sai com erro se alguma não bater com o total aprovado.
+  Nesses casos o checkout recusa sem cobrar e explica.
 
 ```bash
-# .env.parcelas.local (fora do git) com NEXT_PUBLIC_MP_PUBLIC_KEY=APP_USR-...  ou  TEST-...
+# .env.parcelas.local (fora do git) com NEXT_PUBLIC_MP_PUBLIC_KEY=<Public Key de produção>
 node --no-warnings scripts/sondar-parcelamento.mjs --env .env.parcelas.local
 ```
 
-Se o parcelado vendedor não for ativado, o anúncio de 12× não pode rodar. Em nenhum caso o preço é alterado em
-silêncio; a decisão de preço é do Igor.
+Rode de novo se alguém mexer na configuração de parcelamento da conta.
+
+Outros pré-requisitos: chave Pix cadastrada (Pix via API) e a Public Key da mesma aplicação do Access Token
+(`NEXT_PUBLIC_MP_PUBLIC_KEY`).
 
 ## Variáveis de ambiente (Vercel, por ambiente)
 
@@ -154,18 +159,32 @@ Pagamentos desta oferta que chegarem à rota de notificações da IA são ignora
 ## Teste real no sandbox do Mercado Pago (localhost, credenciais de TESTE)
 
 O ambiente Preview da Vercel **não tem** `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` nem banco (lido em 09/11/2026:
-essas variáveis existem só em Production). Por isso a prévia do PR mostra a oferta com a contratação fechada, e o
-teste real com o Mercado Pago roda nesta máquina:
+essas variáveis existem só em Production). Por isso o teste real roda nesta máquina:
+- `.env.sandbox.local` (fora do git) com as credenciais de teste da aplicação;
+- `bash scripts/sandbox-local.sh` sobe o checkout em `http://localhost:3230` com banco em memória, sem e-mail e com
+  Pixel falso;
+- o script só sobe se o Access Token for de um usuário de teste (`/users/me` com a marca `test_user`) e se a Public
+  Key não for a de produção;
+- `node --no-warnings scripts/teste-sandbox-mp.mjs` faz Pix, cartão 1× (aprovado, recusado e pendente) e os
+  parcelados.
 
-1. Criar `.env.sandbox.local` (fora do git) com `MP_ACCESS_TOKEN=TEST-...` e `NEXT_PUBLIC_MP_PUBLIC_KEY=TEST-...`
-   (painel do Mercado Pago > Suas integrações > aplicação > Credenciais de teste).
-2. `bash scripts/sandbox-local.sh` sobe em `http://localhost:3230` com banco em memória, sem e-mail, com Pixel
-   falso e sem notificação (a página do pedido confere o pagamento sozinha). Recusa credenciais que não sejam TEST-.
-3. **Cartão:** cada condição com os cartões de teste do Mercado Pago (titular APRO aprovado, OTHE recusado, CONT
-   pendente; CPF 12345678909). A recusa por acréscimo aparece como "o Mercado Pago cobraria mais que R$ …".
-4. **Pix:** gerar o Pix de R$ 449,90 e conferir o QR Code.
-5. Só liste em `SITES_CONDICOES` de produção as condições aprovadas no teste **e** confirmadas pela sondagem com a
-   Public Key de produção.
+**Resultado em 10/11/2026: o teste de ponta a ponta NÃO roda com a integração atual.**
+- Hoje o painel do Mercado Pago entrega como "credenciais de teste" as credenciais de um usuário de teste vendedor
+  (APP_USR-…, conta TESTUSER…), não mais as TEST-…;
+- com elas, `POST /v1/payments` (a API usada aqui, Pix e cartão) responde **HTTP 401 "Unauthorized use of live
+  credentials"**, com qualquer pagador, inclusive a conta de teste compradora;
+- com as mesmas credenciais, a **API de Orders** (`POST /v1/orders`) funcionou:
+  - Pix criado, aguardando pagamento;
+  - cartão de teste Visa aprovado, R$ 449,90 em 1×.
+- A conta de teste tem configuração de parcelamento própria ("parcelado cliente"):
+  - o checkout deve recusar 2× a 12× nela, sem cobrar;
+  - pela API de Orders, 12× de R$ 574,80 voltou "invalid_transaction_amount".
+
+Caminhos para validar a cobrança antes de abrir a venda (decisão do Igor):
+- **(a)** migrar `src/lib/sites/mercadopago.ts` para a API de Orders, a recomendada pelo Mercado Pago, e testar aqui
+  no sandbox;
+- **(b)** manter a API de Payments e fazer um pagamento real de baixo valor em produção, com estorno. Cobrança real:
+  só com autorização explícita.
 
 ## Testes locais (provedores simulados, nada sai da máquina)
 
