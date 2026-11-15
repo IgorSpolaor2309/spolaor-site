@@ -1,6 +1,8 @@
 import { after } from "next/server";
 import { connectors } from "./connectors";
+import { crmConnector } from "./connectors/crm";
 import { devConsoleConnector } from "./connectors/dev-console";
+import { emailConnector, sendLeadEmail } from "./connectors/email";
 import type { LeadRecord } from "./types";
 
 export class NoLeadDestinationError extends Error {
@@ -18,19 +20,55 @@ export function leadsAvailable() {
 }
 
 /**
- * Entrega o lead aos conectores ativos.
- * Persistentes são aguardados (se falharem, o envio falha); os demais rodam após a resposta.
+ * Registra o lead. O visitante só vê sucesso se o lead ficou guardado em pelo menos um lugar durável:
+ *
+ * 1. CRM (banco), quando configurado: é a fonte de verdade. Gravado, o lead está aceito; o aviso por e-mail
+ *    sai em seguida com estado próprio (src/lib/crm/aviso.ts) e, se falhar, é tentado de novo pela rotina,
+ *    sem perder o contato nem trocar o sucesso por erro.
+ * 2. Se o banco não responder (ou não existir), vale a regra anterior: o e-mail é o registro e precisa ser
+ *    aceito pelo provedor, senão o envio falha. Nesse caso o e-mail avisa que o contato não entrou no CRM.
+ *
+ * Os demais conectores (não persistentes) rodam depois da resposta, como antes.
  */
 export async function processLead(lead: LeadRecord) {
-  let active = connectors.filter((c) => c.isConfigured());
-  if (!active.some((c) => c.persistent)) {
+  const crm = crmConnector.isConfigured();
+  const email = emailConnector.isConfigured();
+  if (!crm && !email) {
     if (!devConsoleConnector.isConfigured()) throw new NoLeadDestinationError();
-    active = [devConsoleConnector, ...active];
+    await devConsoleConnector.send(lead);
   }
 
-  await Promise.all(active.filter((c) => c.persistent).map((c) => c.send(lead)));
+  let gravado = false;
+  if (crm) {
+    try {
+      await crmConnector.send(lead);
+      gravado = true;
+    } catch (err) {
+      console.error("[lead] CRM não gravou o lead", lead.id, (err as Error).message);
+      if (!email) throw err;
+    }
+  }
+  if (email) {
+    if (gravado) {
+      const { enviarAviso } = await import("@/lib/crm/aviso");
+      await enviarAviso(lead.id).catch((e) => console.error("[lead] aviso por e-mail falhou", lead.id, (e as Error).message));
+    } else {
+      await sendLeadEmail(lead, { semCrm: crm });
+    }
+  }
+  if (gravado) {
+    // Primeiro contato automático (só se estiver ligado e houver canal integrado): depois da resposta.
+    after(async () => {
+      try {
+        const { primeiroContatoDoEnvio } = await import("@/lib/crm/mensagens");
+        await primeiroContatoDoEnvio(lead.id);
+      } catch (e) {
+        console.error("[lead] primeiro contato automático falhou", lead.id, (e as Error).message);
+      }
+    });
+  }
 
-  const background = active.filter((c) => !c.persistent);
+  const background = connectors.filter((c) => !c.persistent && c.isConfigured());
   if (background.length) {
     after(async () => {
       const results = await Promise.allSettled(background.map((c) => c.send(lead)));

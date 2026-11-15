@@ -8,6 +8,7 @@ import { SmoothScroll } from "@/components/layout/smooth-scroll";
 import { LeadAttribution } from "@/components/layout/lead-attribution";
 import { Analytics } from "@/components/layout/analytics";
 import { RevealReady } from "@/components/layout/reveal-ready";
+import { SiteOnly } from "@/components/layout/site-only";
 import { isIndexable, site, siteBaseUrl } from "@/lib/site";
 import { headPixelId, pixelHeadScript } from "@/lib/pixel-head";
 import "./globals.css";
@@ -99,13 +100,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Pular para o conteúdo
         </a>
         <RevealReady />
-        <SmoothScroll />
-        <LeadAttribution />
-        <Analytics />
-        <SiteHeader />
+        {/* A área privada (/leads) não leva o cabeçalho, o rodapé, a barra de conversão nem a medição do site. */}
+        <SiteOnly>
+          <SmoothScroll />
+          <LeadAttribution />
+          <Analytics />
+          <SiteHeader />
+        </SiteOnly>
         <main id="conteudo">{children}</main>
-        <SiteFooter />
-        <MobileCtaBar />
+        <SiteOnly>
+          <SiteFooter />
+          <MobileCtaBar />
+        </SiteOnly>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}

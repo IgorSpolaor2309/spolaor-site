@@ -99,3 +99,7 @@ não existirem.** Variáveis (públicas, definidas na Vercel antes do build): `N
 - Pendência legal: não há banner de consentimento (LGPD). Avalie antes de ligar a medição em produção.
 
 Teste local (provedor de e-mail e Pixel simulados, nada sai da máquina): `scripts/teste-ofertas-local.mjs`.
+
+## CRM (/leads)
+
+O conector `crm.ts` grava cada lead no Postgres do site quando há `DATABASE_URL` e alimenta a área privada `/leads`. Com ele ligado, o banco é a fonte de verdade: o lead é aceito assim que é gravado, e o e-mail vira aviso com estado e nova tentativa (uma falha do provedor não derruba mais o envio). Sem banco, vale a regra anterior (o e-mail precisa ser aceito). A ordem e as regras estão em `../pipeline.ts`; o restante em `docs/CRM-LEADS.md`.

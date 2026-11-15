@@ -3,6 +3,8 @@
 // real, nenhum e-mail real. Antes: build com NEXT_PUBLIC_META_PIXEL_ID (qualquer número), RESEND_API_KEY,
 // LEAD_EMAIL_TO, LEAD_EMAIL_FROM e RESEND_API_URL=http://localhost:4010/, depois
 // "node node_modules/next/dist/bin/next start --port 3100". Uso: node scripts/teste-medicao-leads.mjs
+// Rode o servidor SEM DATABASE_URL: este teste cobre o caminho em que o e-mail é o registro do lead. Com o CRM
+// ligado, a falha do provedor não derruba mais o envio (o lead fica gravado); isso é coberto por scripts/teste-crm.mjs.
 //
 // Confere: PageView da primeira página enfileirado antes da hidratação e sem duplicar; PageView nas
 // navegações internas; página e formulário funcionando com o Pixel bloqueado; botões levando ao
