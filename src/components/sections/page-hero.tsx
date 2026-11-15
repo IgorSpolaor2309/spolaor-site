@@ -6,8 +6,8 @@ export function PageHero({
   eyebrow,
   title,
   text,
-  primary = { href: "/analise", label: "Analisar minha empresa" },
-  secondary = { href: "/contato", label: "Falar sobre meu projeto" },
+  primary = { href: "/analise#analise", label: "Analisar minha empresa" },
+  secondary = { href: "/contato#formulario", label: "Falar sobre meu projeto" },
   tone = "ember",
   aside,
 }: {

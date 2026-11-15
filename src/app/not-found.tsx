@@ -10,7 +10,7 @@ export default function NotFound() {
         </h1>
         <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
           <ButtonLink href="/" variant="secondary">Voltar ao início</ButtonLink>
-          <ButtonLink href="/analise" arrow>Analisar meu site</ButtonLink>
+          <ButtonLink href="/analise#analise" arrow>Analisar meu site</ButtonLink>
         </div>
       </div>
     </section>

@@ -80,15 +80,18 @@ export default function ContatoPage() {
             )}
           </div>
         </div>
-        <div className="fade-up lg:col-span-7" style={{ animationDelay: "0.2s" }}>
-          <Suspense fallback={<div className="h-[720px] rounded-[16px] border border-line bg-ink-900" />}>
-            <ContactForm
-              interestsLabel="Seu interesse"
-              messageLabel="O que sua empresa precisa"
-              formLabel="Conte o que sua empresa precisa"
-              available={leadsAvailable()}
-            />
-          </Suspense>
+        {/* Alvo dos botões que trazem a pessoa para falar de um projeto (/contato#formulario). */}
+        <div id="formulario" className="lg:col-span-7">
+          <div className="fade-up" style={{ animationDelay: "0.2s" }}>
+            <Suspense fallback={<div className="h-[720px] rounded-[16px] border border-line bg-ink-900" />}>
+              <ContactForm
+                interestsLabel="Seu interesse"
+                messageLabel="O que sua empresa precisa"
+                formLabel="Conte o que sua empresa precisa"
+                available={leadsAvailable()}
+              />
+            </Suspense>
+          </div>
         </div>
       </div>
     </section>

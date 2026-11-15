@@ -49,7 +49,7 @@ const solutions: Solution[] = [
     includes: "Cada atendimento com responsável e próximo passo, dados preenchidos uma vez só e lembrete para retomar orçamentos enviados.",
     image: "crm-automacao",
     primary: { href: "/automacao#analise", label: "Pedir diagnóstico do processo" },
-    secondary: { href: "/contato?interesse=Automação", label: "Já sei o que quero automatizar" },
+    secondary: { href: "/contato?interesse=Automação#formulario", label: "Já sei o que quero automatizar" },
   },
 ];
 

@@ -99,7 +99,7 @@ export default function PacoteSitePage() {
                 </ButtonLink>
               ) : (
                 <div data-hero-cta>
-                  <ButtonLink href="/contato" size="lg" arrow className="w-full sm:w-auto">
+                  <ButtonLink href="/contato#formulario" size="lg" arrow className="w-full sm:w-auto">
                     Falar com a Spolaor
                   </ButtonLink>
                   <p className="mt-2 text-sm text-dim">A contratação pelo site abre em breve.</p>

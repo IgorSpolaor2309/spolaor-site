@@ -108,7 +108,7 @@ export default function AutomacaoPage() {
         }
         text="Para equipes que anotam, copiam dados e cobram retorno à mão. Automatizamos só o que faz diferença no seu processo."
         primary={{ href: "#analise", label: "Pedir diagnóstico do processo" }}
-        secondary={{ href: "/contato?interesse=Automação", label: "Já sei o que quero automatizar" }}
+        secondary={{ href: "/contato?interesse=Automação#formulario", label: "Já sei o que quero automatizar" }}
       />
 
       <section className="border-t border-line py-16 md:py-32" aria-labelledby="flow-title">
@@ -202,7 +202,7 @@ export default function AutomacaoPage() {
         note={
           <>
             Já sabe o que quer automatizar?{" "}
-            <Link href="/contato?interesse=Automação" className="text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">
+            <Link href="/contato?interesse=Automação#formulario" className="text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">
               Fale direto sobre o projeto
             </Link>
             .

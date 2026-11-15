@@ -32,7 +32,8 @@ export function MobileCtaBar() {
     };
   }, [pathname, cta.target]);
 
-  if (pathname === "/analise" || pathname === "/atendimento-ia/checkout" || pathname.startsWith("/sites/pacote/")) return null;
+  // Páginas que já são o formulário: a barra competiria com ele (e cobriria o fim dos campos).
+  if (pathname === "/analise" || pathname === "/contato" || pathname === "/atendimento-ia/checkout" || pathname.startsWith("/sites/pacote/")) return null;
   const wa = whatsappLink();
 
   return (

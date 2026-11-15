@@ -70,7 +70,7 @@ export default function SistemasPage() {
             caption="Exemplo ilustrativo · o que o sistema faz depende do projeto"
           />
         }
-        primary={{ href: "/contato?interesse=Sistema", label: "Falar sobre meu sistema" }}
+        primary={{ href: "/contato?interesse=Sistema#formulario", label: "Falar sobre meu sistema" }}
         secondary={{ href: "/projetos", label: "Ver projeto em destaque" }}
       />
 
