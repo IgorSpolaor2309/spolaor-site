@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     referrer: str(body.referrer, LIMITS.url),
     utm:
       body.utm && typeof body.utm === "object"
-        ? Object.fromEntries(Object.entries(body.utm as Record<string, unknown>).slice(0, 10).map(([k, v]) => [k.slice(0, 40), String(v).slice(0, 200)]))
+        ? Object.fromEntries(Object.entries(body.utm as Record<string, unknown>).slice(0, 12).map(([k, v]) => [k.slice(0, 40), String(v).slice(0, 200)]))
         : {},
   };
 

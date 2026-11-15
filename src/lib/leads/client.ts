@@ -17,7 +17,9 @@ export function formStartProps(origem: string) {
   return { onFocus: start, onClick: start };
 }
 
-const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "fbclid"];
+// Além das UTMs e dos identificadores de clique, aceita os identificadores reais de campanha, conjunto e anúncio
+// quando a URL do anúncio os traz (na Meta: campaign_id={{campaign.id}}&adset_id={{adset.id}}&ad_id={{ad.id}}).
+const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "utm_id", "campaign_id", "adset_id", "ad_id", "gclid", "fbclid"];
 const ENTRY_KEY = "spolaor:entrada";
 
 function readUtm(search: string) {

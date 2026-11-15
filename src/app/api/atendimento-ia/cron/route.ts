@@ -5,6 +5,7 @@ import { registerSchedule } from "@/lib/ia/agendador";
 import { healthReport, mpAccount } from "@/lib/ia/health";
 import { comCanal, reconcile, runCron } from "@/lib/ia/process";
 import { avisoCadastroAnterior, rotinaAvisosCadastro } from "@/lib/ia/aviso-cadastro";
+import { rotinaCrm } from "@/lib/crm/rotina";
 
 // Rotina periódica (Vercel Cron envia Authorization: Bearer CRON_SECRET): novas tentativas de
 // ativação, conferência direta no Mercado Pago, sincronização com o ZappMillion e guarda de renovação.
@@ -31,6 +32,10 @@ export async function GET(req: Request) {
     console.info(`[atendimento-ia] saude ${JSON.stringify({ ...(await healthReport()), contaMp: await mpAccount().catch((e: Error) => ({ erro: e.message })) })}`);
     return NextResponse.json({ ok: true, saude: "registrada no log" });
   }
+  // CRM (/leads): novas tentativas de avisos de lead e de mensagens. Independe das chaves dos fornecedores da IA
+  // e nunca derruba a rotina (rotinaCrm não lança erro). O detalhe fica só no log privado.
+  const crm = await rotinaCrm();
+  if (crm.length) console.info(`[crm] rotina ${JSON.stringify(crm)}`);
   if (!process.env.DATABASE_URL && process.env.IA_STORE !== "memory") return NextResponse.json({ ok: true, skipped: "sem banco" });
   // Sem as chaves dos fornecedores (ex.: produção antes de abrir as vendas), não há o que conferir.
   if (!iaConfig.zmKey() || !iaConfig.mpToken()) return NextResponse.json({ ok: true, skipped: "sem chaves dos fornecedores" });

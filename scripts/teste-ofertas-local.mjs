@@ -2,6 +2,8 @@
 // Usa um provedor de e-mail FALSO em :4010 e um Pixel FALSO (script simulado), então nada sai da máquina.
 // Antes: build com NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_META_PIXEL_ID (qualquer número) e as variáveis do
 // e-mail apontando para http://localhost:4010/, e "next start -p 3100". Uso: node scripts/teste-ofertas-local.mjs
+// Rode o servidor SEM DATABASE_URL: este teste cobre o caminho em que o e-mail é o registro do lead. Com o CRM
+// ligado, a falha do provedor não derruba mais o envio (o lead fica gravado); isso é coberto por scripts/teste-crm.mjs.
 import http from "node:http";
 import { chromium } from "playwright-core";
 

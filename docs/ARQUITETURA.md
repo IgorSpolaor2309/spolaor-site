@@ -147,3 +147,7 @@ Cinco ilustrações 3D (fundo transparente) ajudam a entender a oferta de cada p
 - **Landings:** aberturas mais curtas nas seis páginas com ilustração. No celular, o botão secundário dos heróis vira link de texto. `/diagnostico-site` ficou abertura → como funciona → formulário → na prática → soluções → dúvidas.
 - **Elementos fixos:** cabeçalho com 60 px no celular (72 px a partir de `sm`), barra fixa mais baixa e sem moldura, que só aparece depois que o botão da abertura (`data-hero-cta`) sai da tela e some com o formulário visível. Respeita `safe-area-inset-bottom`; o rodapé já reserva espaço para ela.
 - **Espaçamento:** seções com `py-16` no celular (antes `py-24`); desktop igual.
+
+## 10. CRM de leads (novembro/2026)
+
+`/leads` é a área privada de acompanhamento comercial: fila de atendimento, lista, funil, ficha com histórico, retornos, cadastro manual e indicadores. Os envios de `/api/lead` passam a ser gravados no Postgres do site (tabelas `crm_*`) antes do aviso por e-mail, que continua saindo e ganhou estado e nova tentativa. O contrato de `/api/lead` com o navegador e o evento Lead não mudaram. As páginas de `/leads` não levam cabeçalho, rodapé nem Pixel do site público. Detalhes, regras e o estado de cada integração em `docs/CRM-LEADS.md`.
