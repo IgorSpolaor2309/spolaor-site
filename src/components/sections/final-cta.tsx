@@ -11,8 +11,8 @@ export function FinalCta({
     </>
   ),
   text = "Descubra onde sua empresa perde contatos hoje, e o que dá para resolver primeiro.",
-  primary = { href: "/analise", label: "Analisar minha empresa" },
-  secondary = { href: "/contato", label: "Falar sobre um projeto" },
+  primary = { href: "/analise#analise", label: "Analisar minha empresa" },
+  secondary = { href: "/contato#formulario", label: "Falar sobre um projeto" },
 }: {
   title?: React.ReactNode;
   text?: string;

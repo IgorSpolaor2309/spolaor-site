@@ -75,7 +75,7 @@ export default function SitesPage() {
         }
         text="Para empresas que precisam apresentar os serviços e receber contatos e pedidos de orçamento, no computador e no celular."
         primary={{ href: "#orcamento", label: "Pedir orçamento de site" }}
-        secondary={{ href: "/analise", label: "Prefiro começar pelo diagnóstico" }}
+        secondary={{ href: "/analise#analise", label: "Prefiro começar pelo diagnóstico" }}
       />
 
       <PacoteChamada />
@@ -176,7 +176,7 @@ export default function SitesPage() {
         </div>
       </section>
 
-      <section id="orcamento" className="scroll-mt-20 border-t border-line py-16 md:py-32" aria-labelledby="quote-title">
+      <section className="border-t border-line py-16 md:py-32" aria-labelledby="quote-title">
         <div className="container-x grid gap-14 lg:grid-cols-12">
           <Reveal className="lg:col-span-5">
             <SectionLabel index="05" tone="signal">
@@ -199,25 +199,27 @@ export default function SitesPage() {
             </ol>
             <p className="mt-6 text-sm text-dim">
               Ainda não sabe se o problema é o site?{" "}
-              <Link href="/analise" className="text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">
+              <Link href="/analise#analise" className="text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">
                 Comece pelo diagnóstico sem custo
               </Link>
               .
             </p>
           </Reveal>
-          <Reveal delay={0.12} className="lg:col-span-6 lg:col-start-7">
-            <Suspense fallback={<div className="h-[720px] rounded-[16px] border border-line bg-ink-900" />}>
-              <ContactForm
-                origem="sites"
-                interests={siteTypes}
-                interestsLabel="O que você precisa?"
-                messageLabel="O que a empresa faz e o que o site precisa ter"
-                submitLabel="Pedir orçamento"
-                formLabel="Pedir orçamento de site"
-                available={leadsAvailable()}
-              />
-            </Suspense>
-          </Reveal>
+          <div id="orcamento" className="lg:col-span-6 lg:col-start-7">
+            <Reveal delay={0.12}>
+              <Suspense fallback={<div className="h-[720px] rounded-[16px] border border-line bg-ink-900" />}>
+                <ContactForm
+                  origem="sites"
+                  interests={siteTypes}
+                  interestsLabel="O que você precisa?"
+                  messageLabel="O que a empresa faz e o que o site precisa ter"
+                  submitLabel="Pedir orçamento"
+                  formLabel="Pedir orçamento de site"
+                  available={leadsAvailable()}
+                />
+              </Suspense>
+            </Reveal>
+          </div>
         </div>
       </section>
       <Faq items={siteFaq} index="06" />

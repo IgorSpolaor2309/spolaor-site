@@ -53,7 +53,7 @@ export default function ProjetosPage() {
           </>
         }
         text="Um sistema empresarial completo, desenvolvido do zero pela Spolaor, que tirou uma operação inteira de planilhas e mensagens soltas."
-        primary={{ href: "/contato?interesse=Sistema", label: "Quero algo assim" }}
+        primary={{ href: "/contato?interesse=Sistema#formulario", label: "Quero algo assim" }}
         secondary={null}
       />
 

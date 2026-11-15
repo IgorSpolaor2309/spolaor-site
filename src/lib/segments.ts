@@ -66,26 +66,29 @@ export const SEGMENTO_DA_ORIGEM: Partial<Record<LeadOrigem, string>> = {
 /** Páginas que têm o formulário de diagnóstico (#analise) na própria página. */
 export const PAGES_WITH_FORM = ["/", "/corretores", "/clinicas", "/orcamentos", "/analise", "/automacao"];
 
-/** Páginas de oferta com formulário próprio (id "formulario"). */
-const OFFER_FORMS: Record<string, string> = {
-  "/lojas-virtuais": "Pedir orçamento de loja",
-  "/agendamento-online": "Quero agendamento online",
-  "/diagnostico-site": "Solicitar diagnóstico",
+/** Páginas de oferta com formulário próprio: rótulo do CTA e id do bloco do formulário. */
+const OFFER_FORMS: Record<string, { label: string; target: string }> = {
+  "/lojas-virtuais": { label: "Pedir orçamento de loja", target: "formulario" },
+  "/agendamento-online": { label: "Quero agendamento online", target: "formulario" },
+  // Em /diagnostico-site o cartão do formulário é #solicitar (#formulario é a seção, com título antes).
+  "/diagnostico-site": { label: "Solicitar diagnóstico", target: "solicitar" },
 };
 
 /**
  * CTA fixo do header e da barra mobile em cada página. Em /sites o caminho é o pedido de
- * orçamento direto; nas páginas com diagnóstico, rola até o formulário; nas demais, leva a /analise.
+ * orçamento direto; nas páginas com diagnóstico, rola até o formulário; nas demais, leva ao formulário
+ * de /analise. O alvo é sempre o bloco do formulário (não a seção), para o clique mostrar os campos.
  */
 export function pageCta(pathname: string): { href: string; target: string | null; label: string } {
   if (pathname === "/atendimento-ia") return { href: "#comprar", target: "comprar", label: "Ver plano e preço" };
-  if (pathname.startsWith("/atendimento-ia/")) return { href: "/contato", target: null, label: "Falar com a Spolaor" };
-  if (OFFER_FORMS[pathname]) return { href: "#formulario", target: "formulario", label: OFFER_FORMS[pathname] };
+  if (pathname.startsWith("/atendimento-ia/")) return { href: "/contato#formulario", target: null, label: "Falar com a Spolaor" };
+  const offer = OFFER_FORMS[pathname];
+  if (offer) return { href: `#${offer.target}`, target: offer.target, label: offer.label };
   if (pathname === "/sites") return { href: "#orcamento", target: "orcamento", label: "Pedir orçamento" };
   if (pathname === "/sites/pacote") return { href: "/sites/pacote/checkout", target: null, label: "Quero meu site" };
   if (pathname === "/automacao") return { href: "#analise", target: "analise", label: "Diagnóstico do processo" };
   if (PAGES_WITH_FORM.includes(pathname)) return { href: "#analise", target: "analise", label: "Analisar minha empresa" };
-  return { href: "/analise", target: null, label: "Analisar minha empresa" };
+  return { href: "/analise#analise", target: null, label: "Analisar minha empresa" };
 }
 
 export const segmentPages = [

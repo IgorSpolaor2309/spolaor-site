@@ -2,7 +2,9 @@ import { Reveal } from "@/components/ui/reveal";
 import { SectionLabel } from "@/components/ui/section-label";
 
 // Seção do formulário das páginas de oferta: texto e passos à esquerda, formulário à direita.
-// O id "formulario" é o alvo dos CTAs da página (header, barra mobile e botões).
+// O id "formulario" é o alvo dos CTAs da página (header, barra mobile e botões). Fica no bloco do
+// formulário, e não na seção, para o clique mostrar o formulário (no celular as colunas se empilham e
+// o texto vinha antes). O bloco não tem transform; o recuo do cabeçalho fixo vem do scroll-padding-top.
 export function RequestSection({
   index,
   label,
@@ -21,7 +23,7 @@ export function RequestSection({
   children: React.ReactNode;
 }) {
   return (
-    <section id="formulario" className="scroll-mt-20 border-t border-line py-16 md:py-32" aria-labelledby="request-title">
+    <section className="border-t border-line py-16 md:py-32" aria-labelledby="request-title">
       <div className="container-x grid gap-14 lg:grid-cols-12">
         <Reveal className="lg:col-span-5">
           <SectionLabel index={index} tone="signal">
@@ -41,9 +43,9 @@ export function RequestSection({
           </ol>
           {note && <p className="mt-6 text-sm text-dim">{note}</p>}
         </Reveal>
-        <Reveal delay={0.12} className="lg:col-span-6 lg:col-start-7">
-          {children}
-        </Reveal>
+        <div id="formulario" className="lg:col-span-6 lg:col-start-7">
+          <Reveal delay={0.12}>{children}</Reveal>
+        </div>
       </div>
     </section>
   );

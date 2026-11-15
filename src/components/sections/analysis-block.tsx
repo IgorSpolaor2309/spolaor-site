@@ -66,7 +66,7 @@ export function AnalysisBlock({
 }) {
   const H = headingLevel;
   return (
-    <section id={sectionId} className="relative overflow-hidden border-t border-line py-16 md:py-32" aria-labelledby="analysis-title">
+    <section className="relative overflow-hidden border-t border-line py-16 md:py-32" aria-labelledby="analysis-title">
       <div className="container-x grid gap-14 lg:grid-cols-12">
         <Reveal className="lg:col-span-5">
           <SectionLabel index={index || undefined} tone="signal">
@@ -79,9 +79,12 @@ export function AnalysisBlock({
           <Criteria items={items} title={itemsTitle} />
           <p className="mt-6 text-sm text-dim">{note}</p>
         </Reveal>
-        <Reveal delay={0.12} className="lg:col-span-6 lg:col-start-7 lg:pt-10">
-          <AnalysisForm origem={origem} problemas={problemas} submitLabel={submitLabel} available={leadsAvailable()} siteRequired={siteRequired} />
-        </Reveal>
+        {/* O alvo dos CTAs (sectionId) é o bloco do formulário, sem transform, para o clique mostrar o formulário. */}
+        <div id={sectionId} className="lg:col-span-6 lg:col-start-7 lg:pt-10">
+          <Reveal delay={0.12}>
+            <AnalysisForm origem={origem} problemas={problemas} submitLabel={submitLabel} available={leadsAvailable()} siteRequired={siteRequired} />
+          </Reveal>
+        </div>
       </div>
     </section>
   );

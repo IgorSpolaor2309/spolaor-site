@@ -11,7 +11,10 @@ export function SmoothScroll() {
     let raf = 0;
     let destroy: (() => void) | undefined;
     import("lenis").then(({ default: Lenis }) => {
-      const lenis = new Lenis({ duration: 1.1, easing: (t) => 1 - Math.pow(1 - t, 4), anchors: { offset: -88 } });
+      // Sem `anchors`: o clique em link de âncora (#formulario, #analise…) fica com o Next/navegador, que
+      // respeitam o scroll-padding-top do html (recuo do cabeçalho fixo, em globals.css). Com `anchors`
+      // ligado, o Lenis e o Next rolavam ao mesmo tempo e o formulário parava em posições diferentes.
+      const lenis = new Lenis({ duration: 1.1, easing: (t) => 1 - Math.pow(1 - t, 4) });
       const loop = (time: number) => {
         lenis.raf(time);
         raf = requestAnimationFrame(loop);

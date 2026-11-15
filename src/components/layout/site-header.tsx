@@ -163,7 +163,7 @@ export function SiteHeader() {
                   Falar no WhatsApp
                 </ButtonLink>
               ) : (
-                <ButtonLink href="/contato" variant="secondary" size="lg">
+                <ButtonLink href="/contato#formulario" variant="secondary" size="lg">
                   Falar sobre meu projeto
                 </ButtonLink>
               )}
