@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { waEnv } from "@/lib/crm/whatsapp/config";
-import { receberEvento } from "@/lib/crm/whatsapp/webhook";
-import { assinaturaValida, type EventoYCloud } from "@/lib/crm/whatsapp/ycloud";
+import { receberEvento, registrarRecusa } from "@/lib/crm/whatsapp/webhook";
+import { conferirAssinatura, type EventoYCloud } from "@/lib/crm/whatsapp/ycloud";
 
 // Webhook da YCloud (WhatsApp). Endereço a cadastrar no painel da YCloud:
 //   https://www.spolaortecnologia.com.br/api/leads/webhooks/ycloud
@@ -10,12 +10,19 @@ import { assinaturaValida, type EventoYCloud } from "@/lib/crm/whatsapp/ycloud";
 // whatsapp.phone_number.quality_updated, whatsapp.business_account.updated, whatsapp.business_account.deleted.
 //
 // Só aceita notificação com assinatura válida (YCloud-Signature, HMAC do corpo cru com YCLOUD_WEBHOOK_SECRET).
+// Quando recusa (401), registra só o MOTIVO, depois de responder: nada do cabeçalho, da assinatura nem do corpo.
+// O motivo aparece em /leads/integracoes; a resposta ao chamador continua sem detalhe nenhum.
 // Responde 200 assim que o evento está gravado: mesmo que o processamento falhe, ele não se perde (a rotina o
 // processa de novo) e a YCloud não precisa repetir. Só responde erro quando não conseguiu gravar.
 export async function POST(req: Request) {
   if (!waEnv.webhookSecret()) return NextResponse.json({ ok: false, error: "nao_configurado" }, { status: 503 });
   const cru = await req.text();
-  if (!assinaturaValida(cru, req.headers.get("ycloud-signature"))) return NextResponse.json({ ok: false }, { status: 401 });
+  const assinatura = conferirAssinatura(cru, req.headers.get("ycloud-signature"));
+  if (!assinatura.ok) {
+    const motivo = assinatura.motivo;
+    if (motivo !== "sem_segredo") after(() => registrarRecusa(motivo));
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
   let ev: EventoYCloud;
   try {
     ev = JSON.parse(cru) as EventoYCloud;

@@ -179,9 +179,25 @@ export async function estadoNumero(): Promise<EstadoNumero> {
  * "<t>.<corpo cru>" com o segredo do endpoint. A tolerância do horário é de 6 horas porque a YCloud tenta de novo por
  * até ~5h40 e não documenta se reassina; a proteção contra repetição é o id do evento (crm_webhook_eventos).
  */
-export function assinaturaValida(corpoCru: string, cabecalho: string | null, agora = Date.now()): boolean {
+/**
+ * Por que uma notificação foi recusada. Só a categoria: nunca o cabeçalho, a assinatura, o segredo nem o corpo.
+ * - sem_segredo: YCLOUD_WEBHOOK_SECRET não definido (a rota responde 503 antes de chegar aqui);
+ * - sem_assinatura: a chamada veio sem o cabeçalho YCloud-Signature;
+ * - formato_invalido: o cabeçalho não tem `t` numérico e `s` com 64 dígitos hexadecimais;
+ * - fora_do_prazo: o horário assinado difere do relógio do servidor em mais de 6 horas;
+ * - assinatura_diferente: o HMAC calculado com o segredo do servidor não bate com o recebido.
+ */
+export type MotivoRecusa = "sem_assinatura" | "formato_invalido" | "fora_do_prazo" | "assinatura_diferente";
+export type ResultadoAssinatura = { ok: true } | { ok: false; motivo: MotivoRecusa | "sem_segredo" };
+
+/** Tolerância entre o horário assinado e o relógio do servidor (a YCloud tenta de novo por cerca de 5h40). */
+const TOLERANCIA_ASSINATURA_S = 6 * 3600;
+
+/** Confere a assinatura da YCloud sobre o corpo cru. Os critérios e a ordem são os mesmos de sempre; a diferença é devolver o motivo. */
+export function conferirAssinatura(corpoCru: string, cabecalho: string | null, agora = Date.now()): ResultadoAssinatura {
   const segredo = waEnv.webhookSecret();
-  if (!segredo || !cabecalho) return false;
+  if (!segredo) return { ok: false, motivo: "sem_segredo" };
+  if (!cabecalho) return { ok: false, motivo: "sem_assinatura" };
   const partes = Object.fromEntries(
     cabecalho.split(",").map((p) => {
       const i = p.indexOf("=");
@@ -189,11 +205,15 @@ export function assinaturaValida(corpoCru: string, cabecalho: string | null, ago
     }),
   );
   const t = Number(partes.t);
-  if (!Number.isFinite(t) || !/^[0-9a-f]{64}$/i.test(partes.s ?? "")) return false;
-  if (Math.abs(agora / 1000 - t) > 6 * 3600) return false;
+  if (!Number.isFinite(t) || !/^[0-9a-f]{64}$/i.test(partes.s ?? "")) return { ok: false, motivo: "formato_invalido" };
+  if (Math.abs(agora / 1000 - t) > TOLERANCIA_ASSINATURA_S) return { ok: false, motivo: "fora_do_prazo" };
   const esperado = createHmac("sha256", segredo).update(`${partes.t}.${corpoCru}`).digest();
   const recebido = Buffer.from(partes.s, "hex");
-  return esperado.length === recebido.length && timingSafeEqual(esperado, recebido);
+  return esperado.length === recebido.length && timingSafeEqual(esperado, recebido) ? { ok: true } : { ok: false, motivo: "assinatura_diferente" };
+}
+
+export function assinaturaValida(corpoCru: string, cabecalho: string | null, agora = Date.now()): boolean {
+  return conferirAssinatura(corpoCru, cabecalho, agora).ok;
 }
 
 type MidiaY = { id?: string; mime_type?: string; filename?: string; caption?: string };

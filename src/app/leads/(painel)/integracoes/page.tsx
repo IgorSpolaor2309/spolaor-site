@@ -12,7 +12,7 @@ import { emailCliente } from "@/lib/crm/mensagens";
 import { CATEGORIA_ROTULO, CATEGORIAS, fmtDataHora, fmtWhatsapp } from "@/lib/crm/tipos";
 import { canalAutomacao, modeloPrimeiroContato, numerosControle, textosAutomaticosApp, waEnv, waEnvio } from "@/lib/crm/whatsapp/config";
 import { estadoValidacao } from "@/lib/crm/whatsapp/validacao";
-import { estadoWebhook } from "@/lib/crm/whatsapp/webhook";
+import { estadoRecusas, estadoWebhook, MOTIVO_RECUSA_ROTULO } from "@/lib/crm/whatsapp/webhook";
 import { estadoNumero, modeloAprovado } from "@/lib/crm/whatsapp/ycloud";
 
 export const metadata: Metadata = { title: "Integrações" };
@@ -50,6 +50,13 @@ const MSG_VALIDACAO: Record<string, { tom: "ok" | "alerta"; texto: string }> = {
   "validacao-aberta": { tom: "alerta", texto: "Este número já tem uma oportunidade real aberta para esse serviço. Escolha outro serviço para a validação." },
 };
 
+const ROTULO_CURTO_RECUSA: Record<keyof typeof MOTIVO_RECUSA_ROTULO, string> = {
+  sem_assinatura: "sem assinatura",
+  formato_invalido: "formato inválido",
+  fora_do_prazo: "fora do prazo",
+  assinatura_diferente: "assinatura diferente",
+};
+
 export default async function IntegracoesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await exigirUsuario();
   const sp = await searchParams;
@@ -58,9 +65,10 @@ export default async function IntegracoesPage({ searchParams }: { searchParams: 
   // WhatsApp: cada linha abaixo é uma evidência lida agora (configuração, YCloud, notificações recebidas), não uma suposição.
   const wa = waEnvio();
   const segredo = !!waEnv.webhookSecret();
-  const [numero, wh, modeloWa, controle, validacao, autoApp] = await Promise.all([
+  const [numero, wh, recusas, modeloWa, controle, validacao, autoApp] = await Promise.all([
     wa.pronto ? estadoNumero() : null,
     estadoWebhook(),
+    estadoRecusas(),
     modeloPrimeiroContato(),
     numerosControle(),
     estadoValidacao(),
@@ -178,6 +186,19 @@ export default async function IntegracoesPage({ searchParams }: { searchParams: 
               {wh.semProcessar > 0 ? ` ${wh.semProcessar} aguardando processamento.` : ""}
               {wh.historico > 0 ? ` ${wh.historico} de histórico do aplicativo, guardadas sem virar mensagem nem pendência.` : ""}
             </p>
+            {recusas && (
+              <p data-wa-recusas data-motivo={recusas.ultimoMotivo} className={wh.ultimoEm && wh.ultimoEm > recusas.ultimaEm ? undefined : "text-ember"}>
+                <strong className={wh.ultimoEm && wh.ultimoEm > recusas.ultimaEm ? undefined : "!text-ember"}>Notificações recusadas:</strong> ao menos {recusas.total} desde{" "}
+                {fmtDataHora(recusas.desde)}; a última em {fmtDataHora(recusas.ultimaEm)}. Motivo da última: {MOTIVO_RECUSA_ROTULO[recusas.ultimoMotivo]}.
+                {recusas.porMotivo.length > 1
+                  ? ` Por motivo: ${recusas.porMotivo.map((x) => `${ROTULO_CURTO_RECUSA[x.motivo]} ${x.n}`).join(" · ")}.`
+                  : ""}{" "}
+                {wh.ultimoEm && wh.ultimoEm > recusas.ultimaEm
+                  ? "Depois dela já chegaram notificações válidas."
+                  : "Nenhuma notificação válida chegou depois dela: enquanto for assim, mensagens e estados de entrega não entram no CRM."}{" "}
+                Uma notificação recusada não é gravada; o que fica é só o motivo.
+              </p>
+            )}
             <p>
               <strong>Primeiro contato automático pelo WhatsApp:</strong> {canal === "whatsapp" ? "ligado" : "desligado"} (
               <Link href="/leads/configuracoes" className="font-semibold text-sky underline-offset-4 hover:underline">
