@@ -9,10 +9,11 @@
 | Formulários do site → banco | **Funciona.** Todo envio aceito por `/api/lead` é gravado antes do aviso por e-mail. |
 | Aviso "Novo lead" por e-mail (Resend) | **Funciona**, agora com estado (pendente, enviado, falhou) e nova tentativa. |
 | Acesso privado | **Funciona.** Código de uso único por e-mail, sessão em cookie `httpOnly`. |
-| Fila, lista, funil, ficha, histórico, retornos, cadastro manual, indicadores, exportação CSV | **Funciona.** |
-| E-mail ao interessado enviado pelo CRM (Resend) | **Funciona** quando há endereço de resposta configurado. O envio automático de primeiro contato vem **desligado**. |
+| Fila "Depende de mim", lista, funil, ficha, histórico, retornos, cadastro manual, indicadores, exportação CSV | **Funciona.** Filtro por serviço na fila, na lista e no funil; a tela se atualiza sozinha. |
+| E-mail ao interessado enviado pelo CRM (Resend) | **Funciona** quando há endereço de resposta configurado. |
+| Primeiro contato automático | **Desligado por padrão.** Um canal só (WhatsApp ou e-mail), tarefa gravada com o lead. Veja `docs/CRM-WHATSAPP.md`. |
 | Recebimento de e-mails | **Não conectado.** Resposta registrada à mão. |
-| WhatsApp | **Manual.** Abre a conversa com o texto do modelo e registra à mão. Sem API oficial. |
+| WhatsApp | **Código pronto, não conectado.** Integração com a YCloud (API oficial, com o aplicativo no celular) implementada e testada com provedor simulado; falta conectar número, modelo e webhook. Sem isso, segue manual. Veja `docs/CRM-WHATSAPP.md`. |
 | Instagram Direct | **Manual.** Abre o Direct e registra à mão. Sem API. |
 | Leitura de campanhas e gasto da Meta | **Não conectado.** Custos informados à mão. |
 | Crush | **Sem integração possível** (não há API, webhooks nem exportação oficial; pesquisa de 15/11/2026). |
@@ -28,7 +29,8 @@ A tela `/leads/integracoes` mostra esse mesmo estado lido da configuração e do
 ### Modelo de dados
 
 - `crm_contatos`: pessoa ou empresa.
-- `crm_oportunidades`: um interesse comercial de um contato (um serviço). Guarda etapa, de quem é a vez, próxima ação, valores, origem e atribuição.
+- `crm_oportunidades`: um interesse comercial de um contato (um serviço). Guarda etapa, de quem é a vez (separado da etapa), categoria do serviço, próxima ação, valores, origem e atribuição.
+- `crm_tarefas`: intenção de primeiro contato, gravada com o lead. `crm_webhook_eventos`: notificações do provedor de WhatsApp, como chegaram.
 - `crm_envios`: cada envio de formulário como chegou. O `id` é o mesmo devolvido ao navegador e usado como `eventID` do evento Lead. Guarda também o estado do aviso por e-mail.
 - `crm_mensagens`: conversa. `modo = sistema` (enviada por integração, com estado de envio) ou `modo = manual` (registrada à mão, sem estado de entrega).
 - `crm_eventos`: histórico e anotações.
@@ -82,7 +84,7 @@ Guardado por oportunidade: origem do formulário, página do envio, primeira pá
 - **Modelos** editáveis em `/leads/configuracoes`, um por situação (formulário ou recepção) e canal. Na ficha o texto vem preenchido e pode ser ajustado antes de enviar.
 - **WhatsApp, Instagram, ligação:** o CRM abre o aplicativo com o texto (ou copia) e a pessoa responsável registra "enviada" e "resposta recebida". A mensagem fica como "registrada à mão", sem estado de entrega.
 - **E-mail pelo CRM:** sai pelo Resend com `reply_to` para o e-mail comercial. Estados: na fila, enviando, aceita pelo provedor, falhou, cancelada. Falha é tentada de novo (até 5 vezes) e pode ser reenviada pela ficha. Reenviar o mesmo formulário não manda outro e-mail (chave única por envio).
-- **Primeiro contato automático por e-mail:** desligado por padrão; liga-se em `/leads/configuracoes`. Vale só para envio de formulário que criou oportunidade nova, com e-mail, que não seja teste. Uma mensagem por oportunidade. O contato continua em "Novo" depois dela.
+- **Primeiro contato automático:** desligado por padrão; em `/leads/configuracoes` escolhe-se um canal (WhatsApp ou e-mail). Vale só para envio de formulário que criou oportunidade nova e não seja teste. Uma mensagem por oportunidade. Depois dela o contato fica em "Aguardando resposta", com a vez do interessado, sem contar como atendimento humano. Regras completas em `docs/CRM-WHATSAPP.md`.
 - **Assumir:** qualquer ação de atendimento (registrar contato, registrar resposta, mudar etapa, botão "Assumir atendimento") marca a oportunidade como assumida. Mensagem automática que ainda não saiu é cancelada, e a automação não recomeça para aquela oportunidade.
 - Não há agente de IA respondendo ou negociando.
 
@@ -113,12 +115,14 @@ Nenhuma é obrigatória além das que o site já tem em produção (`DATABASE_UR
 
 `scripts/teste-medicao-leads.mjs` e `scripts/teste-ofertas-local.mjs` continuam valendo para o caminho **sem banco**. Com `DATABASE_URL` definida, a única verificação que muda neles é "provedor recusa", pelo motivo da seção 3.
 
+`scripts/teste-crm-whatsapp.mjs` cobre o WhatsApp com provedor e fila simulados (veja `docs/CRM-WHATSAPP.md`).
+
 `scripts/previa-crm.mjs` gera capturas das telas em 390 px e 1440 px.
 
 ## 10. Próximas entregas (dependem de decisão ou credencial)
 
 1. **Recebimento de e-mail.** Caminho mais simples: encaminhador na caixa comercial (cPanel) para um endereço de recebimento do Resend, que avisa o site por webhook. Alternativa: leitura IMAP periódica. Precisa da escolha e do acesso.
 2. **Leitura de campanhas da Meta.** Token `ads_read` de um usuário de sistema do Gerenciador de Negócios; lê gasto por campanha, conjunto e anúncio. Só leitura.
-3. **WhatsApp oficial.** Decidir entre número comercial separado e coexistência no número atual (exige WhatsApp Business e um parceiro da Meta). Mensagem iniciada pela empresa exige modelo aprovado e consentimento no formulário.
+3. **WhatsApp oficial.** Decidido: número comercial próprio, com coexistência, pela YCloud. Código pronto; falta a ativação descrita em `docs/CRM-WHATSAPP.md` (seções 9 e 10).
 4. **Instagram Direct.** Aplicativo da Meta com permissão de mensagens, autorizado pela conta profissional.
 5. Compras do Atendimento IA e do pacote de site como oportunidades no CRM (hoje ficam só nas tabelas próprias).

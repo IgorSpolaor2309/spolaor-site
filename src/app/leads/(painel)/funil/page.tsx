@@ -4,7 +4,8 @@ import { avancarAction } from "@/app/leads/actions";
 import { Enviar } from "@/components/crm/enviar";
 import { exigirUsuario } from "@/lib/crm/auth";
 import { funil } from "@/lib/crm/consultas";
-import { ETAPAS, ETAPA_ROTULO, fmtMoeda, fmtRelativo, type Etapa, type Oportunidade } from "@/lib/crm/tipos";
+import { FiltroServico } from "@/components/crm/ui";
+import { CATEGORIA_ROTULO, ETAPAS, ETAPA_ROTULO, fmtMoeda, fmtRelativo, isCategoria, type Etapa, type Oportunidade } from "@/lib/crm/tipos";
 
 export const metadata: Metadata = { title: "Funil" };
 
@@ -18,7 +19,10 @@ function Cartao({ o, agora }: { o: Oportunidade; agora: number }) {
         {o.contato.nome}
       </Link>
       {o.contato.empresa && <p className="text-[0.82rem] text-muted">{o.contato.empresa}</p>}
-      <p className="mt-1 text-[0.82rem] leading-snug text-dim">{o.servico ?? "Serviço não informado"}</p>
+      <p className="mt-1 text-[0.82rem] leading-snug text-dim">
+        {CATEGORIA_ROTULO[o.categoria]}
+        {o.aguardando === "nos" ? <span className="font-semibold text-ember"> · depende de você</span> : null}
+      </p>
       <p className="mt-1.5 flex flex-wrap items-baseline justify-between gap-x-2 text-[0.8rem]">
         <span className="text-dim">chegou {fmtRelativo(o.recebidoEm, agora)}</span>
         {valor !== null && <span className="font-semibold text-fg">{fmtMoeda(valor)}</span>}
@@ -34,9 +38,11 @@ function Cartao({ o, agora }: { o: Oportunidade; agora: number }) {
   );
 }
 
-export default async function FunilPage() {
+export default async function FunilPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await exigirUsuario();
-  const ops = await funil();
+  const sp = await searchParams;
+  const categoria = isCategoria(sp.servico) ? sp.servico : undefined;
+  const ops = await funil(categoria);
   const agora = Date.now();
   const colunas = ETAPAS.map((etapa) => {
     const itens = ops.filter((o) => o.etapa === etapa);
@@ -50,6 +56,9 @@ export default async function FunilPage() {
         Todas as oportunidades abertas e as encerradas nos últimos 60 dias. Valores de proposta não são vendas: só a coluna “Ganho” soma o que foi fechado. Proposta,
         ganho e perda são marcados na ficha.
       </p>
+      <div className="mt-4">
+        <FiltroServico base="/leads/funil" atual={categoria} />
+      </div>
       {/* Celular: uma etapa por vez, recolhível. Computador: colunas lado a lado. */}
       <div className="mt-6 grid gap-3 lg:grid-cols-6 lg:items-start">
         {colunas.map((c) => (

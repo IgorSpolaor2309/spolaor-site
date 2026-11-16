@@ -3,7 +3,7 @@ import Link from "next/link";
 import { btnSecondary, input, OpLinha, Painel, Vazio } from "@/components/crm/ui";
 import { exigirUsuario } from "@/lib/crm/auth";
 import { lista, opcoesFiltro, POR_PAGINA } from "@/lib/crm/consultas";
-import { CANAIS, CANAL_ROTULO, ETAPAS, ETAPA_ROTULO, isCanal, isEtapa } from "@/lib/crm/tipos";
+import { CANAIS, CANAL_ROTULO, CATEGORIA_ROTULO, CATEGORIAS, ETAPAS, ETAPA_ROTULO, isCanal, isCategoria, isEtapa } from "@/lib/crm/tipos";
 
 export const metadata: Metadata = { title: "Lista" };
 
@@ -16,12 +16,12 @@ export default async function ListaPage({ searchParams }: { searchParams: SP }) 
   const q = um(sp.q).slice(0, 100);
   const etapa = um(sp.etapa);
   const canal = um(sp.canal);
-  const servico = um(sp.servico).slice(0, 200);
+  const servico = um(sp.servico);
   const origem = um(sp.origem).slice(0, 200);
   const testes = um(sp.testes) === "1";
   const pagina = Math.max(1, Number(um(sp.p)) || 1);
   const [{ itens, total }, opcoes] = await Promise.all([
-    lista({ q, etapa: isEtapa(etapa) ? etapa : undefined, canal: isCanal(canal) ? canal : undefined, servico: servico || undefined, origem: origem || undefined, testes, pagina }),
+    lista({ q, etapa: isEtapa(etapa) ? etapa : undefined, canal: isCanal(canal) ? canal : undefined, categoria: isCategoria(servico) ? servico : undefined, origem: origem || undefined, testes, pagina }),
     opcoesFiltro(),
   ]);
   const agora = Date.now();
@@ -55,9 +55,9 @@ export default async function ListaPage({ searchParams }: { searchParams: SP }) 
         </select>
         <select name="servico" defaultValue={servico} aria-label="Serviço" className={input}>
           <option value="">Todos os serviços</option>
-          {opcoes.servicos.map((s) => (
+          {CATEGORIAS.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {CATEGORIA_ROTULO[s]}
             </option>
           ))}
         </select>

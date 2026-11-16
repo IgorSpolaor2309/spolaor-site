@@ -21,6 +21,20 @@ const provedor = http
   })
   .listen(4010);
 
+// YCloud simulada (:4040), só para as telas que leem o estado do número e dos modelos quando o servidor de teste
+// está com o WhatsApp configurado (veja scripts/teste-crm-whatsapp.mjs). Sem isso, essas telas mostram "sem resposta".
+const ycloud = http
+  .createServer((req, res) => {
+    res.writeHead(200, { "content-type": "application/json" });
+    if (req.url.startsWith("/whatsapp/templates"))
+      return res.end(JSON.stringify({ items: [{ name: "primeiro_contato_site", language: "pt_BR", status: "APPROVED", category: "UTILITY", components: [{ type: "BODY", text: "Olá, {{1}}! Aqui é a Spolaor Tecnologia. Recebemos {{2}} pelo nosso site. Posso continuar seu atendimento por aqui?" }] }] }));
+    if (req.url.startsWith("/whatsapp/phoneNumbers"))
+      return res.end(JSON.stringify({ items: [{ phoneNumber: "+5547900000000", status: "CONNECTED", qualityRating: "GREEN", messagingLimit: "TIER_250", verifiedName: "Spolaor Tecnologia" }] }));
+    res.end("{}");
+  })
+  .on("error", () => {})
+  .listen(4040);
+
 const browser = await chromium.launch({ executablePath: "C:/Program Files/Google/Chrome/Application/chrome.exe" });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: "pt-BR" });
 await ctx.route(/facebook\.(com|net)/, (r) => r.abort());
@@ -38,7 +52,7 @@ await page.waitForURL(`${B}/leads`);
 let ficha = process.argv[3];
 if (!ficha) ficha = (await page.locator('a[href^="/leads/o/"]').first().getAttribute("href")).split("/").pop();
 const telas = [
-  ["atendimento", "/leads"],
+  ["depende-de-mim", "/leads"],
   ["lista", "/leads/lista"],
   ["funil", "/leads/funil"],
   ["ficha", `/leads/o/${ficha}`],
@@ -72,4 +86,5 @@ await pm.goto(`${B}/leads/entrar`);
 await pm.screenshot({ path: `${pasta}/entrar-390.png` });
 await browser.close();
 provedor.close();
+ycloud.close();
 console.log(`capturas em ${pasta}`);

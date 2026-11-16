@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { maskPhone, validateLead, type LeadOrigem, type LeadPayload } from "@/lib/leads/schema";
+import { AVISO_RETORNO, maskPhone, validateLead, type LeadOrigem, type LeadPayload } from "@/lib/leads/schema";
 import { formStartProps, submitLead } from "@/lib/leads/client";
 import { PROBLEMAS, SEGMENTOS, SEGMENTO_DA_ORIGEM } from "@/lib/segments";
 import { FormUnavailable, SubmitError } from "./submit-error";
@@ -67,6 +67,7 @@ export function AnalysisForm({
     nome: "",
     empresa: "",
     whatsapp: "",
+    aviso: AVISO_RETORNO.versao,
     email: "",
     site: "",
     mensagem: "",
@@ -246,7 +247,9 @@ export function AnalysisForm({
                   {status === "sending" ? "Enviando…" : submitLabel}
                 </Button>
               </div>
-              <p className="text-xs text-dim">Usamos seus dados só para falar sobre o diagnóstico. Nada de spam.</p>
+              <p className="text-xs leading-relaxed text-dim" data-aviso-retorno={AVISO_RETORNO.versao}>
+                {AVISO_RETORNO.texto} Usamos seus dados só para falar sobre o diagnóstico. Nada de spam.
+              </p>
             </motion.fieldset>
           )}
 

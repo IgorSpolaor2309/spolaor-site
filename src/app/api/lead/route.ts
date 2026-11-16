@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { INTERESSES, LIMITS, isOrigem, normalizeUrl, origemFromPath, validateLead, type LeadPayload } from "@/lib/leads/schema";
+import { AVISO_RETORNO, INTERESSES, LIMITS, isOrigem, normalizeUrl, origemFromPath, validateLead, type LeadPayload } from "@/lib/leads/schema";
 import { NoLeadDestinationError, processLead } from "@/lib/leads/server/pipeline";
 import type { LeadRecord } from "@/lib/leads/server/types";
 
@@ -46,6 +46,8 @@ export async function POST(req: Request) {
       body.utm && typeof body.utm === "object"
         ? Object.fromEntries(Object.entries(body.utm as Record<string, unknown>).slice(0, 12).map(([k, v]) => [k.slice(0, 40), String(v).slice(0, 200)]))
         : {},
+    // Só vale a versão vigente do texto de retorno pelo WhatsApp; qualquer outro valor fica sem registro.
+    aviso: body.aviso === AVISO_RETORNO.versao ? AVISO_RETORNO.versao : undefined,
   };
 
   const errors = validateLead(lead);
@@ -59,8 +61,9 @@ export async function POST(req: Request) {
     userAgent: req.headers.get("user-agent")?.slice(0, 300) ?? undefined,
   };
 
+  let medir = true;
   try {
-    await processLead(record);
+    medir = (await processLead(record)).medir;
   } catch (err) {
     if (err instanceof NoLeadDestinationError) {
       console.error("[lead] recebido sem destino configurado; nada foi salvo");
@@ -70,5 +73,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "falha_ao_registrar" }, { status: 502 });
   }
 
-  return NextResponse.json({ ok: true, id: record.id });
+  // medir: false só para números de controle cadastrados no CRM (validação do WhatsApp): o lead é gravado e o fluxo
+  // roda inteiro, mas o navegador não dispara o evento de conversão.
+  return NextResponse.json({ ok: true, id: record.id, ...(medir ? {} : { medir: false }) });
 }

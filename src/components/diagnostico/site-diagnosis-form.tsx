@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { maskPhone, validateLead, type LeadPayload } from "@/lib/leads/schema";
+import { AVISO_RETORNO, maskPhone, validateLead, type LeadPayload } from "@/lib/leads/schema";
 import { formStartProps, submitLead } from "@/lib/leads/client";
 import { FormUnavailable, SubmitError } from "@/components/forms/submit-error";
 import { whatsappLink } from "@/lib/site";
@@ -65,6 +65,7 @@ export function SiteDiagnosisForm({ available = true }: { /** false enquanto nã
     nome: "",
     empresa: "",
     whatsapp: "",
+    aviso: AVISO_RETORNO.versao,
     email: "",
     site: "",
   });
@@ -235,7 +236,9 @@ export function SiteDiagnosisForm({ available = true }: { /** false enquanto nã
             <Button type="submit" size="lg" arrow className="w-full" disabled={status === "sending" || !available} aria-busy={status === "sending"}>
               {status === "sending" ? "Enviando…" : "Solicitar diagnóstico gratuito"}
             </Button>
-            <p className="text-center text-xs leading-relaxed text-dim">Sem custo e sem compromisso. Usamos seus dados só para falar sobre o diagnóstico.</p>
+            <p className="text-center text-xs leading-relaxed text-dim" data-aviso-retorno={AVISO_RETORNO.versao}>
+              Sem custo e sem compromisso. {AVISO_RETORNO.texto}
+            </p>
           </div>
         </form>
       )}

@@ -86,7 +86,9 @@ export async function submitLead(data: LeadPayload, honeypot?: string): Promise<
   // Conversão medida só aqui: resposta 200 COM o id do lead registrado (envio aceito), uma vez por lead
   // (o id é o eventID). Sem id não há lead registrado (ex.: envio descartado pelo anti-spam), então não há
   // Lead. Uma falha da medição nunca transforma um envio aceito em erro na tela.
-  if (typeof body.id === "string" && body.id) {
+  // Exceção: `medir: false` (o servidor reconheceu um número de controle da própria equipe, usado para validar o
+  // WhatsApp) = envio aceito e gravado, sem conversão.
+  if (typeof body.id === "string" && body.id && body.medir !== false) {
     try {
       trackLead(data.origem, body.id);
     } catch {

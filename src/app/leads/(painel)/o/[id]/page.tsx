@@ -3,13 +3,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  associarAction,
   assumirAction,
   contatoAction,
   negocioAction,
   notaAction,
   proximaAcaoAction,
+  reclassificarEcoAction,
   reenviarAvisoAction,
   reenviarMensagemAction,
+  resolverIncertaAction,
   responsavelAction,
   respostaAction,
   testeAction,
@@ -20,10 +23,14 @@ import { Aviso, btnPrimary, btnQuiet, btnSecondary, Campo, EtapaMarca, input, Pa
 import { exigirUsuario } from "@/lib/crm/auth";
 import { ficha, usuarios } from "@/lib/crm/consultas";
 import { emailCliente, modelos, preencher } from "@/lib/crm/mensagens";
+import { frases, modeloPrimeiroContato, parametrosDoModelo, textoDoModelo, waEnvio } from "@/lib/crm/whatsapp/config";
+import { modeloAprovado } from "@/lib/crm/whatsapp/ycloud";
 import {
   atribuicao,
   CANAIS_MENSAGEM,
   CANAL_ROTULO,
+  CATEGORIA_ROTULO,
+  CATEGORIAS,
   ETAPAS,
   ETAPA_ROTULO,
   fmtDataHora,
@@ -31,8 +38,8 @@ import {
   fmtRelativo,
   fmtWhatsapp,
   paraInputLocal,
-  SERVICOS,
-  type Mensagem,
+  PENDENCIA_ROTULO,
+  rotuloStatus,
 } from "@/lib/crm/tipos";
 
 export const metadata: Metadata = { title: "Oportunidade" };
@@ -56,16 +63,18 @@ const MSG: Record<string, { tom: "ok" | "alerta" | "info"; texto: string }> = {
   "contato-whatsapp": { tom: "alerta", texto: "Contato não alterado: WhatsApp inválido. Informe DDD e número." },
   "contato-email": { tom: "alerta", texto: "Contato não alterado: e-mail inválido." },
   "contato-nome": { tom: "alerta", texto: "Contato não alterado: informe o nome." },
+  associado: { tom: "ok", texto: "Mensagens do WhatsApp associadas a esta oportunidade." },
+  origem: { tom: "ok", texto: "Origem da mensagem corrigida. Mensagens do aplicativo com o mesmo texto passam a ser classificadas do mesmo jeito." },
+  "wa-enviado": { tom: "ok", texto: "Mensagem aceita pelo provedor. Entrega e leitura aparecem na conversa quando o WhatsApp informar." },
+  "wa-incerto": { tom: "alerta", texto: "O provedor não respondeu a tempo: não dá para saber se a mensagem saiu. Confira no aplicativo do WhatsApp antes de escrever de novo." },
+  "wa-falhou": { tom: "alerta", texto: "O WhatsApp não aceitou a mensagem. O motivo está na conversa." },
+  "wa-janela": { tom: "alerta", texto: "A janela de 24 horas fechou: texto livre não é mais aceito. Envie o modelo aprovado ou responda pelo aplicativo." },
+  "wa-modelo": { tom: "alerta", texto: "Não há modelo aprovado disponível para iniciar a conversa. Veja Configurações e Integrações." },
+  "wa-config": { tom: "alerta", texto: "O envio de WhatsApp pelo CRM não está configurado." },
+  "wa-sem-numero": { tom: "alerta", texto: "Este contato não tem WhatsApp cadastrado." },
+  "wa-vazio": { tom: "alerta", texto: "Escreva a mensagem antes de enviar." },
+  "wa-repetido": { tom: "info", texto: "Essa mensagem já tinha sido enviada; nada foi mandado de novo." },
   "contato-duplicado": { tom: "alerta", texto: "Contato não alterado: esse WhatsApp ou e-mail já pertence a outro contato cadastrado. Os registros não são unidos automaticamente." },
-};
-
-const STATUS_MSG: Record<Mensagem["status"], string> = {
-  pendente: "Na fila de envio",
-  enviando: "Enviando",
-  enviada: "Aceita pelo provedor",
-  falhou: "Falhou",
-  cancelada: "Cancelada",
-  registrada: "Registrada à mão",
 };
 
 const DADOS_ROTULO: Record<string, string> = { segmento: "Segmento", problema: "Principal problema", urgencia: "Urgência/prazo", melhorias: "Melhorias", servicos: "Serviços marcados", site: "Site", semSite: "Sem site" };
@@ -91,13 +100,28 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
   const aberta = o.etapa !== "ganho" && o.etapa !== "perdido";
   const dados = Object.entries(o.dados).filter(([, v]) => v !== null && v !== "" && v !== false);
   const utm = Object.entries(o.utm);
-  const autoPendente = mensagens.some((m) => m.automatica && (m.status === "pendente" || m.status === "enviando"));
+  const autoPendente = (!!o.tarefa && ["pendente", "processando"].includes(o.tarefa.status)) || mensagens.some((m) => m.automatica && (m.status === "pendente" || m.status === "enviando"));
+  // WhatsApp pelo CRM: só com as credenciais e o número definidos. A janela de 24 h conta da última mensagem da pessoa.
+  const waCfg = waEnvio();
+  const janelaAte = f.waUltimaEntradaEm ? new Date(f.waUltimaEntradaEm).getTime() + 24 * 3600_000 : 0;
+  let waModelo: { texto: string } | null = null;
+  let waModeloMotivo: string | null = null;
+  if (waCfg.pronto && c.whatsapp) {
+    const m = await modeloPrimeiroContato();
+    if (!m.nome) waModeloMotivo = "Nenhum modelo aprovado escolhido em Configurações.";
+    else {
+      const ap = await modeloAprovado(m.nome, m.idioma);
+      if (!ap.ok) waModeloMotivo = ap.motivo;
+      else waModelo = { texto: textoDoModelo(ap.corpo, parametrosDoModelo(m, { nome: c.nome, empresa: c.empresa, pedido: (await frases())[o.categoria] }), m.nome) };
+    }
+  }
+  const soltas = mensagens.filter((m) => m.oportunidadeId === null && m.direcao === "entrada").length;
 
   return (
     <>
       <p className="text-[0.85rem]">
         <Link href="/leads" className="font-semibold text-sky underline-offset-4 hover:underline">
-          ← Atendimento
+          ← Depende de mim
         </Link>
       </p>
       <header className="mt-3 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
@@ -108,11 +132,14 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
           </h1>
           <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.9rem] text-muted">
             <EtapaMarca etapa={o.etapa} />
-            <span>{o.servico ?? "Serviço não informado"}</span>
+            <span>
+              {CATEGORIA_ROTULO[o.categoria]}
+              {o.servico && o.servico !== CATEGORIA_ROTULO[o.categoria] ? ` · ${o.servico}` : ""}
+            </span>
             <span>
               chegou {fmtRelativo(o.recebidoEm, agora)} ({fmtDataHora(o.recebidoEm)})
             </span>
-            {o.teste && <span className="rounded bg-ink-800 px-1.5 py-0.5 text-[0.72rem] font-semibold uppercase tracking-wide text-dim">teste</span>}
+            {o.teste && <span className="rounded bg-ink-800 px-1.5 py-0.5 text-[0.72rem] font-semibold uppercase tracking-wide text-dim">{o.validacao ? "validação" : "teste"}</span>}
           </p>
         </div>
         {aberta && !o.assumidaEm && (
@@ -125,8 +152,24 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
 
       <div className="mt-4 grid gap-2.5">
         {msg && <Aviso tom={msg.tom}>{msg.texto}</Aviso>}
-        {aberta && o.aguardando === "nos" && <Aviso>O interessado respondeu e aguarda o seu retorno.</Aviso>}
-        {autoPendente && <Aviso>Há uma mensagem automática de primeiro contato na fila. Se você assumir o atendimento antes de ela sair, ela é cancelada.</Aviso>}
+        {aberta && o.aguardando === "nos" && (
+          <Aviso tom={o.pendencia === "pediu_parar" ? "alerta" : "info"}>
+            Depende de você: {(PENDENCIA_ROTULO[o.pendencia ?? "resposta"] ?? PENDENCIA_ROTULO.resposta).toLowerCase()}
+            {o.ultimaEntradaEm ? ` (${fmtRelativo(o.ultimaEntradaEm, agora)})` : ""}.
+          </Aviso>
+        )}
+        {o.contatoBloqueado && <Aviso tom="alerta">Este número pediu para parar de receber mensagens. O CRM não envia mais nada automático para ele; qualquer contato é decisão sua.</Aviso>}
+        {autoPendente && <Aviso>O primeiro contato automático está na fila. Se você assumir o atendimento antes de ele sair, ele é cancelado.</Aviso>}
+        {o.tarefa && ["falhou", "incerta"].includes(o.tarefa.status) && o.tarefa.resultado && <Aviso tom="alerta">Primeiro contato automático: {o.tarefa.resultado}</Aviso>}
+        {soltas > 0 && (
+          <form action={associarAction} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[10px] border border-[#e9c9a8] bg-[#fdf3e7] px-3.5 py-2.5 text-[0.9rem] text-[#7a3a04]">
+            <input type="hidden" name="id" value={o.id} />
+            <span>
+              {soltas} {soltas === 1 ? "mensagem desta pessoa no WhatsApp ainda não está ligada" : "mensagens desta pessoa no WhatsApp ainda não estão ligadas"} a nenhuma oportunidade.
+            </span>
+            <Enviar className={btnSecondary}>Associar a esta oportunidade</Enviar>
+          </form>
+        )}
       </div>
 
       {/* Celular: uma coluna só, com próxima ação e etapa logo depois de "Falar com" (as duas colunas viram
@@ -142,11 +185,24 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
 
           <Painel className="order-2 lg:order-none">
             <Titulo>Falar com {c.nome.split(/\s+/)[0]}</Titulo>
-            <ContatoRapido id={o.id} contato={{ whatsapp: c.whatsapp, email: c.email, instagram: c.instagram }} modelos={prontos} emailPeloCrm={email.pronto ? null : `falta configurar ${email.falta.join(", ")}.`} chave={randomUUID()} />
+            <ContatoRapido
+              id={o.id}
+              contato={{ whatsapp: c.whatsapp, email: c.email, instagram: c.instagram }}
+              modelos={prontos}
+              emailPeloCrm={email.pronto ? null : `falta configurar ${email.falta.join(", ")}.`}
+              chave={randomUUID()}
+              wa={
+                waCfg.pronto && c.whatsapp
+                  ? { janelaAberta: janelaAte > agora, janelaAte: janelaAte > agora ? fmtDataHora(new Date(janelaAte).toISOString()) : null, modelo: waModelo, modeloMotivo: waModeloMotivo }
+                  : null
+              }
+            />
           </Painel>
 
           <Painel className="order-5 lg:order-none">
-            <Titulo nota="Informado por você: o CRM ainda não recebe mensagens sozinho.">Registrar resposta do interessado</Titulo>
+            <Titulo nota={waCfg.pronto ? "Para e-mail, ligação e outros canais. O WhatsApp do número comercial entra sozinho." : "Informado por você: o CRM ainda não recebe mensagens sozinho."}>
+              Registrar resposta do interessado
+            </Titulo>
             <form action={respostaAction} className="grid gap-3 px-4 py-4 sm:grid-cols-[180px_minmax(0,1fr)] sm:px-5">
               <input type="hidden" name="id" value={o.id} />
               <Campo rotulo="Por onde respondeu">
@@ -171,27 +227,69 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
             <Titulo nota={mensagens.length ? `${mensagens.length} ${mensagens.length === 1 ? "registro" : "registros"}` : undefined}>Conversa</Titulo>
             {mensagens.length ? (
               <ol className="grid gap-3 px-4 py-4 sm:px-5">
-                {mensagens.map((m) => (
-                  <li key={m.id} className={`max-w-[92%] rounded-[12px] border px-3.5 py-2.5 ${m.direcao === "saida" ? "ml-auto border-[#cfdcf7] bg-[#f1f5fe]" : "border-line bg-ink-850"}`}>
-                    <p className="text-[0.76rem] font-semibold text-dim">
-                      {m.direcao === "saida" ? (m.automatica ? "Mensagem automática" : (m.usuarioNome ?? "Spolaor")) : c.nome} · {CANAL_ROTULO[m.canal]} · {fmtDataHora(m.enviadoEm ?? m.criadoEm)}
-                    </p>
-                    {m.assunto && <p className="mt-1 text-[0.9rem] font-semibold">{m.assunto}</p>}
-                    <p className="mt-1 whitespace-pre-wrap text-[0.92rem] leading-relaxed">{m.corpo}</p>
-                    <p className={`mt-1.5 text-[0.76rem] ${m.status === "falhou" ? "font-semibold text-ember" : "text-dim"}`}>
-                      {STATUS_MSG[m.status]}
-                      {m.modo === "sistema" && m.tentativas > 1 ? ` · ${m.tentativas} tentativas` : ""}
-                      {m.erro ? ` · ${m.erro}` : ""}
-                    </p>
-                    {m.status === "falhou" && (
-                      <form action={reenviarMensagemAction} className="mt-1">
-                        <input type="hidden" name="id" value={o.id} />
-                        <input type="hidden" name="mensagem" value={m.id} />
-                        <Enviar className={btnQuiet}>Tentar enviar de novo</Enviar>
-                      </form>
-                    )}
-                  </li>
-                ))}
+                {mensagens.map((m) => {
+                  const quem =
+                    m.direcao === "entrada"
+                      ? c.nome
+                      : m.automatica && m.via === "app"
+                        ? "Resposta automática do aplicativo (saudação ou ausência)"
+                        : m.automatica
+                          ? "Mensagem automática do CRM"
+                          : m.via === "app"
+                          ? "Pelo aplicativo do WhatsApp"
+                          : (m.usuarioNome ?? "Spolaor");
+                  const alerta = m.status === "falhou" || m.status === "incerta";
+                  return (
+                    <li
+                      key={m.id}
+                      data-mensagem={m.id}
+                      data-status={m.status}
+                      className={`max-w-[92%] rounded-[12px] border px-3.5 py-2.5 ${m.direcao === "saida" ? "ml-auto border-[#cfdcf7] bg-[#f1f5fe]" : "border-line bg-ink-850"}`}
+                    >
+                      <p className="text-[0.76rem] font-semibold text-dim">
+                        {quem} · {CANAL_ROTULO[m.canal]} · {fmtDataHora(m.em)}
+                        {m.oportunidadeId === null ? " · sem associação" : m.oportunidadeId !== o.id ? " · em outra oportunidade desta pessoa" : ""}
+                      </p>
+                      {m.assunto && <p className="mt-1 text-[0.9rem] font-semibold">{m.assunto}</p>}
+                      <p className="mt-1 whitespace-pre-wrap break-words text-[0.92rem] leading-relaxed">{m.corpo}</p>
+                      <p className={`mt-1.5 text-[0.76rem] ${alerta ? "font-semibold text-ember" : "text-dim"}`}>
+                        {rotuloStatus(m)}
+                        {m.status === "lida" && m.lidaEm ? ` às ${fmtDataHora(m.lidaEm)}` : m.status === "entregue" && m.entregueEm ? ` às ${fmtDataHora(m.entregueEm)}` : ""}
+                        {m.modo === "sistema" && m.canal === "email" && m.tentativas > 1 ? ` · ${m.tentativas} tentativas` : ""}
+                        {m.erro && m.status !== "incerta" ? ` · ${m.erro}` : ""}
+                      </p>
+                      {m.status === "falhou" && m.canal === "email" && (
+                        <form action={reenviarMensagemAction} className="mt-1">
+                          <input type="hidden" name="id" value={o.id} />
+                          <input type="hidden" name="mensagem" value={m.id} />
+                          <Enviar className={btnQuiet}>Tentar enviar de novo</Enviar>
+                        </form>
+                      )}
+                      {/* Quem enviou pelo aplicativo é decidido por evidência; o tempo de resposta não prova nada. Se a
+                          classificação estiver errada, quem atende corrige aqui. */}
+                      {m.via === "app" && m.direcao === "saida" && (
+                        <form action={reclassificarEcoAction} className="mt-1">
+                          <input type="hidden" name="id" value={o.id} />
+                          <input type="hidden" name="mensagem" value={m.id} />
+                          <input type="hidden" name="automatica" value={m.automatica ? "0" : "1"} />
+                          <Enviar className={btnQuiet}>{m.automatica ? "Fui eu que escrevi esta mensagem" : "Não fui eu: é mensagem automática do aplicativo"}</Enviar>
+                        </form>
+                      )}
+                      {m.status === "incerta" && m.oportunidadeId === o.id && (
+                        <form action={resolverIncertaAction} className="mt-1 flex flex-wrap gap-x-2">
+                          <input type="hidden" name="id" value={o.id} />
+                          <input type="hidden" name="mensagem" value={m.id} />
+                          <Enviar name="decisao" value="saiu" className={btnQuiet}>
+                            Conferi no aplicativo: saiu
+                          </Enviar>
+                          <Enviar name="decisao" value="nao_saiu" className={btnQuiet}>
+                            Conferi: não saiu
+                          </Enviar>
+                        </form>
+                      )}
+                    </li>
+                  );
+                })}
               </ol>
             ) : (
               <p className="px-4 py-5 text-[0.92rem] text-dim sm:px-5">Nenhuma mensagem registrada ainda.</p>
@@ -330,14 +428,18 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
                 <Campo rotulo="Site">
                   <input name="site" defaultValue={c.site ?? ""} className={input} />
                 </Campo>
-                <Campo rotulo="Serviço de interesse">
-                  <input name="servico" list="servicos" defaultValue={o.servico ?? ""} className={input} maxLength={200} />
+                <Campo rotulo="Serviço (usado nos filtros)">
+                  <select name="categoria" defaultValue={o.categoria} className={input}>
+                    {CATEGORIAS.map((k) => (
+                      <option key={k} value={k}>
+                        {CATEGORIA_ROTULO[k]}
+                      </option>
+                    ))}
+                  </select>
                 </Campo>
-                <datalist id="servicos">
-                  {SERVICOS.map((s) => (
-                    <option key={s} value={s} />
-                  ))}
-                </datalist>
+                <Campo rotulo="Detalhe do pedido (opcional)">
+                  <input name="servico" defaultValue={o.servico ?? ""} className={input} maxLength={200} />
+                </Campo>
                 <div>
                   <Enviar className={btnSecondary}>Salvar contato</Enviar>
                 </div>
@@ -359,6 +461,14 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
                   {CANAL_ROTULO[o.canal]}
                   {o.origem ? ` · ${o.origem}` : ""}
                   {o.registro === "manual" ? " · cadastrado à mão" : ""}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[0.78rem] font-semibold text-dim">Pedido de retorno pelo WhatsApp</dt>
+                <dd className="text-[0.86rem] leading-snug">
+                  {o.avisoVersao
+                    ? `Registrado: o formulário enviado trazia o texto de retorno pelo WhatsApp (versão ${o.avisoVersao}).`
+                    : "Sem registro (cadastro manual ou formulário anterior ao texto de retorno). O CRM não inicia conversa automática por WhatsApp com este contato."}
                 </dd>
               </div>
               {o.pagina && (
@@ -465,7 +575,7 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
                 {outras.map((x) => (
                   <li key={x.id} className="border-b border-line py-3 text-[0.9rem] last:border-b-0">
                     <Link href={`/leads/o/${x.id}`} className="font-semibold text-sky underline-offset-4 hover:underline">
-                      {x.servico ?? "Serviço não informado"}
+                      {CATEGORIA_ROTULO[x.categoria]}
                     </Link>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-[0.82rem] text-dim">
                       <EtapaMarca etapa={x.etapa} />

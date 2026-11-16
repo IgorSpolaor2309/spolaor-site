@@ -56,6 +56,16 @@ export function origemFromPath(path?: string): LeadOrigem | undefined {
   return isOrigem(seg) ? seg : undefined;
 }
 
+/**
+ * Texto exibido nos formulários junto ao botão de envio. É o pedido de retorno pelo WhatsApp da Spolaor: o CRM
+ * só envia a primeira mensagem automática pelo WhatsApp para envios que trouxerem a versão vigente deste texto.
+ * Ao mudar o texto, mude a versão (data). Envios antigos, sem versão, não ganham autorização retroativa.
+ */
+export const AVISO_RETORNO = {
+  versao: "2026-11-16",
+  texto: "Ao enviar, você pede que a Spolaor Tecnologia responda pelo WhatsApp informado.",
+} as const;
+
 export type LeadPayload = {
   tipo: LeadTipo;
   /** Página de origem do lead (veja LEAD_ORIGENS) */
@@ -82,6 +92,8 @@ export type LeadPayload = {
   urgencia?: string;
   referrer?: string;
   utm?: Record<string, string>;
+  /** Versão do texto AVISO_RETORNO que estava no formulário enviado (preenchida pelo formulário, conferida pelo servidor). */
+  aviso?: string;
 };
 
 export type LeadErrors = Partial<Record<keyof LeadPayload, string>>;
