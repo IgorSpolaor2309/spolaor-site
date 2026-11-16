@@ -1,11 +1,23 @@
 import type { Metadata } from "next";
-import { automacaoAction, modeloAction, modeloWhatsappAction, nomeAction } from "@/app/leads/actions";
+import { automacaoAction, limitesAction, modeloAction, modeloWhatsappAction, nomeAction, numerosControleAction, textosAutomaticosAction } from "@/app/leads/actions";
 import { Enviar } from "@/components/crm/enviar";
 import { Aviso, btnPrimary, btnQuiet, btnSecondary, Campo, input, Painel, Titulo } from "@/components/crm/ui";
 import { exigirUsuario } from "@/lib/crm/auth";
 import { emailCliente, modelos, MODELOS_PADRAO } from "@/lib/crm/mensagens";
-import { CATEGORIA_ROTULO, CATEGORIAS, fmtDataHora } from "@/lib/crm/tipos";
-import { canalAutomacao, frases, MODELO_SUGERIDO, modeloPrimeiroContato, VARIAVEIS_MODELO, waEnvio } from "@/lib/crm/whatsapp/config";
+import { CATEGORIA_ROTULO, CATEGORIAS, fmtDataHora, fmtWhatsapp } from "@/lib/crm/tipos";
+import {
+  canalAutomacao,
+  frases,
+  LIMITES_FAIXA,
+  LIMITES_PADRAO,
+  limitesAutomacao,
+  MODELO_SUGERIDO,
+  modeloPrimeiroContato,
+  numerosControle,
+  textosAutomaticosApp,
+  VARIAVEIS_MODELO,
+  waEnvio,
+} from "@/lib/crm/whatsapp/config";
 import { listarModelos } from "@/lib/crm/whatsapp/ycloud";
 
 export const metadata: Metadata = { title: "Configurações" };
@@ -20,6 +32,11 @@ const MSG: Record<string, { tom: "ok" | "alerta"; texto: string }> = {
   "wa-modelo": { tom: "alerta", texto: "Não dá para ligar: escolha abaixo um modelo que esteja aprovado pela Meta." },
   "wa-nome": { tom: "alerta", texto: "Nome de modelo inválido: use o nome exato cadastrado no provedor (minúsculas, números e sublinhado)." },
   "wa-salvo": { tom: "ok", texto: "Modelo e frases do WhatsApp salvos." },
+  limites: { tom: "ok", texto: "Limites do envio automático salvos." },
+  "limites-invalidos": { tom: "alerta", texto: "Limites não alterados: informe números inteiros dentro das faixas indicadas." },
+  textos: { tom: "ok", texto: "Mensagens automáticas do aplicativo salvas." },
+  controle: { tom: "ok", texto: "Números de controle salvos." },
+  "controle-invalido": { tom: "alerta", texto: "Algum número não foi reconhecido e ficou de fora. Informe DDD e número, um por linha." },
 };
 const CANAIS = [
   { v: "desligado", rotulo: "Desligado", texto: "Nenhuma mensagem automática. Todo contato novo aparece em “Depende de mim”." },
@@ -32,7 +49,16 @@ export default async function ConfiguracoesPage({ searchParams }: { searchParams
   const usuario = await exigirUsuario();
   const sp = await searchParams;
   const wa = waEnvio();
-  const [mods, canal, modeloWa, fr, lista] = await Promise.all([modelos(), canalAutomacao(), modeloPrimeiroContato(), frases(), wa.pronto ? listarModelos() : null]);
+  const [mods, canal, modeloWa, fr, lista, limites, autoApp, controle] = await Promise.all([
+    modelos(),
+    canalAutomacao(),
+    modeloPrimeiroContato(),
+    frases(),
+    wa.pronto ? listarModelos() : null,
+    limitesAutomacao(),
+    textosAutomaticosApp(),
+    numerosControle(),
+  ]);
   const email = emailCliente();
   const msg = typeof sp.msg === "string" ? MSG[sp.msg] : undefined;
   const itens = lista ? (lista.ok ? lista.itens : (lista.antigo?.itens ?? [])) : [];
@@ -51,8 +77,8 @@ export default async function ConfiguracoesPage({ searchParams }: { searchParams
         <div className="grid gap-3 px-4 py-4 sm:px-5">
           <p className="max-w-3xl text-[0.9rem] leading-relaxed text-muted">
             Vale só para formulários do site, uma mensagem por oportunidade, por um canal só (a mesma recepção nunca sai por WhatsApp e por e-mail). A tarefa é gravada
-            junto com o contato e sai em seguida. Não sai para envios de teste, para quem já recebeu a recepção ou já está em conversa, depois que alguém assumiu o
-            atendimento, depois que a pessoa respondeu, nem para contatos com mais de 12 horas. Ligar não dispara nada para quem chegou antes.
+            junto com o contato e sai em seguida. Não sai para envios de teste, depois que alguém assumiu o atendimento, depois que a pessoa respondeu, nem fora dos
+            dois limites de tempo abaixo. Ligar não dispara nada para quem chegou antes.
           </p>
           <form action={automacaoAction} className="grid gap-2.5">
             <div role="radiogroup" aria-label="Canal do primeiro contato" className="grid gap-2 sm:grid-cols-3">
@@ -73,6 +99,26 @@ export default async function ConfiguracoesPage({ searchParams }: { searchParams
           {!wa.pronto && <p className="text-[0.84rem] text-dim">WhatsApp indisponível: falta configurar no servidor {wa.falta.join(" e ")}.</p>}
           {!email.pronto && <p className="text-[0.84rem] text-dim">E-mail ao interessado indisponível: falta {email.falta.join(", ")}.</p>}
         </div>
+        <form action={limitesAction} className="grid gap-3 border-t border-line px-4 py-4 sm:px-5" id="limites">
+          <h3 className="text-[0.95rem] font-semibold">Limites de tempo do envio automático</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Campo
+              rotulo="Idade máxima do contato (horas)"
+              dica={`Padrão ${LIMITES_PADRAO.horasMaximas}; de ${LIMITES_FAIXA.horasMaximas[0]} a ${LIMITES_FAIXA.horasMaximas[1]}. Conta da chegada do formulário até a hora em que a tarefa roda. Normalmente são segundos; o limite só age quando a tarefa atrasa (fila ou banco fora do ar) e é o que impede disparo retroativo. Passado o limite, nada é enviado e o contato fica como novo sem primeiro atendimento.`}
+            >
+              <input name="horasMaximas" type="number" inputMode="numeric" min={LIMITES_FAIXA.horasMaximas[0]} max={LIMITES_FAIXA.horasMaximas[1]} step={1} required defaultValue={limites.horasMaximas} className={input} />
+            </Campo>
+            <Campo
+              rotulo="Intervalo entre recepções para a mesma pessoa (horas)"
+              dica={`Padrão ${LIMITES_PADRAO.horasEntreRecepcoes}; de ${LIMITES_FAIXA.horasEntreRecepcoes[0]} a ${LIMITES_FAIXA.horasEntreRecepcoes[1]}. Conta da recepção automática anterior (do CRM ou do aplicativo) até o novo pedido. Dentro do intervalo a pessoa não recebe outra recepção, mesmo pedindo outro serviço: o novo pedido vai para “Depende de mim”. Quem já está em conversa (respondeu ou foi atendido) nunca recebe outra, com qualquer intervalo.`}
+            >
+              <input name="horasEntreRecepcoes" type="number" inputMode="numeric" min={LIMITES_FAIXA.horasEntreRecepcoes[0]} max={LIMITES_FAIXA.horasEntreRecepcoes[1]} step={1} required defaultValue={limites.horasEntreRecepcoes} className={input} />
+            </Campo>
+          </div>
+          <div>
+            <Enviar className={btnSecondary}>Salvar limites</Enviar>
+          </div>
+        </form>
       </Painel>
 
       <Painel className="mt-5" id="whatsapp">
@@ -131,6 +177,57 @@ export default async function ConfiguracoesPage({ searchParams }: { searchParams
           </div>
           <div>
             <Enviar className={btnSecondary}>Salvar modelo e frases</Enviar>
+          </div>
+        </form>
+      </Painel>
+
+      <Painel className="mt-5" id="aplicativo">
+        <Titulo nota={autoApp.saudacao || autoApp.ausencia || autoApp.outras.length ? "Textos cadastrados" : "Nenhum texto cadastrado"}>WhatsApp: mensagens automáticas do aplicativo</Titulo>
+        <form action={textosAutomaticosAction} className="grid gap-4 px-4 py-4 sm:px-5">
+          <p className="max-w-3xl text-[0.9rem] leading-relaxed text-muted">
+            O recomendado é <strong className="text-fg">desligar</strong> a mensagem de saudação e a de ausência no WhatsApp Business, para ninguém receber duas recepções. Se
+            alguma ficar ligada, cole o texto exato aqui. Uma resposta sincronizada do aplicativo só é tratada como automática quando o texto dela é igual a um destes;
+            qualquer outra é tratada como escrita por uma pessoa. O tempo de resposta não entra na conta: resposta rápida não prova automação, nem resposta demorada prova
+            que foi alguém. Se o CRM classificar errado, corrija na ficha (“Não fui eu”) e o texto passa a ser reconhecido.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Campo rotulo="Mensagem de saudação (texto exato)">
+              <textarea name="saudacao" defaultValue={autoApp.saudacao} maxLength={1000} className={`${input} min-h-[90px]`} />
+            </Campo>
+            <Campo rotulo="Mensagem de ausência (texto exato)">
+              <textarea name="ausencia" defaultValue={autoApp.ausencia} maxLength={1000} className={`${input} min-h-[90px]`} />
+            </Campo>
+          </div>
+          {autoApp.outras.length > 0 && (
+            <fieldset className="grid gap-2">
+              <legend className="mb-1 text-[0.8rem] font-semibold text-muted">Aprendidas pela correção na ficha (marque para esquecer)</legend>
+              {autoApp.outras.map((t, i) => (
+                <label key={i} className="flex items-start gap-2 text-[0.88rem] leading-snug">
+                  <input type="checkbox" name="remover" value={i} className="mt-1 h-4 w-4 accent-royal" />
+                  <span className="[overflow-wrap:anywhere]">{t}</span>
+                </label>
+              ))}
+            </fieldset>
+          )}
+          <div>
+            <Enviar className={btnSecondary}>Salvar mensagens automáticas</Enviar>
+          </div>
+        </form>
+      </Painel>
+
+      <Painel className="mt-5" id="controle">
+        <Titulo nota={controle.length ? controle.map((n) => fmtWhatsapp(n)).join(" · ") : "Nenhum cadastrado"}>WhatsApp: números de controle</Titulo>
+        <form action={numerosControleAction} className="grid gap-3 px-4 py-4 sm:px-5">
+          <p className="max-w-3xl text-[0.9rem] leading-relaxed text-muted">
+            Telefones da própria equipe usados para validar o WhatsApp (até 5). Para eles o formulário do site <strong className="text-fg">não gera conversão</strong> nos
+            anúncios, o contato fica fora dos indicadores e o primeiro contato automático roda mesmo com a automação desligada para os demais. Nunca cadastre aqui o
+            número de um cliente. A validação é feita em Integrações.
+          </p>
+          <Campo rotulo="Números de controle (um por linha, com DDD)">
+            <textarea name="numeros" defaultValue={controle.map((n) => fmtWhatsapp(n)).join("\n")} className={`${input} min-h-[80px]`} />
+          </Campo>
+          <div>
+            <Enviar className={btnSecondary}>Salvar números de controle</Enviar>
           </div>
         </form>
       </Painel>

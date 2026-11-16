@@ -61,8 +61,9 @@ export async function POST(req: Request) {
     userAgent: req.headers.get("user-agent")?.slice(0, 300) ?? undefined,
   };
 
+  let medir = true;
   try {
-    await processLead(record);
+    medir = (await processLead(record)).medir;
   } catch (err) {
     if (err instanceof NoLeadDestinationError) {
       console.error("[lead] recebido sem destino configurado; nada foi salvo");
@@ -72,5 +73,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "falha_ao_registrar" }, { status: 502 });
   }
 
-  return NextResponse.json({ ok: true, id: record.id });
+  // medir: false só para números de controle cadastrados no CRM (validação do WhatsApp): o lead é gravado e o fluxo
+  // roda inteiro, mas o navegador não dispara o evento de conversão.
+  return NextResponse.json({ ok: true, id: record.id, ...(medir ? {} : { medir: false }) });
 }

@@ -123,6 +123,6 @@ Nenhuma é obrigatória além das que o site já tem em produção (`DATABASE_UR
 
 1. **Recebimento de e-mail.** Caminho mais simples: encaminhador na caixa comercial (cPanel) para um endereço de recebimento do Resend, que avisa o site por webhook. Alternativa: leitura IMAP periódica. Precisa da escolha e do acesso.
 2. **Leitura de campanhas da Meta.** Token `ads_read` de um usuário de sistema do Gerenciador de Negócios; lê gasto por campanha, conjunto e anúncio. Só leitura.
-3. **WhatsApp oficial.** Decidido: número comercial próprio, com coexistência, pela YCloud. Código pronto; falta a ativação descrita em `docs/CRM-WHATSAPP.md`.
+3. **WhatsApp oficial.** Decidido: número comercial próprio, com coexistência, pela YCloud. Código pronto; falta a ativação descrita em `docs/CRM-WHATSAPP.md` (seções 9 e 10).
 4. **Instagram Direct.** Aplicativo da Meta com permissão de mensagens, autorizado pela conta profissional.
 5. Compras do Atendimento IA e do pacote de site como oportunidades no CRM (hoje ficam só nas tabelas próprias).

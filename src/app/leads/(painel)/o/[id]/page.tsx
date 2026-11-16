@@ -9,6 +9,7 @@ import {
   negocioAction,
   notaAction,
   proximaAcaoAction,
+  reclassificarEcoAction,
   reenviarAvisoAction,
   reenviarMensagemAction,
   resolverIncertaAction,
@@ -63,6 +64,7 @@ const MSG: Record<string, { tom: "ok" | "alerta" | "info"; texto: string }> = {
   "contato-email": { tom: "alerta", texto: "Contato não alterado: e-mail inválido." },
   "contato-nome": { tom: "alerta", texto: "Contato não alterado: informe o nome." },
   associado: { tom: "ok", texto: "Mensagens do WhatsApp associadas a esta oportunidade." },
+  origem: { tom: "ok", texto: "Origem da mensagem corrigida. Mensagens do aplicativo com o mesmo texto passam a ser classificadas do mesmo jeito." },
   "wa-enviado": { tom: "ok", texto: "Mensagem aceita pelo provedor. Entrega e leitura aparecem na conversa quando o WhatsApp informar." },
   "wa-incerto": { tom: "alerta", texto: "O provedor não respondeu a tempo: não dá para saber se a mensagem saiu. Confira no aplicativo do WhatsApp antes de escrever de novo." },
   "wa-falhou": { tom: "alerta", texto: "O WhatsApp não aceitou a mensagem. O motivo está na conversa." },
@@ -137,7 +139,7 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
             <span>
               chegou {fmtRelativo(o.recebidoEm, agora)} ({fmtDataHora(o.recebidoEm)})
             </span>
-            {o.teste && <span className="rounded bg-ink-800 px-1.5 py-0.5 text-[0.72rem] font-semibold uppercase tracking-wide text-dim">teste</span>}
+            {o.teste && <span className="rounded bg-ink-800 px-1.5 py-0.5 text-[0.72rem] font-semibold uppercase tracking-wide text-dim">{o.validacao ? "validação" : "teste"}</span>}
           </p>
         </div>
         {aberta && !o.assumidaEm && (
@@ -261,6 +263,16 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
                           <input type="hidden" name="id" value={o.id} />
                           <input type="hidden" name="mensagem" value={m.id} />
                           <Enviar className={btnQuiet}>Tentar enviar de novo</Enviar>
+                        </form>
+                      )}
+                      {/* Quem enviou pelo aplicativo é decidido por evidência; o tempo de resposta não prova nada. Se a
+                          classificação estiver errada, quem atende corrige aqui. */}
+                      {m.via === "app" && m.direcao === "saida" && (
+                        <form action={reclassificarEcoAction} className="mt-1">
+                          <input type="hidden" name="id" value={o.id} />
+                          <input type="hidden" name="mensagem" value={m.id} />
+                          <input type="hidden" name="automatica" value={m.automatica ? "0" : "1"} />
+                          <Enviar className={btnQuiet}>{m.automatica ? "Fui eu que escrevi esta mensagem" : "Não fui eu: é mensagem automática do aplicativo"}</Enviar>
                         </form>
                       )}
                       {m.status === "incerta" && m.oportunidadeId === o.id && (

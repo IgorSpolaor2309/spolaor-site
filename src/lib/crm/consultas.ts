@@ -59,6 +59,7 @@ function mapOp(r: Row): Oportunidade {
     motivoPerda: s("motivo_perda"),
     perdidoEm: d("perdido_em"),
     teste: r.teste as boolean,
+    validacao: r.validacao === true,
     recebidoEm: d("recebido_em")!,
     criadoEm: d("criado_em")!,
     atualizadoEm: d("atualizado_em")!,
@@ -142,12 +143,12 @@ const ms = (i: string | null) => (i ? new Date(i).getTime() : 0);
 export async function fila(categoria?: Categoria): Promise<Fila> {
   const sql = await db();
   const cat = categoria ? sql`and o.categoria = ${categoria}` : sql``;
-  const rows = (await sql`${base(sql)} where o.teste = false and o.etapa in ${sql(ETAPAS_ABERTAS)} ${cat} order by o.recebido_em desc limit 500`).map((r) => mapOp(r as Row));
+  const rows = (await sql`${base(sql)} where (o.teste = false or o.validacao) and o.etapa in ${sql(ETAPAS_ABERTAS)} ${cat} order by o.recebido_em desc limit 500`).map((r) => mapOp(r as Row));
   // Falha de comunicação também aparece para oportunidades já encerradas: precisa de ação mesmo assim.
   const fechadasComFalha = (await sql`${base(sql)} where o.teste = false and o.etapa not in ${sql(ETAPAS_ABERTAS)} ${cat} and (
       exists (select 1 from crm_envios e where e.oportunidade_id = o.id and e.aviso_status = 'falhou')
       or exists (select 1 from crm_mensagens m where m.oportunidade_id = o.id and m.status in ('falhou', 'incerta'))) limit 50`).map((r) => mapOp(r as Row));
-  const [{ n: testesOcultos }] = await sql<{ n: number }[]>`select count(*)::int as n from crm_oportunidades where teste and etapa in ${sql(ETAPAS_ABERTAS)}`;
+  const [{ n: testesOcultos }] = await sql<{ n: number }[]>`select count(*)::int as n from crm_oportunidades where teste and not validacao and etapa in ${sql(ETAPAS_ABERTAS)}`;
   const soltas = await sql`
     select c.id, c.nome, c.whatsapp, count(*)::int as mensagens, min(coalesce(m.ocorrida_em, m.criado_em)) as desde,
       (array_agg(m.corpo order by coalesce(m.ocorrida_em, m.criado_em) desc))[1] as ultima,

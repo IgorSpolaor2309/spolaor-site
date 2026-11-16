@@ -317,8 +317,7 @@ try {
 
   /* ───────────────────────────── resposta humana ───────────────────────────── */
   secao("Resposta humana: pelo aplicativo e pelo CRM");
-  await espera(5300); // uma pessoa leva mais de 5 s para responder; menos que isso é tratado como resposta automática do aplicativo
-  const tEco = new Date().toISOString();
+  const tEco = new Date().toISOString(); // logo depois da mensagem da pessoa: o intervalo não entra na classificação
   await eco(a.fone, "Pode sim, Marina. Combinado às 15h.", { em: tEco });
   oA = await opId(a.o.id);
   const ultima = (await msgs(a.o.id)).find((x) => x.corpo === "Pode sim, Marina. Combinado às 15h.");
@@ -499,7 +498,7 @@ try {
   const t2 = await tarefaEm(o2.id, "cancelada");
   const o2b = await opId(o2.id);
   ok(o2.id !== p1.o.id && o2.contato_id === p1.o.contato_id && o2.categoria === "automacao", "mesma pessoa, outro serviço: mesma pessoa, oportunidade nova (categoria “automacao”)");
-  ok(enviosPara(p1.fone).length === 1 && /já recebeu a recepção/.test(t2.resultado), "a pessoa NÃO recebe uma segunda recepção automática pelo segundo serviço");
+  ok(enviosPara(p1.fone).length === 1 && /já recebeu uma recepção automática nas últimas 72 horas/.test(t2.resultado), "a pessoa NÃO recebe uma segunda recepção automática pelo segundo serviço");
   ok(o2b.aguardando === "nos" && o2b.pendencia === "novo_pedido", "o segundo pedido vai direto para “Depende de mim” (novo pedido de quem já está em conversa)");
   // resposta sem contexto: só a 1ª tem conversa → vai para ela
   await recebida(p1.fone, "Recebi a mensagem de vocês, obrigada");
@@ -577,13 +576,50 @@ try {
   await recebida(mid.fone, "Quero o orçamento", { tipo: "button", conteudo: { button: { text: "Quero o orçamento", payload: "orcamento" } }, em: new Date(Date.now() + 150_000).toISOString() });
   ok((await opId(mid.o.id)).aguardando === "nos" && (await msgs(mid.o.id)).at(-1).corpo === "Quero o orçamento", "resposta por botão vira pendência humana com o texto do botão");
 
-  // saudação automática do aplicativo
-  const saud = await novoLead({ nome: "Júlia Antunes" });
-  const tS = Date.now() + 300_000;
-  await recebida(saud.fone, "Oi, tudo bem?", { em: new Date(tS).toISOString() });
-  await eco(saud.fone, "Olá! Obrigado por entrar em contato. Em breve retornamos.", { em: new Date(tS + 2000).toISOString() });
-  const oSaud = await opId(saud.o.id);
-  ok(oSaud.aguardando === "nos" && oSaud.assumida_em === null && (await msgs(saud.o.id)).at(-1).automatica === true, "mensagem de saudação do aplicativo (2 s depois da pessoa) não é tratada como resposta humana: a pendência continua");
+  // Quem enviou pelo aplicativo é decidido por EVIDÊNCIA (identificadores e texto cadastrado), nunca pelo tempo.
+  const rap = await novoLead({ nome: "Júlia Antunes" });
+  const tR = Date.now();
+  await recebida(rap.fone, "Oi, tudo bem?", { em: new Date(tR).toISOString() });
+  await eco(rap.fone, "Oi, Júlia! Tudo sim. Já te respondo.", { em: new Date(tR + 1000).toISOString() });
+  const oRap = await opId(rap.o.id);
+  const mRap = (await msgs(rap.o.id)).find((x) => x.corpo.startsWith("Oi, Júlia!"));
+  ok(oRap.aguardando === "cliente" && oRap.assumida_em && mRap.automatica === false, "resposta pelo aplicativo 1 segundo depois da pessoa, com texto não cadastrado: é humana (resposta rápida NÃO prova automação)");
+
+  const SAUDACAO = "Olá! Obrigado por entrar em contato com a Spolaor Tecnologia. Em breve retornamos.";
+  await page.goto(`${B}/leads/configuracoes`);
+  await page.fill('textarea[name="saudacao"]', SAUDACAO);
+  await acao(page, 'button:has-text("Salvar mensagens automáticas")');
+  ok((await sql`select valor from crm_config where chave = 'whatsapp:textos-automaticos'`)[0].valor.saudacao === SAUDACAO, "texto da saudação do aplicativo cadastrado em Configurações");
+  const lento = await novoLead({ nome: "Lorena Paixão" });
+  await recebida(lento.fone, "Boa tarde, recebi a mensagem", { em: ha(200) });
+  await eco(lento.fone, "  olá! obrigado por entrar em contato com a SPOLAOR Tecnologia.   Em breve retornamos. ", { em: ha(80) });
+  const oLento = await opId(lento.o.id);
+  const mLento = (await msgs(lento.o.id)).find((x) => x.via === "app");
+  ok(oLento.aguardando === "nos" && oLento.assumida_em === null && mLento.automatica === true, "resposta do aplicativo 2 minutos depois, com o texto da saudação cadastrada: é automática (demora NÃO prova que foi uma pessoa); a pendência continua");
+  const rapAuto = await novoLead({ nome: "Luana Peixoto" });
+  const tA = Date.now();
+  await recebida(rapAuto.fone, "Oi", { em: new Date(tA).toISOString() });
+  await eco(rapAuto.fone, SAUDACAO, { em: new Date(tA + 800).toISOString() });
+  ok((await opId(rapAuto.o.id)).aguardando === "nos", "a mesma saudação cadastrada, em menos de 1 segundo, também é automática: o que decide é o texto, não o intervalo");
+
+  // saudação NÃO cadastrada entra como humana (regra padrão); quem atende corrige na ficha e o CRM aprende o texto
+  const AUSENCIA = "No momento não estamos disponíveis. Responderemos assim que possível.";
+  const corr = await novoLead({ nome: "Mateus Linhares" });
+  await recebida(corr.fone, "Oi, vocês atendem sábado?", { em: ha(120) });
+  await eco(corr.fone, AUSENCIA, { em: ha(119) });
+  ok((await opId(corr.o.id)).aguardando === "cliente", "mensagem automática do aplicativo com texto não cadastrado entra como humana (sem evidência, o CRM não adivinha pelo tempo)");
+  await page.goto(`${B}/leads/o/${corr.o.id}`);
+  await acao(page, 'button:has-text("Não fui eu: é mensagem automática do aplicativo")');
+  const oCorr = await opId(corr.o.id);
+  ok(oCorr.aguardando === "nos" && oCorr.pendencia === "resposta" && (await msgs(corr.o.id)).find((x) => x.via === "app").automatica === true, "correção na ficha (“Não fui eu”): a mensagem vira automática do aplicativo e a pendência volta para “Depende de mim”");
+  ok((await sql`select valor from crm_config where chave = 'whatsapp:textos-automaticos'`)[0].valor.outras.includes(AUSENCIA), "o texto corrigido fica cadastrado como mensagem automática do aplicativo");
+  const dep = await novoLead({ nome: "Nicole Brandão" });
+  await recebida(dep.fone, "Olá", { em: ha(60) });
+  await eco(dep.fone, AUSENCIA, { em: ha(30) });
+  ok((await opId(dep.o.id)).aguardando === "nos" && (await opId(dep.o.id)).assumida_em === null, "na vez seguinte o mesmo texto já é reconhecido como automático, sem intervenção");
+  await page.goto(`${B}/leads/o/${dep.o.id}`);
+  await acao(page, 'button:has-text("Fui eu que escrevi esta mensagem")');
+  ok((await opId(dep.o.id)).aguardando === "cliente" && !(await sql`select valor from crm_config where chave = 'whatsapp:textos-automaticos'`)[0].valor.outras.includes(AUSENCIA), "“Fui eu” faz o inverso: conta como resposta humana e o texto deixa de ser tratado como automático");
 
   // histórico e eco fora do CRM
   const cAntes = (await sql`select count(*)::int as n from crm_contatos`)[0].n;
@@ -608,13 +644,6 @@ try {
   ok(avisoErrado.o.aviso_versao === null && enviosPara(avisoErrado.fone).length === 0, "versão de texto que o servidor não reconhece não vale como autorização");
   const teste = await novoLead({ nome: "TESTE formulário" }, ["cancelada"]);
   ok(/teste/i.test(teste.t.resultado) && enviosPara(teste.fone).length === 0, "envio de teste não recebe mensagem automática");
-  qs.modo = "some";
-  const velho = await novoLead({ nome: "Marcos Vieira" }, ["pendente"]);
-  await sql`update crm_oportunidades set recebido_em = now() - interval '13 hours' where id = ${velho.o.id}`;
-  await tarefaHttp(velho.t.id);
-  await espera(400);
-  qs.modo = "ok";
-  ok(/mais de 12 horas/.test((await tarefa(velho.o.id)).resultado) && enviosPara(velho.fone).length === 0, "tarefa de um contato com mais de 12 horas não envia (nada de disparo retroativo)");
   // canal e-mail: nunca os dois
   await page.goto(`${B}/leads/configuracoes`);
   await page.check('input[name="canal"][value="email"]');
@@ -636,6 +665,165 @@ try {
   await espera(500);
   const [oMan] = await sql`select o.* from crm_oportunidades o join crm_contatos c on c.id = o.contato_id where c.nome = 'Pedro Manual'`;
   ok(oMan.categoria === "sistemas" && (await tarefa(oMan.id)) === undefined && yc.envios.length === manualAntes, "cadastro manual: categoria escolhida, nenhuma tarefa e nenhuma mensagem automática");
+
+  /* ───────────────────────────── limites de tempo ───────────────────────────── */
+  secao("Limites de tempo: idade do contato (12 h) e intervalo entre recepções (72 h)");
+  /** Segundo pedido da mesma pessoa, por outro serviço. */
+  const outroPedido = async (base, origem) => {
+    const l = lead({ nome: base.l.nome, origem, pagina: `/${origem}`, whatsapp: base.l.whatsapp, email: base.l.email });
+    pessoa--;
+    const r = await post(l);
+    const o = await op(r.body.id);
+    const t = await tarefaEm(o.id, "cancelada", "concluida", "falhou");
+    return { o: await opId(o.id), t };
+  };
+  const envelhecerRecepcao = (contatoId, horas) => sql`update crm_mensagens set criado_em = now() - ${`${horas} hours`}::interval, ocorrida_em = now() - ${`${horas} hours`}::interval where contato_id = ${contatoId} and automatica`;
+  qs.modo = "some";
+  const h11 = await novoLead({ nome: "Marcos Vieira" }, ["pendente"]);
+  await sql`update crm_oportunidades set recebido_em = now() - interval '11 hours 50 minutes' where id = ${h11.o.id}`;
+  await tarefaHttp(h11.t.id);
+  await tarefaEm(h11.o.id, "concluida");
+  ok(enviosPara(h11.fone).length === 1, "12 h, borda de dentro: tarefa atrasada de um contato com 11 h 50 min ainda envia");
+  const h12 = await novoLead({ nome: "Noemi Sales" }, ["pendente"]);
+  await sql`update crm_oportunidades set recebido_em = now() - interval '12 hours 10 minutes' where id = ${h12.o.id}`;
+  await tarefaHttp(h12.t.id);
+  const t12 = await tarefaEm(h12.o.id, "cancelada");
+  ok(/mais de 12 horas/.test(t12.resultado) && enviosPara(h12.fone).length === 0 && (await opId(h12.o.id)).etapa === "novo", "12 h, borda de fora: com 12 h 10 min nada é enviado e o contato segue como novo sem primeiro atendimento");
+  await page.goto(`${B}/leads`);
+  ok((await page.locator(`#manual [data-oportunidade="${h12.o.id}"]`).count()) === 1, "o contato que passou do limite aparece em “Depende de mim” para atendimento manual");
+  qs.modo = "ok";
+
+  const r71 = await novoLead({ nome: "Priscila Nunes" });
+  await envelhecerRecepcao(r71.o.contato_id, 71);
+  const r71b = await outroPedido(r71, "lojas-virtuais");
+  ok(r71b.t.status === "cancelada" && /nas últimas 72 horas/.test(r71b.t.resultado) && enviosPara(r71.fone).length === 1 && r71b.o.pendencia === "novo_pedido", "72 h, dentro: novo pedido de outro serviço 71 h depois da recepção NÃO gera outra recepção e vai para “Depende de mim”");
+  const r73 = await novoLead({ nome: "Quésia Amaral" });
+  await envelhecerRecepcao(r73.o.contato_id, 73);
+  const r73b = await outroPedido(r73, "lojas-virtuais");
+  ok(r73b.t.status === "concluida" && enviosPara(r73.fone).length === 2 && (await opId(r73.o.id)).etapa === "aguardando_resposta", "72 h, fora: 73 h depois, sem resposta da pessoa, o novo pedido recebe nova recepção (uma recepção sem resposta não é “conversa”)");
+  const conv = await novoLead({ nome: "Raquel Torres" });
+  await recebida(conv.fone, "Oi, quero saber mais");
+  await envelhecerRecepcao(conv.o.contato_id, 100);
+  const convB = await outroPedido(conv, "lojas-virtuais");
+  ok(convB.t.status === "cancelada" && /já está em conversa/.test(convB.t.resultado) && enviosPara(conv.fone).length === 1 && convB.o.pendencia === "novo_pedido", "quem já está em conversa (respondeu) não recebe outra recepção nem depois de 100 h: o novo pedido vai para atendimento humano");
+  const falhaAnt = await novoLead({ nome: "Sabrina Couto" });
+  await sql`update crm_mensagens set status = 'falhou' where oportunidade_id = ${falhaAnt.o.id} and automatica`;
+  const falhaB = await outroPedido(falhaAnt, "lojas-virtuais");
+  ok(falhaB.t.status === "concluida" && enviosPara(falhaAnt.fone).length === 2, "recepção anterior que FALHOU não conta para o intervalo: o novo pedido recebe a recepção");
+
+  // limites configuráveis, dentro de faixas
+  await page.goto(`${B}/leads/configuracoes`);
+  ok(/Padrão 12; de 1 a 48/.test(await texto(page, "#limites")) && /Padrão 72; de 1 a 720/.test(await texto(page, "#limites")), "configurações mostram os dois limites, o padrão, a faixa e o que cada um mede");
+  await page.fill('#limites input[name="horasMaximas"]', "2");
+  await page.fill('#limites input[name="horasEntreRecepcoes"]', "24");
+  await acao(page, 'button:has-text("Salvar limites")');
+  qs.modo = "some";
+  const h3 = await novoLead({ nome: "Tânia Borges" }, ["pendente"]);
+  await sql`update crm_oportunidades set recebido_em = now() - interval '3 hours' where id = ${h3.o.id}`;
+  await tarefaHttp(h3.t.id);
+  ok(/mais de 2 horas/.test((await tarefaEm(h3.o.id, "cancelada")).resultado) && enviosPara(h3.fone).length === 0, "idade máxima alterada para 2 h: contato com 3 h não recebe");
+  qs.modo = "ok";
+  const r25 = await novoLead({ nome: "Úrsula Dias" });
+  await envelhecerRecepcao(r25.o.contato_id, 25);
+  ok((await outroPedido(r25, "lojas-virtuais")).t.status === "concluida" && enviosPara(r25.fone).length === 2, "intervalo alterado para 24 h: 25 h depois o novo pedido já recebe recepção");
+  await page.goto(`${B}/leads/configuracoes`);
+  await page.evaluate(() => (document.querySelector("#limites").noValidate = true));
+  await page.fill('#limites input[name="horasMaximas"]', "0");
+  await page.fill('#limites input[name="horasEntreRecepcoes"]', "9999");
+  await acao(page, 'button:has-text("Salvar limites")');
+  const limSalvo = (await sql`select valor from crm_config where chave = 'automacao:limites'`)[0].valor;
+  ok(/Limites não alterados/.test(await texto(page)) && limSalvo.horasMaximas === 2 && limSalvo.horasEntreRecepcoes === 24, "valor fora da faixa é recusado pelo servidor, sem ajuste silencioso");
+  await page.fill('#limites input[name="horasMaximas"]', "12");
+  await page.fill('#limites input[name="horasEntreRecepcoes"]', "72");
+  await acao(page, 'button:has-text("Salvar limites")');
+
+  /* ───────────────────────────── validação com número de controle ───────────────────────────── */
+  secao("Validação com número de controle, sem conversão publicitária");
+  const CONTROLE = "5547988000001";
+  await page.goto(`${B}/leads/configuracoes`);
+  await page.fill('textarea[name="numeros"]', "(47) 98800-0001\nnão é número");
+  await acao(page, 'button:has-text("Salvar números de controle")');
+  ok(/Algum número não foi reconhecido/.test(await texto(page)) && JSON.stringify((await sql`select valor from crm_config where chave = 'whatsapp:numeros-controle'`)[0].valor.numeros) === JSON.stringify([CONTROLE]), "número de controle cadastrado; texto que não é telefone é recusado e avisado");
+  // a automação fica DESLIGADA para todos durante a validação
+  await page.check('input[name="canal"][value="desligado"]');
+  await acao(page, 'button:has-text("Salvar canal")');
+  await page.goto(`${B}/leads/integracoes`);
+  ok(/Validação com número de controle:\s*nunca feita/.test(await texto(page)), "integrações: validação “nunca feita” enquanto não houver uma");
+  const real = await novoLead({ nome: "Valéria Real" }, ["cancelada"]);
+  await acao(page, '#validacao button:has-text("Iniciar validação")');
+  let [oV] = await sql`select o.*, c.whatsapp from crm_oportunidades o join crm_contatos c on c.id = o.contato_id where o.validacao order by o.recebido_em desc limit 1`;
+  await tarefaEm(oV.id, "concluida");
+  const envV = enviosPara(CONTROLE);
+  ok(envV.length === 1 && envV[0].type === "template" && oV.whatsapp === CONTROLE && oV.validacao && oV.teste && oV.aviso_versao === AVISO, "validação iniciada pelo CRM: o fluxo real (lead → tarefa → fila → provedor) envia o modelo ao número de controle");
+  ok(enviosPara(real.fone).length === 0 && /desligado/.test(real.t.resultado), "com a automação desligada, um contato real que chega ao mesmo tempo NÃO recebe nada: a validação só alcança o número de controle");
+  const passos = async () => {
+    await page.goto(`${B}/leads/integracoes`);
+    return { ...Object.fromEntries(await page.locator("[data-passo]").evaluateAll((els) => els.map((e) => [e.dataset.passo, e.dataset.ok]))), geral: await page.locator("[data-validacao]").getAttribute("data-validacao") };
+  };
+  let ps = await passos();
+  ok(ps.conversao === "sim" && ps.tarefa === "sim" && ps.acionada === "sim" && ps.aceita === "sim" && ps.entregue === "nao" && ps.resposta === "nao" && ps.eco === "nao" && ps.crm === "nao" && ps.geral === "incompleta", "roteiro da validação: só os passos com evidência aparecem comprovados (aceita pelo provedor ≠ entregue)");
+  const mV = (await msgs(oV.id))[0];
+  await estado({ id: mV.provedor_id, wamid: mV.wamid, externalId: mV.id }, "delivered", { deliverTime: new Date().toISOString() });
+  await recebida(CONTROLE, "Recebi a mensagem de validação");
+  await page.goto(`${B}/leads`);
+  ok(/validação/.test(await texto(page, `#respostas [data-oportunidade="${oV.id}"]`)), "a resposta do número de controle aparece em “Depende de mim”, marcada como validação");
+  await eco(CONTROLE, "Resposta pelo aplicativo, na validação");
+  await page.goto(`${B}/leads/o/${oV.id}`);
+  await page.fill('[data-wa-crm] textarea[name="corpo"]', "Resposta pelo CRM, na validação");
+  await acao(page, 'button:has-text("Enviar pelo WhatsApp")');
+  ps = await passos();
+  ok(ps.entregue === "sim" && ps.resposta === "sim" && ps.eco === "sim" && ps.crm === "sim" && ps.lida === "nao" && ps.geral === "completa", "validação completa: entrega, resposta recebida, resposta pelo aplicativo e resposta pelo CRM comprovadas (leitura é opcional)");
+  ok(/Validação com número de controle:\s*completa/.test(await texto(page)), "integrações passa a mostrar a validação como completa");
+  await page.goto(`${B}/leads/indicadores`);
+  const reaisV = (await sql`select count(*)::int as n from crm_oportunidades where not teste and recebido_em > now() - interval '30 days'`)[0].n;
+  ok(new RegExp(`Contatos recebidos\\s+${reaisV}\\b`).test(await page.locator("#conteudo").innerText()) &&(await sql`select count(*)::int as n from crm_oportunidades where validacao and not teste`)[0].n === 0, "a validação fica fora dos indicadores");
+  // nova validação: encerra a anterior e não esbarra no intervalo de 72 h
+  await page.goto(`${B}/leads/integracoes`);
+  await page.selectOption('#validacao select[name="categoria"]', "lojas");
+  await acao(page, '#validacao button:has-text("Iniciar validação")');
+  const [oV2] = await sql`select o.* from crm_oportunidades o where o.validacao order by o.recebido_em desc limit 1`;
+  await tarefaEm(oV2.id, "concluida");
+  ok(oV2.id !== oV.id && (await opId(oV.id)).etapa === "perdido" && (await opId(oV.id)).motivo_perda === "Validação encerrada" && enviosPara(CONTROLE).filter((e) => e.type === "template").length === 2, "nova validação encerra a anterior e envia de novo: o intervalo entre recepções não vale para o número de controle");
+  // número retirado da lista: uma validação pendente não envia
+  qs.modo = "some";
+  await page.selectOption('#validacao select[name="categoria"]', "agendamento");
+  await acao(page, '#validacao button:has-text("Iniciar validação")');
+  const [oV3] = await sql`select o.* from crm_oportunidades o where o.validacao order by o.recebido_em desc limit 1`;
+  const tV3 = await tarefa(oV3.id);
+  await sql`update crm_config set valor = '{"numeros": []}'::jsonb where chave = 'whatsapp:numeros-controle'`;
+  await tarefaHttp(tV3.id);
+  ok(/não está na lista de números de controle/.test((await tarefaEm(oV3.id, "cancelada")).resultado) && enviosPara(CONTROLE).filter((e) => e.type === "template").length === 2, "número retirado da lista de controle: a validação pendente é cancelada e nada sai (a exceção só vale para números listados)");
+  qs.modo = "ok";
+  await sql`update crm_config set valor = ${sql.json({ numeros: [CONTROLE] })} where chave = 'whatsapp:numeros-controle'`;
+  // API: o contrato com o navegador
+  const apiControle = await post(lead({ nome: "Igor Validação", whatsapp: "(47) 98800-0001", email: "" , tipo: "analise", segmento: "Outro", problema: "Outro" }));
+  pessoa--;
+  const apiNormal = await post(lead({ nome: "Wagner Normal" }));
+  ok(apiControle.status === 200 && !!apiControle.body.id && apiControle.body.medir === false && apiNormal.body.medir === undefined && !!apiNormal.body.id, "API: número de controle recebe id e `medir: false`; qualquer outro número recebe a resposta de sempre");
+  // formulário público real, no navegador, com o número de controle
+  const { ctx: ctxVal } = await contexto();
+  const val = await ctxVal.newPage();
+  await val.goto(`${B}/diagnostico-site?utm_source=meta&utm_campaign=leads-gerais`);
+  await val.waitForFunction(() => (window.__fb ?? []).some((x) => x[1] === "PageView"));
+  await val.fill("#diag-site", "validacao-controle.com.br");
+  await val.fill('input[autocomplete="name"]', "Igor Validação");
+  await val.fill('input[type="tel"]', "47988000001");
+  const nVal = enviosPara(CONTROLE).length;
+  const [respVal] = await Promise.all([val.waitForResponse((r) => r.url().endsWith("/api/lead")), val.click('#solicitar button[type="submit"]')]);
+  const corpoVal = await respVal.json();
+  await val.waitForSelector('[role="status"]');
+  await espera(800);
+  const fbVal = await val.evaluate(() => window.__fb ?? []);
+  const oVal = await op(corpoVal.id);
+  await tarefaEm(oVal.id, "concluida");
+  ok(corpoVal.medir === false && fbVal.filter((x) => x[1] === "Lead").length === 0 && fbVal.filter((x) => x[1] === "FormStart").length === 1, "formulário público com o número de controle: envio aceito e NENHUM evento Lead (FormStart, que não é conversão, continua)");
+  ok(oVal.validacao && oVal.teste && oVal.categoria === "diagnostico" && enviosPara(CONTROLE).length === nVal + 1, "esse envio percorre o caminho real inteiro (formulário público → API → tarefa → provedor) e fica marcado como validação");
+  await ctxVal.close();
+  ps = await passos();
+  ok(/pelo formulário do site/.test(await texto(page, "#validacao")) && ps.conversao === "sim" && ps.geral === "incompleta", "a validação pelo formulário público aparece no roteiro com a origem certa e recomeça os passos");
+  await page.goto(`${B}/leads/configuracoes`);
+  await page.check('input[name="canal"][value="whatsapp"]');
+  await acao(page, 'button:has-text("Salvar canal")');
 
   /* ───────────────────────────── formulários do site e Pixel ───────────────────────────── */
   secao("Formulários do site e medição preservados");

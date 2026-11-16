@@ -30,7 +30,7 @@ export function leadsAvailable() {
  *
  * Os demais conectores (não persistentes) rodam depois da resposta, como antes.
  */
-export async function processLead(lead: LeadRecord) {
+export async function processLead(lead: LeadRecord): Promise<{ medir: boolean }> {
   const crm = crmConnector.isConfigured();
   const email = emailConnector.isConfigured();
   if (!crm && !email) {
@@ -40,10 +40,14 @@ export async function processLead(lead: LeadRecord) {
 
   let gravado = false;
   let tarefaId: string | null = null;
+  // Envio de um número de controle (validação do WhatsApp): o navegador não registra conversão.
+  let medir = true;
   if (crm) {
     try {
       const { registrarEnvio } = await import("@/lib/crm/entrada");
-      tarefaId = (await registrarEnvio(lead, email)).tarefaId;
+      const r = await registrarEnvio(lead, email);
+      tarefaId = r.tarefaId;
+      medir = !r.validacao;
       gravado = true;
     } catch (err) {
       console.error("[lead] CRM não gravou o lead", lead.id, (err as Error).message);
@@ -82,4 +86,5 @@ export async function processLead(lead: LeadRecord) {
       });
     });
   }
+  return { medir };
 }

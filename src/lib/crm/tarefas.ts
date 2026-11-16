@@ -4,7 +4,7 @@ import { efeitosDoEnvioAceito } from "./conversa";
 import { db } from "./db";
 import { registrarEvento } from "./entrada";
 import { emailCliente, enfileirarEmail, enviarMensagem, modelos, preencher } from "./mensagens";
-import { canalAutomacao, frases, modeloPrimeiroContato, parametrosDoModelo, textoDoModelo, waEnvio } from "./whatsapp/config";
+import { canalAutomacao, frases, limitesAutomacao, modeloPrimeiroContato, numerosControle, parametrosDoModelo, textoDoModelo, waEnvio } from "./whatsapp/config";
 import { enviarWhatsapp } from "./whatsapp/envio";
 import { modeloAprovado } from "./whatsapp/ycloud";
 import { isCategoria } from "./tipos";
@@ -21,10 +21,8 @@ import { isCategoria } from "./tipos";
 // resolver.
 
 const env = (k: string) => (process.env[k] ?? "").trim();
-/** Contato mais antigo que isto não recebe primeiro contato automático (nada de disparo retroativo). */
-const LIMITE_HORAS = 12;
-/** A mesma pessoa não recebe duas recepções automáticas neste intervalo, mesmo pedindo serviços diferentes. */
-const INTERVALO_RECEPCAO_HORAS = 72;
+// Os dois limites de tempo do envio automático (idade máxima do contato e intervalo entre recepções para a mesma
+// pessoa) são configuráveis: veja limitesAutomacao() em ./whatsapp/config.ts e docs/CRM-WHATSAPP.md, seção 3.
 
 /** Publica a tarefa no QStash. Devolve false se não há QStash configurado ou se a publicação falhou. */
 async function publicar(id: string): Promise<boolean> {
@@ -124,32 +122,51 @@ async function executar(id: string): Promise<string> {
     }
   }
 
+  const limites = await limitesAutomacao();
   const [o] = await sql<
     {
-      id: string; etapa: string; teste: boolean; assumida_em: Date | null; recebido_em: Date; categoria: string | null; servico: string | null; aviso_versao: string | null;
+      id: string; etapa: string; teste: boolean; validacao: boolean; assumida_em: Date | null; recebido_em: Date; categoria: string | null; servico: string | null; aviso_versao: string | null;
       contato_id: string; nome: string; empresa: string | null; whatsapp: string | null; email: string | null; wa_bloqueado_em: Date | null;
-      respondeu: boolean; recepcao_recente: boolean; em_conversa: boolean;
+      respondeu: boolean; recepcao_recente: boolean; em_conversa: boolean; idade_horas: number;
     }[]
   >`
-    select o.id, o.etapa, o.teste, o.assumida_em, o.recebido_em, o.categoria, o.servico, o.aviso_versao,
+    select o.id, o.etapa, o.teste, o.validacao, o.assumida_em, o.recebido_em, o.categoria, o.servico, o.aviso_versao,
       c.id as contato_id, c.nome, c.empresa, c.whatsapp, c.email, c.wa_bloqueado_em,
+      extract(epoch from (now() - o.recebido_em)) / 3600.0 as idade_horas,
       exists (select 1 from crm_mensagens m where m.contato_id = c.id and m.direcao = 'entrada' and coalesce(m.ocorrida_em, m.criado_em) >= o.recebido_em) as respondeu,
-      exists (select 1 from crm_mensagens m where m.contato_id = c.id and m.automatica and m.direcao = 'saida' and m.oportunidade_id <> o.id
-        and m.status in ('enviando', 'incerta', 'aceita', 'enviada', 'entregue', 'lida') and m.criado_em > now() - ${`${INTERVALO_RECEPCAO_HORAS} hours`}::interval) as recepcao_recente,
-      exists (select 1 from crm_oportunidades x where x.contato_id = c.id and x.id <> o.id and x.etapa in ('aguardando_resposta', 'em_conversa', 'proposta_enviada')) as em_conversa
+      -- Recepção recente: outra mensagem automática (do CRM, por qualquer canal, ou do aplicativo) que saiu, ou pode
+      -- ter saído, para a mesma pessoa dentro do intervalo. Mensagem que falhou ou foi cancelada não conta.
+      exists (select 1 from crm_mensagens m where m.contato_id = c.id and m.automatica and m.direcao = 'saida' and m.oportunidade_id is distinct from o.id
+        and m.status in ('enviando', 'incerta', 'aceita', 'enviada', 'entregue', 'lida')
+        and coalesce(m.ocorrida_em, m.criado_em) > now() - ${`${limites.horasEntreRecepcoes} hours`}::interval) as recepcao_recente,
+      -- Em conversa de verdade: outra oportunidade aberta em que a pessoa respondeu ou alguém assumiu. Uma oportunidade
+      -- que só recebeu a mensagem automática e ficou sem resposta NÃO é conversa (para ela vale o intervalo acima).
+      exists (select 1 from crm_oportunidades x where x.contato_id = c.id and x.id <> o.id and x.etapa in ${sql(["novo", "aguardando_resposta", "em_conversa", "proposta_enviada"])}
+        and (x.assumida_em is not null or x.ultima_entrada_em is not null) and not x.validacao) as em_conversa
     from crm_oportunidades o join crm_contatos c on c.id = o.contato_id where o.id = ${t.oportunidade_id}`;
   if (!o) return encerrar(id, t.oportunidade_id, { status: "cancelada", resultado: "Oportunidade não encontrada." });
 
-  const canal = await canalAutomacao();
+  // Validação com número de controle: roda o mesmo caminho do envio real pelo WhatsApp, mesmo com a automação
+  // desligada para todos os outros, e só para um número que continue na lista de controle.
+  if (o.validacao && !(o.whatsapp && (await numerosControle()).includes(o.whatsapp)))
+    return encerrar(id, o.id, { status: "cancelada", resultado: "Validação cancelada: o número não está na lista de números de controle." });
+  const canal = o.validacao ? "whatsapp" : await canalAutomacao();
   // O que encerra sem pedir nada de especial: o contato segue como um novo contato comum.
   if (canal === "desligado") return encerrar(id, o.id, { status: "cancelada", resultado: "Primeiro contato automático desligado." });
-  if (o.teste) return encerrar(id, o.id, { status: "cancelada", resultado: "Envio de teste: sem mensagem automática." });
+  if (o.teste && !o.validacao) return encerrar(id, o.id, { status: "cancelada", resultado: "Envio de teste: sem mensagem automática." });
   if (o.assumida_em || o.etapa !== "novo") return encerrar(id, o.id, { status: "cancelada", resultado: "Atendimento já assumido por uma pessoa." });
   if (o.respondeu) return encerrar(id, o.id, { status: "cancelada", resultado: "O interessado já escreveu antes do envio automático." });
-  if (Date.now() - new Date(o.recebido_em).getTime() > LIMITE_HORAS * 3600_000)
-    return encerrar(id, o.id, { status: "cancelada", resultado: `Contato recebido há mais de ${LIMITE_HORAS} horas: sem envio automático retroativo.` });
-  if (o.recepcao_recente || o.em_conversa)
-    return encerrar(id, o.id, { status: "cancelada", resultado: "A pessoa já recebeu a recepção ou já está em conversa: novo pedido para atendimento humano.", pendencia: "novo_pedido" });
+  if (Number(o.idade_horas) > limites.horasMaximas)
+    return encerrar(id, o.id, { status: "cancelada", resultado: `Contato recebido há mais de ${limites.horasMaximas} horas: sem envio automático retroativo.` });
+  // Na validação o intervalo entre recepções não se aplica: quem dispara é a própria equipe, de propósito.
+  if (!o.validacao && o.em_conversa)
+    return encerrar(id, o.id, { status: "cancelada", resultado: "A pessoa já está em conversa em outra oportunidade: novo pedido para atendimento humano.", pendencia: "novo_pedido" });
+  if (!o.validacao && o.recepcao_recente)
+    return encerrar(id, o.id, {
+      status: "cancelada",
+      resultado: `A pessoa já recebeu uma recepção automática nas últimas ${limites.horasEntreRecepcoes} horas: novo pedido para atendimento humano.`,
+      pendencia: "novo_pedido",
+    });
 
   if (canal === "email") return primeiroContatoEmail(id, o);
 

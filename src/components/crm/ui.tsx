@@ -84,7 +84,7 @@ export function OpLinha({ o, agora, destaque }: { o: Oportunidade; agora: number
             {o.contato.nome}
           </Link>
           {o.contato.empresa && <span className="text-[0.88rem] text-muted">{o.contato.empresa}</span>}
-          {o.teste && <span className="rounded bg-ink-800 px-1.5 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wide text-dim">teste</span>}
+          {o.teste && <span className="rounded bg-ink-800 px-1.5 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wide text-dim">{o.validacao ? "validação" : "teste"}</span>}
         </p>
         <p className="mt-1 text-[0.86rem] leading-snug text-muted">
           {CATEGORIA_ROTULO[o.categoria]} · {atr.fonte} · chegou {fmtRelativo(o.recebidoEm, agora)}
@@ -155,6 +155,7 @@ export function ItemFilaLinha({ o, motivo, desde, alerta, agora }: { o: Oportuni
             {o.contato.nome}
           </Link>
           {o.contato.empresa && <span className="text-[0.88rem] text-muted">{o.contato.empresa}</span>}
+          {o.validacao && <span className="rounded bg-ink-800 px-1.5 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wide text-dim">validação</span>}
         </p>
         <p className={`mt-1 text-[0.88rem] font-semibold leading-snug ${alerta ? "text-ember" : "text-fg"}`}>{motivo}</p>
         {um && (

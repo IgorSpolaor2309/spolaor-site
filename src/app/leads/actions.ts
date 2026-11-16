@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { acessoPronto, entrarComCodigo, exigirUsuario, renomearUsuario, sair, solicitarCodigo } from "@/lib/crm/auth";
 import { enviarAviso } from "@/lib/crm/aviso";
 import { db } from "@/lib/crm/db";
-import { associarMensagens, conferirMensagens, efeitosDoEnvioAceito } from "@/lib/crm/conversa";
+import { associarMensagens, conferirMensagens, efeitosDoEnvioAceito, reclassificarEco } from "@/lib/crm/conversa";
 import { cadastrarManual, criarParaContato, registrarEvento } from "@/lib/crm/entrada";
 import { emailCliente, enfileirarEmail, enviarMensagem, restaurarModelo, salvarModelo } from "@/lib/crm/mensagens";
 import { normEmail, normWhatsapp, texto, valorMonetario } from "@/lib/crm/normalizar";
@@ -24,7 +24,8 @@ import {
   salvarNegocio,
 } from "@/lib/crm/operacoes";
 import { CATEGORIAS, deInputLocal, ETAPAS, isCanal, isCanalMensagem, isCategoria, isCustoTipo, isEtapa, type Categoria } from "@/lib/crm/tipos";
-import { definirCanalAutomacao, salvarFrases, salvarModeloPrimeiroContato, VARIAVEIS_MODELO, waEnvio } from "@/lib/crm/whatsapp/config";
+import { definirCanalAutomacao, salvarFrases, salvarLimitesAutomacao, salvarModeloPrimeiroContato, salvarNumerosControle, salvarTextosAutomaticosApp, textosAutomaticosApp, VARIAVEIS_MODELO, waEnvio } from "@/lib/crm/whatsapp/config";
+import { iniciarValidacao } from "@/lib/crm/whatsapp/validacao";
 import { enviarWhatsapp } from "@/lib/crm/whatsapp/envio";
 import { listarModelos, modeloAprovado } from "@/lib/crm/whatsapp/ycloud";
 import { randomUUID } from "node:crypto";
@@ -459,4 +460,55 @@ export async function conferirConversaAction(fd: FormData) {
   await conferirMensagens(contato);
   atualizar();
   redirect("/leads#sem-associacao");
+}
+
+/* ───────────────────────────── limites, textos automáticos do aplicativo e validação ───────────────────────────── */
+
+/** Limites de tempo do primeiro contato automático (idade máxima do contato e intervalo entre recepções). */
+export async function limitesAction(fd: FormData) {
+  const u = await exigirUsuario();
+  const ok = await salvarLimitesAutomacao({ horasMaximas: fd.get("horasMaximas"), horasEntreRecepcoes: fd.get("horasEntreRecepcoes") }, u.id);
+  revalidatePath("/leads", "layout");
+  redirect(`/leads/configuracoes?msg=${ok ? "limites" : "limites-invalidos"}#automacao`);
+}
+
+/** Textos da saudação e da ausência do aplicativo: é por eles (e só por eles) que uma resposta do aplicativo é tratada como automática. */
+export async function textosAutomaticosAction(fd: FormData) {
+  const u = await exigirUsuario();
+  const atual = await textosAutomaticosApp();
+  const remover = new Set(fd.getAll("remover").map(String));
+  await salvarTextosAutomaticosApp(
+    { saudacao: String(fd.get("saudacao") ?? ""), ausencia: String(fd.get("ausencia") ?? ""), outras: atual.outras.filter((_, i) => !remover.has(String(i))) },
+    u.id,
+  );
+  revalidatePath("/leads", "layout");
+  redirect("/leads/configuracoes?msg=textos#aplicativo");
+}
+
+/** Números de controle (telefones da própria equipe) usados na validação do WhatsApp. */
+export async function numerosControleAction(fd: FormData) {
+  const u = await exigirUsuario();
+  const r = await salvarNumerosControle(String(fd.get("numeros") ?? "").split(/[\n,;]+/), u.id);
+  revalidatePath("/leads", "layout");
+  redirect(`/leads/configuracoes?msg=${r.invalidos.length ? "controle-invalido" : "controle"}#controle`);
+}
+
+/** Inicia uma validação do WhatsApp com um número de controle: o fluxo real, sem conversão publicitária. */
+export async function validacaoAction(fd: FormData) {
+  const u = await exigirUsuario();
+  const categoria = fd.get("categoria");
+  const r = await iniciarValidacao(String(fd.get("numero") ?? ""), isCategoria(categoria) ? categoria : "sites", u);
+  atualizar();
+  redirect(`/leads/integracoes?msg=${r.ok ? "validacao" : r.erro}#validacao`);
+}
+
+/** Correção de quem enviou uma mensagem sincronizada do aplicativo: "não fui eu" (automática) ou "fui eu". */
+export async function reclassificarEcoAction(fd: FormData) {
+  const u = await exigirUsuario();
+  const id = uuid(fd.get("id"));
+  const msg = uuid(fd.get("mensagem"));
+  if (!id || !msg) return;
+  await reclassificarEco(msg, fd.get("automatica") === "1", u.id);
+  atualizar(id);
+  redirect(ficha(id, "origem"));
 }

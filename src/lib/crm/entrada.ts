@@ -3,6 +3,7 @@ import type { LeadRecord } from "@/lib/leads/server/types";
 import { db, type Db } from "./db";
 import { normEmail, normInstagram, normWhatsapp } from "./normalizar";
 import { categoriaDoEnvio, ETAPAS_ABERTAS, type Canal, type Categoria } from "./tipos";
+import { numerosControle } from "./whatsapp/config";
 
 // Entrada de contatos no CRM: formulários do site (registrarEnvio) e cadastro manual (usa acharOuCriarContato).
 // Regras:
@@ -67,27 +68,46 @@ export type ResultadoEnvio = {
   /** true = oportunidade criada agora; false = envio anexado a uma oportunidade aberta do mesmo serviço */
   novaOportunidade: boolean;
   teste: boolean;
+  /** envio de um número de controle: validação do fluxo, sem conversão publicitária */
+  validacao: boolean;
   /** tarefa de primeiro contato criada com a oportunidade (null quando o envio foi anexado ou já existia) */
   tarefaId: string | null;
 };
 
-/** Grava um envio de formulário aceito pela API. `avisoLigado` = há e-mail de aviso configurado para este envio. */
+/**
+ * Grava um envio de formulário aceito pela API. `avisoLigado` = há e-mail de aviso configurado para este envio.
+ * Se o WhatsApp informado é um número de controle, o envio é uma VALIDAÇÃO: fica fora dos indicadores e quem chamou
+ * (a API) avisa o navegador para não registrar conversão.
+ */
 export async function registrarEnvio(lead: LeadRecord, avisoLigado: boolean): Promise<ResultadoEnvio> {
   const sql = await db();
+  const fone = normWhatsapp(lead.whatsapp);
+  const validacao = !!fone && (await numerosControle()).includes(fone);
   return (await sql.begin(async (tx) => {
-    const [ja] = await tx<{ oportunidade_id: string; contato_id: string; teste: boolean }[]>`
-      select e.oportunidade_id, o.contato_id, o.teste from crm_envios e join crm_oportunidades o on o.id = e.oportunidade_id where e.id = ${lead.id}`;
-    if (ja) return { oportunidadeId: ja.oportunidade_id, contatoId: ja.contato_id, gravado: false, novaOportunidade: false, teste: ja.teste, tarefaId: null };
+    const [ja] = await tx<{ oportunidade_id: string; contato_id: string; teste: boolean; validacao: boolean }[]>`
+      select e.oportunidade_id, o.contato_id, o.teste, o.validacao from crm_envios e join crm_oportunidades o on o.id = e.oportunidade_id where e.id = ${lead.id}`;
+    if (ja) return { oportunidadeId: ja.oportunidade_id, contatoId: ja.contato_id, gravado: false, novaOportunidade: false, teste: ja.teste, validacao: ja.validacao, tarefaId: null };
 
     const contato = await acharOuCriarContato(tx, { nome: lead.nome, empresa: lead.empresa, whatsapp: lead.whatsapp, email: lead.email, site: lead.site });
     const servico = lead.interesse ?? null;
     const categoria = categoriaDoEnvio(lead.origem, lead.servicos);
-    const teste = /^\s*teste\b/i.test(lead.nome);
+    // Validação também conta como teste: nunca entra nos indicadores.
+    const teste = validacao || /^\s*teste\b/i.test(lead.nome);
 
     let oportunidadeId: string | undefined;
     let novaOportunidade = false;
     let tarefaId: string | null = null;
     if (!contato.novo) {
+      // Cada validação começa do zero: encerra as validações anteriores ainda abertas deste número.
+      if (validacao) {
+        await tx`
+          update crm_oportunidades set etapa = 'perdido', motivo_perda = 'Validação encerrada', perdido_em = now(), aguardando = null, pendencia = null,
+            proxima_acao = null, proxima_acao_em = null, atualizado_em = now()
+          where contato_id = ${contato.id} and validacao and etapa in ${tx(ETAPAS_ABERTAS)}`;
+        await tx`
+          update crm_tarefas set status = 'cancelada', resultado = 'Validação anterior encerrada.', atualizado_em = now()
+          where status = 'pendente' and oportunidade_id in (select id from crm_oportunidades where contato_id = ${contato.id} and validacao)`;
+      }
       const [aberta] = await tx<{ id: string; etapa: string }[]>`
         select id, etapa from crm_oportunidades
         where contato_id = ${contato.id} and servico is not distinct from ${servico} and etapa in ${tx(ETAPAS_ABERTAS)}
@@ -131,16 +151,16 @@ export async function registrarEnvio(lead: LeadRecord, avisoLigado: boolean): Pr
       const utm = lead.utm ?? {};
       await tx`
         insert into crm_oportunidades (id, contato_id, etapa, servico, categoria, canal, origem, registro, tipo, mensagem, dados, pagina, entrada, referrer, utm,
-          meta_campaign_id, meta_adset_id, meta_ad_id, teste, recebido_em, aviso_versao, aviso_em)
+          meta_campaign_id, meta_adset_id, meta_ad_id, teste, validacao, recebido_em, aviso_versao, aviso_em)
         values (${oportunidadeId}, ${contato.id}, 'novo', ${servico}, ${categoria}, 'formulario', ${lead.origem}, 'automatico', ${lead.tipo}, ${lead.mensagem ?? null},
           ${tx.json(dados as never)}, ${lead.pagina ?? null}, ${lead.entrada ?? null}, ${lead.referrer ?? null}, ${tx.json(utm)},
-          ${idMeta(utm.campaign_id)}, ${idMeta(utm.adset_id)}, ${idMeta(utm.ad_id)}, ${teste}, ${lead.createdAt},
+          ${idMeta(utm.campaign_id)}, ${idMeta(utm.adset_id)}, ${idMeta(utm.ad_id)}, ${teste}, ${validacao}, ${lead.createdAt},
           ${lead.aviso ?? null}, ${lead.aviso ? lead.createdAt : null})`;
       await registrarEvento(tx, {
         oportunidadeId,
         tipo: "criado",
-        texto: `Contato recebido pelo formulário do site (${lead.origem}).`,
-        dados: { envio: lead.id, contatoExistente: !contato.novo, aviso: lead.aviso ?? null },
+        texto: validacao ? `Validação com número de controle (${lead.origem}). Fora dos indicadores e sem conversão publicitária.` : `Contato recebido pelo formulário do site (${lead.origem}).`,
+        dados: { envio: lead.id, contatoExistente: !contato.novo, aviso: lead.aviso ?? null, validacao },
         em: lead.createdAt,
       });
       // Intenção de primeiro contato, na mesma transação do lead. Uma por oportunidade (chave única).
@@ -151,7 +171,7 @@ export async function registrarEnvio(lead: LeadRecord, avisoLigado: boolean): Pr
     await tx`
       insert into crm_envios (id, oportunidade_id, payload, recebido_em, aviso_status)
       values (${lead.id}, ${oportunidadeId}, ${tx.json(lead as never)}, ${lead.createdAt}, ${avisoLigado ? "pendente" : "desligado"})`;
-    return { oportunidadeId, contatoId: contato.id, gravado: true, novaOportunidade, teste, tarefaId };
+    return { oportunidadeId, contatoId: contato.id, gravado: true, novaOportunidade, teste, validacao, tarefaId };
   })) as ResultadoEnvio;
 }
 

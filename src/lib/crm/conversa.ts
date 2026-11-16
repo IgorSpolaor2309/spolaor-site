@@ -3,6 +3,7 @@ import { db, type Db } from "./db";
 import { registrarEvento } from "./entrada";
 import { normWhatsapp } from "./normalizar";
 import { ETAPAS_ABERTAS, fmtWhatsapp } from "./tipos";
+import { ehTextoAutomatico, salvarTextosAutomaticosApp, textosAutomaticosApp } from "./whatsapp/config";
 
 // Regras da conversa de WhatsApp, independentes do provedor. O conector (src/lib/crm/whatsapp/ycloud.ts) traduz
 // as notificações para os formatos abaixo; aqui fica o que elas significam para o atendimento.
@@ -14,6 +15,15 @@ import { ETAPAS_ABERTAS, fmtWhatsapp } from "./tipos";
 // - Mensagem recebida      → pode deixar a oportunidade dependendo de nós e cancela a automação pendente.
 // - Resposta humana        → pelo CRM ou pelo aplicativo (eco): assume o atendimento e cancela a automação.
 // - Mensagem automática    → não é resposta humana; o eco dela é reconhecido pelos identificadores.
+//
+// Quem enviou uma mensagem sincronizada do aplicativo é decidido só por EVIDÊNCIA, nunca pelo tempo:
+//   1. identificadores do provedor iguais aos de uma mensagem nossa            → é a nossa (CRM);
+//   2. envio nosso ainda sem identificador, com o mesmo texto para a mesma pessoa → é a nossa (CRM);
+//   3. texto igual a uma mensagem automática do aplicativo cadastrada (saudação, ausência) → automática do aplicativo;
+//   4. qualquer outra                                                           → enviada por uma pessoa pelo aplicativo.
+// O intervalo entre a mensagem da pessoa e a resposta não prova nada: uma resposta em 2 segundos pode ser humana
+// (resposta rápida salva, alguém com a conversa aberta) e uma em 2 minutos pode ser automática. Se a regra 4 errar
+// (saudação não cadastrada), quem atende corrige na ficha ("não fui eu") e o texto passa a ser reconhecido.
 // - Entrega, leitura, eco da nossa automação, sincronização de histórico → nunca mudam de quem é a vez.
 
 export type MidiaRef = { id?: string | null; mime?: string | null; nome?: string | null; legenda?: string | null };
@@ -38,14 +48,6 @@ export type EntradaWa = {
 };
 
 export type EcoWa = Omit<EntradaWa, "de" | "nomePerfil"> & { para: string | null };
-
-/**
- * Resposta do número comercial que sai menos de 5 segundos depois da mensagem da pessoa não foi digitada por
- * ninguém: é a saudação ou a mensagem de ausência do aplicativo WhatsApp Business. Fica registrada como automática
- * e não conta como atendimento humano (senão esconderia uma resposta que ainda espera retorno). O recomendado é
- * desligar essas mensagens no aplicativo; isto é a proteção para o caso de ficarem ligadas.
- */
-const AUTO_RESPOSTA_MS = 5000;
 
 export type StatusWa = {
   provedor: string;
@@ -276,6 +278,7 @@ export async function registrarEco(e: EcoWa): Promise<ResultadoEco> {
   const usuarioWa = (e.usuarioWa ?? "").trim() || null;
   if (!fone && !usuarioWa) return { resultado: "sem_telefone" };
   const sql = await db();
+  const automaticos = await textosAutomaticosApp();
   return (await sql.begin(async (tx) => {
     await travarContato(tx, fone ?? `wa:${usuarioWa}`);
     const [ja] = await tx<{ id: string; via: string | null; wamid: string | null }[]>`
@@ -288,26 +291,27 @@ export async function registrarEco(e: EcoWa): Promise<ResultadoEco> {
     if (!contato) return { resultado: "fora_do_crm" };
 
     const corpo = corpoDaMensagem(e.tipo, e.texto, e.midia).slice(0, 8000);
-    // Nossa mensagem pela API cujo identificador do WhatsApp ainda não chegou (resposta lenta ou envio incerto).
+    // Nossa mensagem pela API que ainda não tem identificador do WhatsApp (resposta do provedor em curso ou perdida):
+    // mesma pessoa e mesmo texto. É identidade da mensagem, não horário.
     const candidatas = await tx<{ id: string; corpo: string; status: string }[]>`
       select id, corpo, status from crm_mensagens
       where contato_id = ${contato.id} and canal = 'whatsapp' and direcao = 'saida' and via = 'api' and wamid is null
-        and status in ('enviando', 'incerta', 'aceita', 'enviada')
-        and criado_em between ${e.em}::timestamptz - interval '10 minutes' and ${e.em}::timestamptz + interval '2 minutes'
+        and status in ('enviando', 'incerta')
       order by criado_em desc`;
     const nossa = candidatas.find((c) => igual(c.corpo, corpo));
     if (nossa) {
       await tx`
         update crm_mensagens set wamid = ${e.wamid ?? null}, ocorrida_em = coalesce(ocorrida_em, ${e.em}),
-          status = case when status in ('enviando', 'incerta', 'aceita') then 'enviada' else status end,
-          enviado_em = coalesce(enviado_em, ${e.em}), erro = case when status = 'incerta' then null else erro end
+          status = 'enviada', enviado_em = coalesce(enviado_em, ${e.em}), erro = null
         where id = ${nossa.id}`;
+      // O envio estava em curso ou incerto e a mensagem apareceu na conversa: aplica os efeitos de um envio aceito.
+      await efeitosDoEnvioAceito(tx, nossa.id, e.em);
       return { resultado: "propria", mensagemId: nossa.id };
     }
 
     const oportunidadeId = await oportunidadeDaConversa(tx, contato.id, e.respostaA);
-    const desdeEntrada = contato.wa_ultima_entrada_em ? new Date(e.em).getTime() - new Date(contato.wa_ultima_entrada_em).getTime() : -1;
-    const autoResposta = desdeEntrada >= 0 && desdeEntrada < AUTO_RESPOSTA_MS;
+    // Automática do aplicativo só por evidência de conteúdo: texto igual a uma saudação ou ausência cadastrada.
+    const autoResposta = e.tipo === "text" && ehTextoAutomatico(automaticos, e.texto ?? "");
     const mensagemId = randomUUID();
     await tx`
       insert into crm_mensagens (id, oportunidade_id, contato_id, canal, direcao, modo, via, tipo, automatica, corpo, midia, status, provedor, provedor_id, wamid, resposta_a, ocorrida_em, enviado_em)
@@ -448,4 +452,55 @@ export async function associarMensagens(oportunidadeId: string, usuarioId: strin
 export async function conferirMensagens(contatoId: string): Promise<void> {
   const sql = await db();
   await sql`update crm_mensagens set conferida_em = now() where contato_id = ${contatoId} and oportunidade_id is null and conferida_em is null`;
+}
+
+/** Recalcula a última resposta humana das oportunidades abertas da pessoa a partir das mensagens e, daí, de quem é a vez. */
+async function recomputarSaidaHumana(tx: Db, contatoId: string) {
+  const ops = await tx<{ id: string }[]>`
+    update crm_oportunidades o set ultima_saida_humana_em = (
+      select max(coalesce(m.ocorrida_em, m.criado_em)) from crm_mensagens m
+      where m.contato_id = o.contato_id and m.direcao = 'saida' and not m.automatica
+        and m.status in ('aceita', 'enviada', 'entregue', 'lida', 'registrada')
+        and (m.canal = 'whatsapp' or m.oportunidade_id = o.id))
+    where o.contato_id = ${contatoId} and o.etapa in ${tx(ETAPAS_ABERTAS)}
+    returning o.id`;
+  for (const o of ops) await recalcularVez(tx, o.id, "resposta");
+}
+
+/**
+ * Correção humana da origem de uma mensagem sincronizada do aplicativo. É a palavra de quem atende, não uma
+ * inferência: "não fui eu" marca a mensagem como automática do aplicativo, desfaz o efeito de resposta humana (a
+ * pendência volta, se a pessoa ainda espera) e cadastra o texto para ser reconhecido nas próximas vezes; "fui eu"
+ * faz o contrário.
+ */
+export async function reclassificarEco(mensagemId: string, automatica: boolean, usuarioId: string): Promise<boolean> {
+  const sql = await db();
+  const feito = (await sql.begin(async (tx) => {
+    const [m] = await tx<{ contato_id: string; oportunidade_id: string | null; corpo: string; tipo: string; em: Date }[]>`
+      update crm_mensagens set automatica = ${automatica}
+      where id = ${mensagemId} and via = 'app' and direcao = 'saida' and automatica <> ${automatica}
+      returning contato_id, oportunidade_id, corpo, tipo, coalesce(ocorrida_em, criado_em) as em`;
+    if (!m) return null;
+    if (automatica) await recomputarSaidaHumana(tx, m.contato_id);
+    else await aplicarRespostaHumana(tx, { contatoId: m.contato_id, oportunidadeId: m.oportunidade_id, em: new Date(m.em).toISOString(), usuarioId, origem: "app" });
+    if (m.oportunidade_id) {
+      await registrarEvento(tx, {
+        oportunidadeId: m.oportunidade_id,
+        tipo: "origem_corrigida",
+        texto: automatica ? "Mensagem do aplicativo marcada como automática (saudação ou ausência): não conta como resposta humana." : "Mensagem do aplicativo marcada como escrita por uma pessoa.",
+        usuarioId,
+      });
+    }
+    return m;
+  })) as { corpo: string; tipo: string } | null;
+  if (!feito) return false;
+  // Aprende (ou desaprende) o texto, para as próximas mensagens iguais serem classificadas sem intervenção.
+  if (feito.tipo === "text") {
+    const t = await textosAutomaticosApp();
+    const igual = (x: string) => x.replace(/\s+/g, " ").trim().toLowerCase() === feito.corpo.replace(/\s+/g, " ").trim().toLowerCase();
+    if (automatica && !ehTextoAutomatico(t, feito.corpo)) await salvarTextosAutomaticosApp({ ...t, outras: [...t.outras, feito.corpo] }, usuarioId);
+    if (!automatica && ehTextoAutomatico(t, feito.corpo))
+      await salvarTextosAutomaticosApp({ saudacao: igual(t.saudacao) ? "" : t.saudacao, ausencia: igual(t.ausencia) ? "" : t.ausencia, outras: t.outras.filter((x) => !igual(x)) }, usuarioId);
+  }
+  return true;
 }

@@ -148,6 +148,8 @@ export type Oportunidade = {
   motivoPerda: string | null;
   perdidoEm: string | null;
   teste: boolean;
+  /** validação com número de controle: aparece na fila, fica fora dos indicadores */
+  validacao: boolean;
   recebidoEm: string;
   criadoEm: string;
   atualizadoEm: string;

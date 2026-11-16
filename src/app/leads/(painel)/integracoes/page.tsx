@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Painel } from "@/components/crm/ui";
+import { validacaoAction } from "@/app/leads/actions";
+import { Enviar } from "@/components/crm/enviar";
+import { Aviso, btnPrimary, Campo, input, Painel, Titulo } from "@/components/crm/ui";
 import { emailsAutorizados, exigirUsuario } from "@/lib/crm/auth";
 import { avisoConfigurado } from "@/lib/crm/aviso";
 import { estadoFormularios, estadoMensagens } from "@/lib/crm/consultas";
 import { db, dbStatus } from "@/lib/crm/db";
 import { emailCliente } from "@/lib/crm/mensagens";
-import { fmtDataHora, fmtWhatsapp } from "@/lib/crm/tipos";
-import { canalAutomacao, modeloPrimeiroContato, waEnv, waEnvio } from "@/lib/crm/whatsapp/config";
+import { CATEGORIA_ROTULO, CATEGORIAS, fmtDataHora, fmtWhatsapp } from "@/lib/crm/tipos";
+import { canalAutomacao, modeloPrimeiroContato, numerosControle, textosAutomaticosApp, waEnv, waEnvio } from "@/lib/crm/whatsapp/config";
+import { estadoValidacao } from "@/lib/crm/whatsapp/validacao";
 import { estadoWebhook } from "@/lib/crm/whatsapp/webhook";
 import { estadoNumero, modeloAprovado } from "@/lib/crm/whatsapp/ycloud";
 
@@ -39,13 +42,30 @@ function Canal({ nome, estado, children }: { nome: string; estado: Estado; child
 
 // Estado REAL de cada canal, lido da configuração e do banco no momento. "Conectado" só aparece quando o CRM de
 // fato recebe ou envia por ali. O que depende de credencial, aprovação ou decisão fica dito como tal.
-export default async function IntegracoesPage() {
+const MSG_VALIDACAO: Record<string, { tom: "ok" | "alerta"; texto: string }> = {
+  validacao: { tom: "ok", texto: "Validação iniciada. Acompanhe os passos abaixo; cada um só aparece como comprovado com evidência." },
+  "validacao-numero": { tom: "alerta", texto: "Escolha um número cadastrado como número de controle." },
+  "validacao-config": { tom: "alerta", texto: "O WhatsApp ainda não está configurado no servidor (chave da YCloud e número comercial)." },
+  "validacao-modelo": { tom: "alerta", texto: "Não há modelo de primeiro contato aprovado. Escolha um modelo aprovado em Configurações." },
+  "validacao-aberta": { tom: "alerta", texto: "Este número já tem uma oportunidade real aberta para esse serviço. Escolha outro serviço para a validação." },
+};
+
+export default async function IntegracoesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await exigirUsuario();
+  const sp = await searchParams;
+  const msgValidacao = typeof sp.msg === "string" ? MSG_VALIDACAO[sp.msg] : undefined;
   const [banco, forms, msgs, canal] = await Promise.all([dbStatus(), estadoFormularios(), estadoMensagens(), canalAutomacao()]);
   // WhatsApp: cada linha abaixo é uma evidência lida agora (configuração, YCloud, notificações recebidas), não uma suposição.
   const wa = waEnvio();
   const segredo = !!waEnv.webhookSecret();
-  const [numero, wh, modeloWa] = await Promise.all([wa.pronto ? estadoNumero() : null, estadoWebhook(), modeloPrimeiroContato()]);
+  const [numero, wh, modeloWa, controle, validacao, autoApp] = await Promise.all([
+    wa.pronto ? estadoNumero() : null,
+    estadoWebhook(),
+    modeloPrimeiroContato(),
+    numerosControle(),
+    estadoValidacao(),
+    textosAutomaticosApp(),
+  ]);
   const modeloEstado = wa.pronto && modeloWa.nome ? await modeloAprovado(modeloWa.nome, modeloWa.idioma) : null;
   const sql = await db();
   const [falhasWa] = await sql<{ falhas: number; incertas: number }[]>`
@@ -179,6 +199,15 @@ export default async function IntegracoesPage() {
               funcionar: use o WhatsApp Business (não o pessoal) no celular do número comercial, desligue a mensagem de saudação e a de ausência do aplicativo (senão a pessoa
               recebe duas recepções) e abra o aplicativo ao menos uma vez a cada duas semanas (a Meta desconecta números inativos).
             </p>
+            <p data-wa-validacao>
+              <strong>Validação com número de controle:</strong>{" "}
+              {!validacao
+                ? "nunca feita. Enquanto não houver uma validação completa, o envio e o recebimento reais não estão comprovados."
+                : validacao.completa
+                  ? `completa (iniciada em ${fmtDataHora(validacao.iniciadaEm)}).`
+                  : `incompleta. Falta comprovar: ${validacao.faltam.join("; ")}.`}{" "}
+              <strong>Mensagens automáticas do aplicativo cadastradas:</strong> {[autoApp.saudacao, autoApp.ausencia, ...autoApp.outras].filter((x) => x.trim()).length}.
+            </p>
           </Canal>
 
           <Canal nome="Instagram Direct" estado="manual">
@@ -223,6 +252,73 @@ export default async function IntegracoesPage() {
             </p>
           </Canal>
         </ul>
+      </Painel>
+
+      <Painel className="mt-5 scroll-mt-20" id="validacao">
+        <Titulo nota={validacao ? (validacao.completa ? "Completa" : "Incompleta") : "Nunca feita"}>Validação do WhatsApp com número de controle</Titulo>
+        <div className="grid gap-4 px-4 py-4 sm:px-5">
+          <p className="max-w-3xl text-[0.9rem] leading-relaxed text-muted">
+            Roda o fluxo real de ponta a ponta com um telefone da própria equipe: lead gravado, tarefa, fila, envio pelo provedor, entrega, resposta, resposta pelo
+            aplicativo e resposta pelo CRM. Não aborda cliente, fica fora dos indicadores e <strong className="text-fg">não gera conversão nos anúncios</strong>: iniciada
+            aqui, não passa pelo navegador público; pelo formulário do site com um número de controle, o site não dispara o evento Lead. Funciona com a automação
+            desligada para todos os outros contatos.
+          </p>
+          {msgValidacao && <Aviso tom={msgValidacao.tom}>{msgValidacao.texto}</Aviso>}
+          {controle.length === 0 ? (
+            <p className="text-[0.9rem] font-semibold">
+              Nenhum número de controle cadastrado.{" "}
+              <Link href="/leads/configuracoes#controle" className="text-sky underline-offset-4 hover:underline">
+                Cadastrar em Configurações
+              </Link>
+            </p>
+          ) : (
+            <form action={validacaoAction} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+              <Campo rotulo="Número de controle">
+                <select name="numero" className={input}>
+                  {controle.map((n) => (
+                    <option key={n} value={n}>
+                      {fmtWhatsapp(n)}
+                    </option>
+                  ))}
+                </select>
+              </Campo>
+              <Campo rotulo="Serviço do pedido simulado">
+                <select name="categoria" className={input} defaultValue="sites">
+                  {CATEGORIAS.map((c) => (
+                    <option key={c} value={c}>
+                      {CATEGORIA_ROTULO[c]}
+                    </option>
+                  ))}
+                </select>
+              </Campo>
+              <Enviar className={btnPrimary}>Iniciar validação</Enviar>
+            </form>
+          )}
+          {validacao && (
+            <div data-validacao={validacao.completa ? "completa" : "incompleta"}>
+              <p className="text-[0.86rem] text-dim">
+                Última validação: {fmtWhatsapp(validacao.numero)}, iniciada em {fmtDataHora(validacao.iniciadaEm)} {validacao.origem === "crm" ? "pelo CRM" : "pelo formulário do site"}.{" "}
+                <Link href={`/leads/o/${validacao.oportunidadeId}`} className="font-semibold text-sky underline-offset-4 hover:underline">
+                  Abrir a ficha
+                </Link>
+              </p>
+              <ol className="mt-2 border-t border-line">
+                {validacao.passos.map((p) => (
+                  <li key={p.id} data-passo={p.id} data-ok={p.ok ? "sim" : "nao"} className="flex gap-3 border-b border-line py-2.5">
+                    <span aria-hidden className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-[3px] ${p.ok ? "bg-[#1a7f4b]" : p.opcional ? "bg-ink-600" : "bg-ember"}`} />
+                    <span className="min-w-0">
+                      <span className="block text-[0.92rem] font-semibold">
+                        {p.titulo}
+                        <span className="font-normal text-dim"> · {p.ok ? "comprovado" : p.opcional ? "não comprovado (opcional)" : "não comprovado"}</span>
+                      </span>
+                      <span className="block text-[0.84rem] leading-snug text-muted">{p.evidencia}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </div>
       </Painel>
     </>
   );

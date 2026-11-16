@@ -199,7 +199,9 @@ alter table crm_oportunidades add column if not exists aviso_em timestamptz;    
 alter table crm_oportunidades add column if not exists ultima_entrada_em timestamptz;    -- última mensagem do interessado nesta oportunidade
 alter table crm_oportunidades add column if not exists ultima_saida_humana_em timestamptz; -- última resposta de uma pessoa (CRM, aplicativo ou registro à mão)
 alter table crm_oportunidades add column if not exists pendencia text;                   -- por que depende de nós: resposta | pediu_parar | novo_envio | novo_pedido | nao_suportado
+alter table crm_oportunidades add column if not exists validacao boolean not null default false; -- validação com número de controle: fora dos indicadores, sem conversão publicitária
 create index if not exists crm_oportunidades_categoria on crm_oportunidades (categoria);
+create index if not exists crm_oportunidades_validacao on crm_oportunidades (recebido_em desc) where validacao;
 create index if not exists crm_oportunidades_vez on crm_oportunidades (aguardando) where aguardando is not null;
 
 -- Registros anteriores: categoria pela origem do formulário; sem origem conhecida fica "a classificar".
