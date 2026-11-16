@@ -225,6 +225,38 @@ try {
   ok(semAss.status === 401 && assErrada === 401 && assVelha === 401, `webhook sem assinatura, com segredo errado ou com horário de 7 h atrás: 401/401/401 (${semAss.status}/${assErrada}/${assVelha})`);
   ok((await sql`select count(*)::int as n from crm_webhook_eventos`)[0].n === 0 && (await sql`select count(*)::int as n from crm_contatos`)[0].n === 0, "notificação sem assinatura válida não grava nada");
 
+  // Motivo de cada recusa: fica registrado só o motivo, a hora e a contagem.
+  const recusas = async () => (await sql`select valor from crm_config where chave = 'whatsapp:webhook-recusas'`)[0]?.valor ?? null;
+  const cru = (cabecalho, corpo = corpoSolto) =>
+    fetch(`${B}/api/leads/webhooks/ycloud`, { method: "POST", headers: { "content-type": "application/json", ...(cabecalho === undefined ? {} : { "ycloud-signature": cabecalho }) }, body: corpo }).then(async (r) => ({ status: r.status, corpo: await r.text() }));
+  await espera(700);
+  const r0 = await recusas();
+  ok(r0?.total === 3 && r0.porMotivo.sem_assinatura === 1 && r0.porMotivo.assinatura_diferente === 1 && r0.porMotivo.fora_do_prazo === 1, `as três recusas acima ficaram registradas pelo motivo: sem assinatura, assinatura diferente e fora do prazo (${JSON.stringify(r0?.porMotivo)})`);
+  const agS = Math.floor(Date.now() / 1000);
+  const hmac = (t, corpo, segredo = SEGREDO) => createHmac("sha256", segredo).update(`${t}.${corpo}`).digest("hex");
+  const FALSA = "a".repeat(64);
+  const fmt = [await cru("abc"), await cru(`t=${agS}`), await cru(`t=${agS},s=xyz`), await cru(`t=agora,s=${FALSA}`), await cru(`s=${hmac(agS, corpoSolto)}`)];
+  ok(fmt.every((x) => x.status === 401), `cabeçalho fora do formato (texto solto, sem s, s que não é hexadecimal, t que não é número, sem t): 401 em todos (${fmt.map((x) => x.status).join("/")})`);
+  const dif = [await cru(`t=${agS},s=${FALSA}`), await cru(`t=${agS},s=${hmac(agS, corpoSolto)}`, corpoSolto.replace('"oi"', '"oi!"')), await cru(`t=${agS},s=${hmac(agS + 1, corpoSolto)}`)];
+  ok(dif.every((x) => x.status === 401), `assinatura inventada, corpo alterado depois de assinado e horário trocado depois de assinado: 401 em todos (${dif.map((x) => x.status).join("/")})`);
+  await espera(400);
+  const futuro = await cru(`t=${agS + 7 * 3600},s=${hmac(agS + 7 * 3600, corpoSolto)}`);
+  ok(futuro.status === 401, `assinatura correta com horário 7 h no futuro: 401 (${futuro.status})`);
+  await espera(900);
+  const r1 = await recusas();
+  ok(
+    r1?.total === 12 && r1.porMotivo.sem_assinatura === 1 && r1.porMotivo.formato_invalido === 5 && r1.porMotivo.assinatura_diferente === 4 && r1.porMotivo.fora_do_prazo === 2 && r1.ultimoMotivo === "fora_do_prazo",
+    `cada recusa contada no seu motivo (${JSON.stringify(r1?.porMotivo)}, total ${r1?.total}, última: ${r1?.ultimoMotivo})`,
+  );
+  const gravado = JSON.stringify(r1 ?? {});
+  ok(
+    Object.keys(r1 ?? {}).sort().join(",") === "desde,porMotivo,total,ultimaEm,ultimoMotivo" &&
+      ![SEGREDO, "outro-segredo", FALSA, hmac(agS, corpoSolto), "evt_sem_assinatura", "5547911110000", "ycloud-signature", '"oi"'].some((x) => gravado.includes(x)),
+    "o registro guarda só motivo, hora e contagem: nada do segredo, da assinatura, do cabeçalho, do telefone ou do texto",
+  );
+  ok([...fmt, ...dif, futuro].every((x) => x.corpo === '{"ok":false}'), "a resposta ao chamador não revela o motivo da recusa");
+  ok((await sql`select count(*)::int as n from crm_webhook_eventos`)[0].n === 0 && (await sql`select count(*)::int as n from crm_contatos`)[0].n === 0 && (await sql`select count(*)::int as n from crm_mensagens`)[0].n === 0, "nenhuma das notificações recusadas gravou evento, contato ou mensagem");
+
   /* ───────────────────────────── login ───────────────────────────── */
   const { ctx, meta } = await contexto();
   const page = await ctx.newPage();
@@ -246,6 +278,13 @@ try {
   let integ = await texto(page);
   ok(/WhatsApp \(YCloud[^)]*\)\s*Parcial/.test(integ) && /estado CONNECTED, nome Spolaor Tecnologia/.test(integ), "integrações: número CONNECTED lido da YCloud, mas estado geral “Parcial” enquanto nenhuma notificação chegou");
   ok(/Notificações recebidas:\s*nenhuma até agora/.test(integ) && /nenhum escolhido em Configurações/.test(integ), "integrações: sem notificação recebida e sem modelo escolhido, dito como tal");
+  const recTxt = (await texto(page, "[data-wa-recusas]")).replace(/\s+/g, " ");
+  ok(
+    /Notificações recusadas: ao menos 12 desde/.test(recTxt) && /horário assinado difere do relógio do servidor/.test(recTxt) && /assinatura diferente 4/.test(recTxt) && /Nenhuma notificação válida chegou depois dela/.test(recTxt) &&
+      (await page.getAttribute("[data-wa-recusas]", "data-motivo")) === "fora_do_prazo",
+    `integrações: recusas com contagem, motivo da última e aviso de que nada válido chegou depois (“${recTxt.slice(0, 150)}…”)`,
+  );
+  ok(![SEGREDO, "a".repeat(64)].some((x) => recTxt.includes(x)), "integrações: o texto das recusas não mostra segredo nem assinatura");
   // antes de ligar: formulário real não dispara nada
   const antes = await novoLead({}, ["cancelada"]);
   ok(antes.t?.status === "cancelada" && /desligado/.test(antes.t.resultado) && yc.envios.length === 0, `automação desligada (padrão): a tarefa é gravada com o lead e encerrada sem envio (“${antes.t?.resultado}”)`);
@@ -257,6 +296,7 @@ try {
   await acao(page, 'button:has-text("Salvar modelo e frases")');
   const cfgTxt = await texto(page, "#whatsapp");
   ok(/Estado na Meta: APPROVED · categoria UTILITY/.test(cfgTxt) && cfgTxt.includes("Recebemos {{2}} pelo nosso site"), `configurações: modelo lido da YCloud com estado, categoria e texto aprovado (${cfgTxt.slice(0, 160).replace(/\s+/g, " ")})`);
+  ok(/^Texto aprovado pela Meta \(lido da YCloud/.test((await texto(page, "[data-modelo-texto]")).trim()) && (await page.getAttribute("[data-modelo-texto]", "data-modelo-texto")) === "APPROVED", "configurações: modelo APPROVED → rótulo “Texto aprovado pela Meta”");
   await page.check('input[name="canal"][value="whatsapp"]');
   await acao(page, 'button:has-text("Salvar canal")');
   ok((await sql`select valor from crm_config where chave = 'automacao:primeiro-contato'`)[0]?.valor?.canal === "whatsapp", "primeiro contato automático ligado no canal WhatsApp");
@@ -381,6 +421,21 @@ try {
   await page.goto(`${B}/leads/integracoes`);
   integ = await texto(page);
   ok(/Modelo do primeiro contato:\s*pendente ou indisponível\. O modelo "primeiro_contato_site" não está aprovado/.test(integ), "integrações: modelo pendente/indisponível dito como tal");
+  ok(/Depois dela já chegaram notificações válidas/.test((await texto(page, "[data-wa-recusas]")).replace(/\s+/g, " ")), "integrações: depois que notificações válidas chegam, as recusas antigas deixam de ser alerta");
+  const rotuloModelo = async () => {
+    await page.goto(`${B}/leads/configuracoes`);
+    return (await texto(page, "[data-modelo-texto]")).trim().replace(/\s+/g, " ");
+  };
+  const rotPausado = await rotuloModelo();
+  ok(/^Texto de modelo suspenso pela Meta \(PAUSED\)/.test(rotPausado) && !/aprovado/i.test(rotPausado), `configurações: modelo PAUSED não é chamado de aprovado (“${rotPausado.slice(0, 60)}”)`);
+  yc.modeloStatus = "PENDING";
+  await webhook("whatsapp.template.reviewed", { whatsappTemplate: { name: MODELO, language: "pt_BR", status: "PENDING", statusUpdateEvent: "PENDING" } });
+  const rotPendente = await rotuloModelo();
+  ok(/^Texto em análise na Meta, ainda não aprovado \(lido da YCloud/.test(rotPendente) && !/^Texto aprovado/.test(rotPendente), `configurações: modelo PENDING → “em análise, ainda não aprovado” (“${rotPendente.slice(0, 60)}”)`);
+  yc.modeloStatus = "REJECTED";
+  await webhook("whatsapp.template.reviewed", { whatsappTemplate: { name: MODELO, language: "pt_BR", status: "REJECTED", statusUpdateEvent: "REJECTED" } });
+  const rotRecusado = await rotuloModelo();
+  ok(/^Texto recusado pela Meta/.test(rotRecusado), `configurações: modelo REJECTED → “Texto recusado pela Meta” (“${rotRecusado.slice(0, 40)}”)`);
   yc.modeloStatus = "APPROVED";
   await webhook("whatsapp.template.reviewed", { whatsappTemplate: { name: MODELO, language: "pt_BR", status: "APPROVED", statusUpdateEvent: "APPROVED" } });
 
@@ -886,6 +941,50 @@ try {
   integ = await texto(page);
   ok(/WhatsApp \(YCloud[^)]*\)\s*Conectado/.test(integ) && /Última mensagem recebida: \d/.test(integ) && /Última resposta sincronizada do aplicativo: \d/.test(integ) && /Último estado de entrega: \d/.test(integ), "integrações: com número conectado e notificações recebidas, mostra “Conectado” e a hora do último evento de cada tipo");
   ok(/com resultado incerto:\s*\d/.test(integ), "integrações: falhas e envios incertos recentes aparecem");
+
+  /* ───────────────────────────── reentrega depois de recusa ───────────────────────────── */
+  secao("Reentrega depois de recusa (caso real de 16/11/2026) e teto do registro de recusas");
+  // Primeira mensagem (30 min atrás) recusada duas vezes por segredo errado; a segunda mensagem chega e é aceita
+  // antes; a primeira entra na nova tentativa, com o MESMO id de evento; depois a YCloud a repete mais uma vez.
+  const foneR = "5548955551234";
+  const h30 = new Date(Date.now() - 30 * 60_000).toISOString();
+  const evA = { id: "evt_reentrega_A", wamid: "wamid.REENTREGA_A", msg: "in_reentrega_A" };
+  const mandaA = (opcoes) => recebida(foneR, "primeira mensagem", { id: evA.msg, wamid: evA.wamid, em: h30, nome: "Pessoa Reentrega", topo: { createTime: h30 }, opcoes: { id: evA.id, ...opcoes } });
+  const rAntes = (await recusas()).porMotivo.assinatura_diferente;
+  const recA = [await mandaA({ segredo: "segredo-antigo" }), await mandaA({ segredo: "segredo-antigo" })];
+  await espera(700);
+  ok(recA.every((x) => x === 401) && (await sql`select count(*)::int as n from crm_mensagens where wamid = ${evA.wamid}`)[0].n === 0 && (await recusas()).porMotivo.assinatura_diferente === rAntes + 2, "primeira mensagem recusada duas vezes por segredo errado: 401, nada gravado, duas recusas contadas como assinatura diferente");
+  const stB = await recebida(foneR, "segunda mensagem", { nome: "Pessoa Reentrega" });
+  const stA = await mandaA({});
+  await espera(500);
+  const [cR] = await sql`select id from crm_contatos where whatsapp = ${foneR}`;
+  const msgsR = await sql`select corpo, ocorrida_em from crm_mensagens where contato_id = ${cR?.id ?? null} order by coalesce(ocorrida_em, criado_em)`;
+  ok(stB === 200 && stA === 200 && msgsR.length === 2 && msgsR[0].corpo === "primeira mensagem" && new Date(msgsR[0].ocorrida_em).toISOString() === h30, `com o segredo certo, a segunda mensagem entra na hora e a primeira entra na nova tentativa: 2 mensagens, a primeira com a hora real de envio (${msgsR.map((x) => x.corpo).join(" → ")})`);
+  const stA2 = await mandaA({});
+  const stA3 = await recebida(foneR, "primeira mensagem", { id: evA.msg, wamid: evA.wamid, em: h30, nome: "Pessoa Reentrega" }); // mesma mensagem, outro id de evento
+  await espera(400);
+  ok(
+    stA2 === 200 && stA3 === 200 && (await sql`select count(*)::int as n from crm_mensagens where contato_id = ${cR.id}`)[0].n === 2 && (await sql`select count(*)::int as n from crm_webhook_eventos where id = ${`ycloud:${evA.id}`}`)[0].n === 1 && (await sql`select count(*)::int as n from crm_contatos where whatsapp = ${foneR}`)[0].n === 1,
+    "a mesma mensagem reentregue depois de aceita (mesmo evento e também com outro id de evento) responde 200 e não duplica mensagem, evento nem contato",
+  );
+  await page.goto(`${B}/leads`);
+  const soltaR = (await texto(page, `#sem-associacao [data-conversa="${cR.id}"]`)).replace(/\s+/g, " ");
+  ok(/2 mensagens/.test(soltaR) && /esperando há (29|30|31) min/.test(soltaR), `fila: a conversa mostra 2 mensagens e a espera contada desde a hora real da primeira, não da chegada (“${soltaR.slice(0, 120)}”)`);
+  await acao(page, `#sem-associacao [data-conversa="${cR.id}"] button:has-text("Não é um pedido")`);
+
+  // Teto: a rota é pública, então uma enxurrada de chamadas inválidas não vira uma gravação por chamada.
+  await espera(61_000); // janela nova
+  const totA = (await recusas()).total;
+  const nEvt = (await sql`select count(*)::int as n from crm_webhook_eventos`)[0].n;
+  const enxurrada = await Promise.all(Array.from({ length: 45 }, () => cru("abc")));
+  await espera(2500);
+  const totB = (await recusas()).total;
+  ok(enxurrada.every((x) => x.status === 401) && totB - totA >= 1 && totB - totA <= 30, `45 chamadas inválidas de uma vez: todas 401 e no máximo 30 gravações na janela (${totB - totA})`);
+  await espera(61_000);
+  await cru("abc");
+  await espera(1200);
+  const totC = (await recusas()).total;
+  ok(totC === totA + 46 && (await sql`select count(*)::int as n from crm_webhook_eventos`)[0].n === nEvt, `o que passou do teto não se perde: entra na próxima gravação permitida (total ${totA} → ${totC}); nenhum evento gravado pela enxurrada`);
 
   const cookie = (await ctx.cookies()).find((c) => c.name === "spolaor_crm");
   const { ctx: ctxM } = await contexto({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });

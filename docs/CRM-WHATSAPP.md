@@ -150,7 +150,9 @@ A conversa é uma só por número. Uma mensagem vai para: a oportunidade da mens
 - **Limite de requisições (429):** nada saiu; a tarefa volta para a fila (até 3 tentativas).
 - **Estados separados:** na fila, aceita pelo provedor, enviada, entregue, lida, falhou, resultado incerto.
 - **Retenção:** as notificações já processadas são apagadas depois de 90 dias.
-- **Assinatura:** `YCloud-Signature: t=<unix>,s=<hex>`, HMAC-SHA256 de `<t>.<corpo cru>`. Tolerância de 6 horas no horário, porque a YCloud tenta de novo por até cerca de 5h40 e não documenta se reassina.
+- **Assinatura:** `YCloud-Signature: t=<unix>,s=<hex>`, HMAC-SHA256 de `<t>.<corpo cru>`. Tolerância de 6 horas no horário, porque a YCloud tenta de novo por até cerca de 5h40 e não documenta se reassina. A conferência foi comparada com a implementação de referência da documentação da YCloud (mesmo resultado, inclusive com acentos no corpo).
+- **Notificação recusada (401):** não é gravada, porque não se sabe quem a enviou. Fica registrado só o **motivo**, a hora e a contagem (`crm_config`, chave `whatsapp:webhook-recusas`), e `/leads/integracoes` mostra "Notificações recusadas" com o motivo da última. Nunca são guardados o cabeçalho, a assinatura, o segredo nem o corpo, e a resposta ao chamador não diz o motivo. Motivos: sem assinatura (a chamada não trouxe o cabeçalho), formato inválido, fora do prazo (mais de 6 horas de diferença) e assinatura diferente (o segredo do servidor não é o do endpoint, ou o corpo foi alterado). Como a rota é pública, o registro tem teto de 30 gravações por minuto por instância; o excedente é somado na gravação seguinte, então a contagem é um piso ("ao menos").
+- **Nova tentativa depois de recusa:** a YCloud repete o mesmo evento em 10 s, 30 s, 5 min, 30 min, 1 h, 2 h e 2 h. Corrigida a causa, a tentativa seguinte entra normalmente, com a hora real da mensagem. Um endpoint que falha repetidamente pode passar a `pending` na YCloud e parar de receber.
 
 ## 6. Variáveis de ambiente (servidor)
 
@@ -185,7 +187,7 @@ Confirmado na documentação oficial (16/11/2026):
 
 ## 8. Testes
 
-`scripts/teste-crm-whatsapp.mjs`: YCloud, QStash e e-mail simulados, Postgres local. 161 verificações. Cobre formulário → tarefa → primeiro contato, resposta → fila, resposta pelo aplicativo e pelo CRM, classificação por evidência, duplicação, concorrência, eventos fora de ordem, envio incerto, janela, modelo indisponível, integração desconectada, duas oportunidades, limites de tempo nas bordas, validação com número de controle, formulários e Pixel, filtros, atualização automática e celular.
+`scripts/teste-crm-whatsapp.mjs`: YCloud, QStash e e-mail simulados, Postgres local. 182 verificações. Cobre formulário → tarefa → primeiro contato, resposta → fila, resposta pelo aplicativo e pelo CRM, classificação por evidência, duplicação, concorrência, eventos fora de ordem, envio incerto, janela, modelo indisponível, integração desconectada, duas oportunidades, limites de tempo nas bordas, validação com número de controle, motivos de recusa do webhook e reentrega depois de recusa, formulários e Pixel, filtros, atualização automática e celular.
 
 ## 9. Validação com número de controle
 
@@ -230,9 +232,56 @@ Ordem sugerida. Nenhuma credencial deve ser enviada por mensagem ou escrita em d
 3. **Conectar por coexistência:** no painel, "WhatsApp Business APP Coexistence", por QR code. Não cadastrar o número como exclusivo de API nem desconectar o aplicativo.
 4. **Modelo:** criar o modelo de primeiro contato (seção 3), em `pt_BR`, e aguardar a aprovação. Conferir a categoria atribuída pela Meta.
 5. **Webhook:** cadastrar `https://www.spolaortecnologia.com.br/api/leads/webhooks/ycloud` com os eventos `whatsapp.inbound_message.received`, `whatsapp.message.updated`, `whatsapp.smb.message.echoes`, `whatsapp.smb.message.created`, `whatsapp.template.reviewed`, `whatsapp.template.category_updated`, `whatsapp.phone_number.quality_updated`, `whatsapp.business_account.updated` e `whatsapp.business_account.deleted`.
-6. **Vercel (Production):** `YCLOUD_API_KEY`, `YCLOUD_WEBHOOK_SECRET` e `WHATSAPP_NUMERO`; Redeploy.
+6. **Vercel (Production):** `YCLOUD_API_KEY`, `YCLOUD_WEBHOOK_SECRET` e `WHATSAPP_NUMERO`; Redeploy. Copie os dois segredos pelos botões da YCloud, nunca selecionando o texto da tela: a chave aparece mascarada até clicar em "Look", e o segredo do webhook aparece truncado (use "Copy secret"). A Vercel pode pedir um código por e-mail a cada Redeploy.
 7. **Conferir em `/leads/integracoes`:** número `CONNECTED`, modelo aprovado.
 8. **Cadastrar o número de controle** (o seu, não o de um cliente) em Configurações. Se a saudação ou a ausência do aplicativo ficarem ligadas, cadastrar o texto exato delas.
 9. **Validar com a automação desligada** (seção 9): iniciar a validação em Integrações, responder do número de controle, responder pelo aplicativo do celular comercial e responder pela ficha, até o roteiro mostrar "completa". Repetir pelo formulário público com o número de controle, para percorrer também a página real. Nenhum desses envios gera conversão nos anúncios.
 10. **Ligar a automação** em Configurações, só depois da validação completa.
 11. **Número público do site:** só trocar depois de tudo validado.
+
+## 11. Diagnóstico da ativação (16/11/2026)
+
+Registro do que aconteceu na primeira ativação real, para não repetir o caminho errado.
+
+### O que aconteceu
+
+| Sintoma | Causa confirmada | Correção |
+|---|---|---|
+| `/leads/integracoes` mostrava "sem resposta da YCloud (TypeError)" em toda consulta. | Valor de `YCLOUD_API_KEY` na Vercel colado da tela, com a chave ainda mascarada. | Chave revelada com "Look", colada de novo e Redeploy. O CRM passou a ler o número como `CONNECTED`. |
+| Mensagem enviada ao número comercial não aparecia no CRM. | Valor de `YCLOUD_WEBHOOK_SECRET` na Vercel diferente do segredo do endpoint. A YCloud entregou o evento quatro vezes e o site respondeu **401** em todas. | Segredo copiado com "Copy secret", salvo na Vercel e Redeploy. A notificação seguinte foi aceita (HTTP 200) e a mensagem recusada entrou na nova tentativa da YCloud. |
+
+Os 401 foram resolvidos **só** com a correção do segredo na Vercel. Nenhuma alteração de código foi necessária para o recebimento funcionar.
+
+### Hipóteses que não se confirmaram
+
+Antes de ler o histórico de entregas do webhook, a falta de mensagens foi atribuída à Meta e à YCloud. **Nenhuma destas hipóteses foi confirmada como causa**, e o recebimento funcionou com todas elas ainda presentes:
+
+- conta do WhatsApp (WABA) em "Pending" na YCloud;
+- aviso "WABA status is abnormal, some functions are unavailable" na página do número;
+- Inbox da YCloud dizendo que o canal não está conectado;
+- portfólio da Meta criado pela conexão por QR code inacessível pelo Facebook do dono;
+- cadastro feito sem site ou empresa sem verificação.
+
+O erro de diagnóstico foi ler o histórico de entregas da YCloud antes de a página carregar e tomar a lista vazia como "nenhuma tentativa". Os painéis da YCloud e da Vercel só carregam as listas com a aba visível.
+
+O significado de "Pending" e de "WABA status is abnormal" continua sem documentação. Pela documentação da Meta, empresa sem verificação limita o **envio** (250 pessoas por 24 horas fora da janela de atendimento) e, se o cadastro foi feito sem site, pode impedir o envio até a verificação. Isso ainda não foi testado. O portfólio criado pelo caminho do QR code é acessado entrando no Meta Business Suite pela opção WhatsApp, não pelo Facebook.
+
+### Comprovado com dado real
+
+- A YCloud gera `whatsapp.inbound_message.received` para o número em coexistência e chama o webhook de produção.
+- O CRM grava a mensagem recebida, cria o contato e a mostra em "Conversas sem associação".
+- Duas mensagens distintas viraram duas mensagens, sem duplicar. A que foi recusada quatro vezes entrou uma única vez na nova tentativa e ficou ordenada pela hora real de envio, anterior à da mensagem que chegou primeiro.
+
+### Ainda não comprovado com dado real
+
+- Envio pela API (modelo ou texto livre). O modelo `primeiro_contato_site` estava em análise na Meta.
+- Estados de entrega e leitura.
+- Resposta pelo aplicativo sincronizada no CRM (eco).
+- Repetição, pela YCloud, de um evento que **já** tinha sido aceito. Isso só foi exercitado com provedor simulado.
+- Validação completa com número de controle (seção 9).
+
+### Como diagnosticar da próxima vez
+
+1. Em `/leads/integracoes`, ler "Notificações recebidas" e "Notificações recusadas". O motivo da última recusa aponta a causa.
+2. Na YCloud, em Developers → Webhooks → histórico do endpoint, conferir as tentativas e o código HTTP de cada uma, com a aba visível.
+3. Só depois de descartar configuração nossa, considerar Meta ou YCloud.

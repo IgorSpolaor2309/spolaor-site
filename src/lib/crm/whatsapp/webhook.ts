@@ -1,6 +1,6 @@
 import { aplicarStatus, registrarEco, registrarEntrada } from "../conversa";
 import { crmConfigured, db } from "../db";
-import { listarModelos, traduzir, type EventoYCloud } from "./ycloud";
+import { listarModelos, traduzir, type EventoYCloud, type MotivoRecusa } from "./ycloud";
 
 // Recebimento das notificações da YCloud.
 //
@@ -89,6 +89,93 @@ export async function rotinaWebhooks(): Promise<string[]> {
   for (const r of rows) out.push(`webhook ${r.id.slice(-8)}: ${await processarGravado(r.id, r.payload)}`);
   await sql`delete from crm_webhook_eventos where processado_em is not null and recebido_em < now() - interval '90 days'`.catch(() => {});
   return out;
+}
+
+/* ───────────────────────────── notificações recusadas ─────────────────────────────
+ *
+ * Uma notificação recusada (HTTP 401) não é gravada: não se sabe quem a enviou. O que fica registrado é só o MOTIVO
+ * e a hora, para a tela de Integrações dizer por que o webhook não está entrando. Nunca o cabeçalho, a assinatura,
+ * o segredo nem o corpo.
+ *
+ * A rota é pública, então o registro tem teto: no máximo MAX_REGISTROS gravações por JANELA_MS em cada instância do
+ * servidor. O que passar disso é só contado na memória e entra junto na próxima gravação permitida. Em operação
+ * normal (as novas tentativas da YCloud são poucas por minuto) a contagem é exata; sob enxurrada ela é um piso.
+ */
+
+export const MOTIVO_RECUSA_ROTULO: Record<MotivoRecusa, string> = {
+  sem_assinatura: "a chamada veio sem o cabeçalho de assinatura da YCloud (não partiu da YCloud, ou foi um teste manual)",
+  formato_invalido: "o cabeçalho de assinatura veio fora do formato esperado",
+  fora_do_prazo: "o horário assinado difere do relógio do servidor em mais de 6 horas",
+  assinatura_diferente:
+    "a assinatura não confere com YCLOUD_WEBHOOK_SECRET: o segredo salvo no servidor é diferente do segredo do endpoint na YCloud (copie o valor inteiro pelo botão “Copy secret”, salve na Vercel e refaça o deploy)",
+};
+const MOTIVOS = Object.keys(MOTIVO_RECUSA_ROTULO) as MotivoRecusa[];
+const CHAVE_RECUSAS = "whatsapp:webhook-recusas";
+const JANELA_MS = 60_000;
+const MAX_REGISTROS = 30;
+let janelaInicio = 0;
+let registrosNaJanela = 0;
+const acumulado = new Map<MotivoRecusa, number>();
+
+type Recusas = { desde: string; total: number; ultimaEm: string; ultimoMotivo: MotivoRecusa; porMotivo: Partial<Record<MotivoRecusa, number>> };
+
+/** Registra que uma notificação foi recusada e por quê. Nunca lança erro: falhar aqui não pode mudar a resposta da rota. */
+export async function registrarRecusa(motivo: MotivoRecusa, agora = Date.now()): Promise<void> {
+  console.warn(`[crm] webhook ycloud recusado: ${motivo}`);
+  if (!MOTIVOS.includes(motivo) || !crmConfigured()) return;
+  acumulado.set(motivo, (acumulado.get(motivo) ?? 0) + 1);
+  if (agora - janelaInicio >= JANELA_MS) {
+    janelaInicio = agora;
+    registrosNaJanela = 0;
+  }
+  if (registrosNaJanela >= MAX_REGISTROS) return; // teto: fica na memória até a próxima gravação permitida
+  registrosNaJanela++;
+  const lote = new Map(acumulado);
+  acumulado.clear();
+  const quando = new Date(agora).toISOString();
+  try {
+    const sql = await db();
+    await sql.begin(async (tx) => {
+      const vazio: Recusas = { desde: quando, total: 0, ultimaEm: quando, ultimoMotivo: motivo, porMotivo: {} };
+      await tx`insert into crm_config (chave, valor) values (${CHAVE_RECUSAS}, ${tx.json(vazio as never)}) on conflict (chave) do nothing`;
+      const [r] = await tx<{ valor: Partial<Recusas> }[]>`select valor from crm_config where chave = ${CHAVE_RECUSAS} for update`;
+      const v = r?.valor ?? {};
+      const porMotivo: Partial<Record<MotivoRecusa, number>> = {};
+      for (const m of MOTIVOS) {
+        const n = (Number(v.porMotivo?.[m]) || 0) + (lote.get(m) ?? 0);
+        if (n > 0) porMotivo[m] = n;
+      }
+      const novo: Recusas = {
+        desde: typeof v.desde === "string" ? v.desde : quando,
+        total: MOTIVOS.reduce((s, m) => s + (porMotivo[m] ?? 0), 0),
+        ultimaEm: quando,
+        ultimoMotivo: motivo,
+        porMotivo,
+      };
+      await tx`update crm_config set valor = ${tx.json(novo as never)}, atualizado_em = now() where chave = ${CHAVE_RECUSAS}`;
+    });
+  } catch (e) {
+    // Não gravou: devolve o lote à memória para a próxima tentativa.
+    for (const [m, n] of lote) acumulado.set(m, (acumulado.get(m) ?? 0) + n);
+    console.error(`[crm] recusa do webhook não registrada: ${(e as Error).message.slice(0, 200)}`);
+  }
+}
+
+export type EstadoRecusas = { total: number; desde: string; ultimaEm: string; ultimoMotivo: MotivoRecusa; porMotivo: { motivo: MotivoRecusa; n: number }[] } | null;
+
+/** Notificações recusadas desde que o registro existe (null se nenhuma). */
+export async function estadoRecusas(): Promise<EstadoRecusas> {
+  const sql = await db();
+  const [r] = await sql<{ valor: Partial<Recusas> }[]>`select valor from crm_config where chave = ${CHAVE_RECUSAS}`;
+  const v = r?.valor;
+  if (!v || !v.total || typeof v.ultimaEm !== "string" || !v.ultimoMotivo || !MOTIVOS.includes(v.ultimoMotivo)) return null;
+  return {
+    total: Number(v.total) || 0,
+    desde: typeof v.desde === "string" ? v.desde : v.ultimaEm,
+    ultimaEm: v.ultimaEm,
+    ultimoMotivo: v.ultimoMotivo,
+    porMotivo: MOTIVOS.map((m) => ({ motivo: m, n: Number(v.porMotivo?.[m]) || 0 })).filter((x) => x.n > 0),
+  };
 }
 
 export type EstadoWebhook = {

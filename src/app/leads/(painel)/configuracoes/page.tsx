@@ -38,6 +38,24 @@ const MSG: Record<string, { tom: "ok" | "alerta"; texto: string }> = {
   controle: { tom: "ok", texto: "Números de controle salvos." },
   "controle-invalido": { tom: "alerta", texto: "Algum número não foi reconhecido e ficou de fora. Informe DDD e número, um por linha." },
 };
+/** Rótulo do texto lido do provedor: só chama de "aprovado" o que a Meta aprovou. */
+function rotuloTextoModelo(status: string) {
+  switch (status) {
+    case "APPROVED":
+      return "Texto aprovado pela Meta";
+    case "PENDING":
+    case "IN_APPEAL":
+      return "Texto em análise na Meta, ainda não aprovado";
+    case "REJECTED":
+      return "Texto recusado pela Meta";
+    case "PAUSED":
+    case "DISABLED":
+      return `Texto de modelo suspenso pela Meta (${status})`;
+    default:
+      return `Texto do modelo, ainda não aprovado (estado na Meta: ${status})`;
+  }
+}
+
 const CANAIS = [
   { v: "desligado", rotulo: "Desligado", texto: "Nenhuma mensagem automática. Todo contato novo aparece em “Depende de mim”." },
   { v: "whatsapp", rotulo: "WhatsApp", texto: "Modelo aprovado enviado pelo número comercial logo depois do formulário." },
@@ -132,7 +150,9 @@ export default async function ConfiguracoesPage({ searchParams }: { searchParams
           </p>
           {escolhido?.corpo && (
             <div>
-              <p className="mb-1.5 text-[0.8rem] font-semibold text-muted">Texto aprovado (lido da YCloud{lista?.ok ? ` em ${fmtDataHora(lista.em)}` : ""})</p>
+              <p className="mb-1.5 text-[0.8rem] font-semibold text-muted" data-modelo-texto={escolhido.status}>
+                {rotuloTextoModelo(escolhido.status)} (lido da YCloud{lista?.ok ? ` em ${fmtDataHora(lista.em)}` : ""})
+              </p>
               <p className="whitespace-pre-wrap rounded-[10px] border border-line bg-ink-850 px-3 py-2.5 text-[0.92rem] leading-relaxed">{escolhido.corpo}</p>
             </div>
           )}
