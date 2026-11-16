@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
-import { automacaoAction, modeloAction, nomeAction } from "@/app/leads/actions";
+import { automacaoAction, modeloAction, modeloWhatsappAction, nomeAction } from "@/app/leads/actions";
 import { Enviar } from "@/components/crm/enviar";
 import { Aviso, btnPrimary, btnQuiet, btnSecondary, Campo, input, Painel, Titulo } from "@/components/crm/ui";
 import { exigirUsuario } from "@/lib/crm/auth";
-import { automacaoEmailAtiva, emailCliente, modelos, MODELOS_PADRAO } from "@/lib/crm/mensagens";
+import { emailCliente, modelos, MODELOS_PADRAO } from "@/lib/crm/mensagens";
+import { CATEGORIA_ROTULO, CATEGORIAS, fmtDataHora } from "@/lib/crm/tipos";
+import { canalAutomacao, frases, MODELO_SUGERIDO, modeloPrimeiroContato, VARIAVEIS_MODELO, waEnvio } from "@/lib/crm/whatsapp/config";
+import { listarModelos } from "@/lib/crm/whatsapp/ycloud";
 
 export const metadata: Metadata = { title: "Configurações" };
 
@@ -13,14 +16,27 @@ const MSG: Record<string, { tom: "ok" | "alerta"; texto: string }> = {
   "modelo-vazio": { tom: "alerta", texto: "A mensagem do modelo não pode ficar vazia." },
   automacao: { tom: "ok", texto: "Primeiro contato automático atualizado." },
   "email-config": { tom: "alerta", texto: "Não dá para ligar: o envio de e-mail ao interessado ainda não está configurado." },
+  "wa-config": { tom: "alerta", texto: "Não dá para ligar: o WhatsApp ainda não está configurado no servidor (chave da YCloud e número comercial)." },
+  "wa-modelo": { tom: "alerta", texto: "Não dá para ligar: escolha abaixo um modelo que esteja aprovado pela Meta." },
+  "wa-nome": { tom: "alerta", texto: "Nome de modelo inválido: use o nome exato cadastrado no provedor (minúsculas, números e sublinhado)." },
+  "wa-salvo": { tom: "ok", texto: "Modelo e frases do WhatsApp salvos." },
 };
+const CANAIS = [
+  { v: "desligado", rotulo: "Desligado", texto: "Nenhuma mensagem automática. Todo contato novo aparece em “Depende de mim”." },
+  { v: "whatsapp", rotulo: "WhatsApp", texto: "Modelo aprovado enviado pelo número comercial logo depois do formulário." },
+  { v: "email", rotulo: "E-mail", texto: "Modelo “E-mail · primeiro contato”, para quem informou e-mail." },
+] as const;
+const VAR_ROTULO: Record<string, string> = { primeiro_nome: "Primeiro nome", pedido: "Frase do pedido (por serviço)", nome: "Nome completo", empresa: "Empresa" };
 
 export default async function ConfiguracoesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const usuario = await exigirUsuario();
   const sp = await searchParams;
-  const [mods, automacao] = await Promise.all([modelos(), automacaoEmailAtiva()]);
+  const wa = waEnvio();
+  const [mods, canal, modeloWa, fr, lista] = await Promise.all([modelos(), canalAutomacao(), modeloPrimeiroContato(), frases(), wa.pronto ? listarModelos() : null]);
   const email = emailCliente();
   const msg = typeof sp.msg === "string" ? MSG[sp.msg] : undefined;
+  const itens = lista ? (lista.ok ? lista.itens : (lista.antigo?.itens ?? [])) : [];
+  const escolhido = itens.find((t) => t.nome === modeloWa.nome && t.idioma === modeloWa.idioma);
   return (
     <>
       <h1 className="text-[1.6rem] font-semibold leading-tight tracking-[-0.03em]">Configurações</h1>
@@ -30,31 +46,99 @@ export default async function ConfiguracoesPage({ searchParams }: { searchParams
         </div>
       )}
 
-      <Painel className="mt-5">
-        <Titulo nota={automacao ? "Ligado" : "Desligado"}>Primeiro contato automático por e-mail</Titulo>
+      <Painel className="mt-5" id="automacao">
+        <Titulo nota={`Agora: ${CANAIS.find((c) => c.v === canal)!.rotulo}`}>Primeiro contato automático</Titulo>
         <div className="grid gap-3 px-4 py-4 sm:px-5">
           <p className="max-w-3xl text-[0.9rem] leading-relaxed text-muted">
-            Quando ligado, quem preenche um formulário do site e informa e-mail recebe o modelo “E-mail · primeiro contato” logo depois do envio. Uma mensagem por oportunidade,
-            nunca repetida; não sai para envios de teste, para quem já tem conversa aberta do mesmo serviço, nem depois que alguém assumiu o atendimento. Falha de envio é tentada
-            de novo e aparece em Atendimento. Por WhatsApp e Instagram não há envio automático (sem integração oficial).
+            Vale só para formulários do site, uma mensagem por oportunidade, por um canal só (a mesma recepção nunca sai por WhatsApp e por e-mail). A tarefa é gravada
+            junto com o contato e sai em seguida. Não sai para envios de teste, para quem já recebeu a recepção ou já está em conversa, depois que alguém assumiu o
+            atendimento, depois que a pessoa respondeu, nem para contatos com mais de 12 horas. Ligar não dispara nada para quem chegou antes.
           </p>
-          {!email.pronto && <Aviso tom="alerta">Envio de e-mail ao interessado não configurado. Falta: {email.falta.join(", ")}.</Aviso>}
-          {email.pronto && (
-            <p className="text-[0.84rem] text-dim">
-              Sai de <strong>{email.from}</strong>; as respostas vão para <strong>{email.replyTo}</strong>.
-            </p>
-          )}
-          <form action={automacaoAction}>
-            <input type="hidden" name="ativo" value={automacao ? "0" : "1"} />
-            <Enviar className={automacao ? btnSecondary : btnPrimary}>{automacao ? "Desligar o envio automático" : "Ligar o envio automático"}</Enviar>
+          <form action={automacaoAction} className="grid gap-2.5">
+            <div role="radiogroup" aria-label="Canal do primeiro contato" className="grid gap-2 sm:grid-cols-3">
+              {CANAIS.map((c) => (
+                <label key={c.v} className="flex cursor-pointer gap-2.5 rounded-[10px] border border-line-strong bg-white px-3 py-2.5 has-[:checked]:border-royal has-[:checked]:bg-royal/[0.04]">
+                  <input type="radio" name="canal" value={c.v} defaultChecked={canal === c.v} className="mt-1 h-4 w-4 accent-royal" />
+                  <span>
+                    <span className="block text-[0.92rem] font-semibold">{c.rotulo}</span>
+                    <span className="block text-[0.82rem] leading-snug text-muted">{c.texto}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            <div>
+              <Enviar className={btnPrimary}>Salvar canal</Enviar>
+            </div>
           </form>
+          {!wa.pronto && <p className="text-[0.84rem] text-dim">WhatsApp indisponível: falta configurar no servidor {wa.falta.join(" e ")}.</p>}
+          {!email.pronto && <p className="text-[0.84rem] text-dim">E-mail ao interessado indisponível: falta {email.falta.join(", ")}.</p>}
         </div>
       </Painel>
 
-      <h2 className="mt-8 font-[family-name:var(--font-display)] text-[1.15rem] font-semibold">Modelos de mensagem</h2>
+      <Painel className="mt-5" id="whatsapp">
+        <Titulo nota={escolhido ? `Estado na Meta: ${escolhido.status}${escolhido.categoria ? ` · categoria ${escolhido.categoria}` : ""}` : modeloWa.nome ? "Modelo não encontrado na conta" : "Nenhum modelo escolhido"}>
+          WhatsApp: modelo do primeiro contato
+        </Titulo>
+        <form action={modeloWhatsappAction} className="grid gap-4 px-4 py-4 sm:px-5">
+          <p className="max-w-3xl text-[0.9rem] leading-relaxed text-muted">
+            Para iniciar uma conversa pela API, o WhatsApp exige um modelo aprovado pela Meta. O texto do modelo é criado e aprovado no painel da YCloud; aqui você
+            escolhe qual usar e o que entra em cada variável. Texto sugerido: <em>{MODELO_SUGERIDO}</em>
+          </p>
+          {escolhido?.corpo && (
+            <div>
+              <p className="mb-1.5 text-[0.8rem] font-semibold text-muted">Texto aprovado (lido da YCloud{lista?.ok ? ` em ${fmtDataHora(lista.em)}` : ""})</p>
+              <p className="whitespace-pre-wrap rounded-[10px] border border-line bg-ink-850 px-3 py-2.5 text-[0.92rem] leading-relaxed">{escolhido.corpo}</p>
+            </div>
+          )}
+          {escolhido?.categoria === "MARKETING" && (
+            <Aviso tom="alerta">A Meta classificou este modelo como MARKETING: cada envio custa bem mais que um modelo de utilidade. Confira o texto e a categoria no painel da YCloud.</Aviso>
+          )}
+          {lista && !lista.ok && <Aviso tom="alerta">Não foi possível ler os modelos da YCloud agora: {lista.erro}.</Aviso>}
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <Campo rotulo="Nome do modelo na YCloud" dica={itens.length ? `Modelos na conta: ${itens.map((t) => `${t.nome} (${t.idioma}, ${t.status})`).join(" · ")}` : "Use o nome exato do modelo cadastrado no provedor."}>
+              <input name="nome" defaultValue={modeloWa.nome} placeholder="ex.: primeiro_contato_site" className={input} autoComplete="off" />
+            </Campo>
+            <Campo rotulo="Idioma">
+              <input name="idioma" defaultValue={modeloWa.idioma} className={input} maxLength={12} autoComplete="off" />
+            </Campo>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Campo key={i} rotulo={`Variável {{${i}}}`}>
+                <select name={`var${i}`} defaultValue={modeloWa.variaveis[i - 1] ?? ""} className={input}>
+                  <option value="">(o modelo não tem)</option>
+                  {VARIAVEIS_MODELO.map((v) => (
+                    <option key={v} value={v}>
+                      {VAR_ROTULO[v]}
+                    </option>
+                  ))}
+                </select>
+              </Campo>
+            ))}
+          </div>
+          <div>
+            <p className="text-[0.92rem] font-semibold">Frase do pedido, por serviço</p>
+            <p className="mt-1 max-w-3xl text-[0.82rem] leading-snug text-dim">
+              É o que entra na variável “Frase do pedido”, para a mensagem falar do que a pessoa pediu. Editar aqui não exige nova aprovação da Meta.
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {CATEGORIAS.map((c) => (
+                <Campo key={c} rotulo={CATEGORIA_ROTULO[c]}>
+                  <input name={`frase-${c}`} defaultValue={fr[c]} maxLength={120} className={input} />
+                </Campo>
+              ))}
+            </div>
+          </div>
+          <div>
+            <Enviar className={btnSecondary}>Salvar modelo e frases</Enviar>
+          </div>
+        </form>
+      </Painel>
+
+      <h2 className="mt-8 font-[family-name:var(--font-display)] text-[1.15rem] font-semibold">Modelos de mensagem do CRM</h2>
       <p className="mt-1.5 max-w-3xl text-[0.9rem] leading-relaxed text-muted">
-        Texto inicial de cada canal. Na ficha ele aparece já preenchido e pode ser ajustado antes de enviar. Variáveis: <code>{"{{primeiro_nome}}"}</code>,{" "}
-        <code>{"{{nome}}"}</code>, <code>{"{{empresa}}"}</code>, <code>{"{{servico}}"}</code> e <code>{"{{meu_nome}}"}</code>.
+        Texto inicial quando você abre o aplicativo pelo CRM ou envia e-mail. Na ficha ele aparece preenchido e pode ser ajustado antes de enviar. Variáveis:{" "}
+        <code>{"{{primeiro_nome}}"}</code>, <code>{"{{nome}}"}</code>, <code>{"{{empresa}}"}</code>, <code>{"{{servico}}"}</code> e <code>{"{{meu_nome}}"}</code>.
       </p>
       <div className="mt-4 grid gap-5 lg:grid-cols-2">
         {mods.map((m) => {

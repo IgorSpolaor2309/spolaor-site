@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
+import { aplicarRespostaHumana, cancelarAutomacao, recalcularVez } from "./conversa";
 import { db, type Db } from "./db";
 import { registrarEvento } from "./entrada";
 import { normEmail, normInstagram, normWhatsapp } from "./normalizar";
-import { ETAPA_ROTULO, type CanalMensagem, type CustoTipo, type Etapa } from "./tipos";
+import { ETAPA_ROTULO, type CanalMensagem, type Categoria, type CustoTipo, type Etapa } from "./tipos";
 
 // Alterações feitas por uma pessoa no CRM. Cada uma grava o histórico na mesma transação.
 // Quem chama (src/app/leads/actions.ts) já conferiu a sessão e passa o usuário.
@@ -15,13 +16,16 @@ async function assumir(tx: Db, oportunidadeId: string, usuarioId: string) {
     update crm_oportunidades set assumida_em = now(), responsavel_id = coalesce(responsavel_id, ${usuarioId})
     where id = ${oportunidadeId} and assumida_em is null`;
   if (!r.count) return;
+  const t = await tx`
+    update crm_tarefas set status = 'cancelada', resultado = 'Atendimento assumido por uma pessoa antes do envio.', atualizado_em = now()
+    where oportunidade_id = ${oportunidadeId} and status = 'pendente'`;
   const c = await tx`
     update crm_mensagens set status = 'cancelada', erro = 'Atendimento assumido por uma pessoa antes do envio.'
     where oportunidade_id = ${oportunidadeId} and automatica and status in ('pendente', 'falhou')`;
   await registrarEvento(tx, {
     oportunidadeId,
     tipo: "assumido",
-    texto: c.count ? "Atendimento assumido. A mensagem automática que ainda não tinha saído foi cancelada." : "Atendimento assumido.",
+    texto: c.count || t.count ? "Atendimento assumido. O primeiro contato automático que ainda não tinha saído foi cancelado." : "Atendimento assumido.",
     usuarioId,
   });
 }
@@ -45,6 +49,7 @@ export async function salvarNegocio(oportunidadeId: string, n: Negocio, usuarioI
       update crm_oportunidades set
         etapa = ${n.etapa},
         aguardando = case when ${n.etapa} in ('ganho', 'perdido') then null else aguardando end,
+        pendencia = case when ${n.etapa} in ('ganho', 'perdido') then null else pendencia end,
         valor_proposta = ${n.valorProposta},
         proposta_em = case when ${n.etapa} = 'proposta_enviada' or ${n.valorProposta}::numeric is not null then coalesce(proposta_em, now()) else proposta_em end,
         valor_fechado = ${n.valorFechado},
@@ -93,15 +98,14 @@ export async function definirProximaAcao(oportunidadeId: string, texto: string |
 export async function registrarContatoFeito(oportunidadeId: string, canal: CanalMensagem, corpo: string | null, usuarioId: string) {
   const sql = await db();
   await sql.begin(async (tx) => {
-    await assumir(tx, oportunidadeId, usuarioId);
+    const [o] = await tx<{ contato_id: string }[]>`select contato_id from crm_oportunidades where id = ${oportunidadeId} for update`;
+    if (!o) throw new Error("Oportunidade não encontrada");
+    const em = new Date().toISOString();
     await tx`
-      insert into crm_mensagens (id, oportunidade_id, canal, direcao, modo, corpo, status, usuario_id)
-      values (${randomUUID()}, ${oportunidadeId}, ${canal}, 'saida', 'manual', ${corpo || "(contato feito, texto não registrado)"}, 'registrada', ${usuarioId})`;
-    await tx`
-      update crm_oportunidades set
-        primeiro_contato_em = coalesce(primeiro_contato_em, now()), ultimo_contato_em = now(), aguardando = 'cliente',
-        etapa = case when etapa = 'novo' then 'aguardando_resposta' else etapa end, atualizado_em = now()
-      where id = ${oportunidadeId}`;
+      insert into crm_mensagens (id, oportunidade_id, contato_id, canal, direcao, modo, via, corpo, status, usuario_id, ocorrida_em)
+      values (${randomUUID()}, ${oportunidadeId}, ${o.contato_id}, ${canal}, 'saida', 'manual', 'registro', ${corpo || "(contato feito, texto não registrado)"}, 'registrada', ${usuarioId}, ${em})`;
+    // Mesma regra de uma resposta pelo aplicativo ou pelo CRM: assume, para a automação e passa a vez ao interessado.
+    await aplicarRespostaHumana(tx, { contatoId: o.contato_id, oportunidadeId, em, usuarioId, origem: "crm" });
     await registrarEvento(tx, { oportunidadeId, tipo: "contato_feito", texto: "Contato feito (registrado à mão).", dados: { canal }, usuarioId });
   });
 }
@@ -110,14 +114,17 @@ export async function registrarContatoFeito(oportunidadeId: string, canal: Canal
 export async function registrarResposta(oportunidadeId: string, canal: CanalMensagem, corpo: string | null, usuarioId: string) {
   const sql = await db();
   await sql.begin(async (tx) => {
+    const [o] = await tx<{ contato_id: string }[]>`select contato_id from crm_oportunidades where id = ${oportunidadeId} for update`;
+    if (!o) throw new Error("Oportunidade não encontrada");
+    const em = new Date().toISOString();
     await assumir(tx, oportunidadeId, usuarioId);
+    await cancelarAutomacao(tx, o.contato_id, "O interessado respondeu antes do envio automático.");
     await tx`
-      insert into crm_mensagens (id, oportunidade_id, canal, direcao, modo, corpo, status, usuario_id)
-      values (${randomUUID()}, ${oportunidadeId}, ${canal}, 'entrada', 'manual', ${corpo || "(resposta recebida, texto não registrado)"}, 'registrada', ${usuarioId})`;
-    await tx`
-      update crm_oportunidades set aguardando = 'nos',
-        etapa = case when etapa in ('novo', 'aguardando_resposta') then 'em_conversa' else etapa end, atualizado_em = now()
-      where id = ${oportunidadeId}`;
+      insert into crm_mensagens (id, oportunidade_id, contato_id, canal, direcao, modo, via, corpo, status, usuario_id, ocorrida_em)
+      values (${randomUUID()}, ${oportunidadeId}, ${o.contato_id}, ${canal}, 'entrada', 'manual', 'registro', ${corpo || "(resposta recebida, texto não registrado)"}, 'registrada', ${usuarioId}, ${em})`;
+    await tx`update crm_oportunidades set ultima_entrada_em = ${em} where id = ${oportunidadeId}`;
+    await recalcularVez(tx, oportunidadeId, "resposta");
+    await tx`update crm_oportunidades set etapa = 'em_conversa' where id = ${oportunidadeId} and etapa in ('novo', 'aguardando_resposta')`;
     await registrarEvento(tx, { oportunidadeId, tipo: "resposta", texto: "Resposta do interessado (registrada à mão).", dados: { canal }, usuarioId });
   });
 }
@@ -174,11 +181,14 @@ export async function editarContato(oportunidadeId: string, e: EdicaoContato, us
   })) as { ok: true } | { ok: false; erro: ErroContato };
 }
 
-export async function editarServico(oportunidadeId: string, servico: string | null, usuarioId: string) {
+/** Serviço de interesse: a categoria (usada nos filtros) e, se quiser, um detalhe em texto livre. Só registra no histórico o que mudou. */
+export async function editarServico(oportunidadeId: string, categoria: Categoria, servico: string | null, usuarioId: string) {
   const sql = await db();
   await sql.begin(async (tx) => {
-    await tx`update crm_oportunidades set servico = ${servico}, atualizado_em = now() where id = ${oportunidadeId}`;
-    await registrarEvento(tx, { oportunidadeId, tipo: "servico", texto: `Serviço de interesse: ${servico ?? "não informado"}`, usuarioId });
+    const [o] = await tx<{ categoria: string | null; servico: string | null }[]>`select categoria, servico from crm_oportunidades where id = ${oportunidadeId} for update`;
+    if (!o || (o.categoria === categoria && (o.servico ?? null) === servico)) return;
+    await tx`update crm_oportunidades set categoria = ${categoria}, servico = ${servico}, atualizado_em = now() where id = ${oportunidadeId}`;
+    await registrarEvento(tx, { oportunidadeId, tipo: "servico", texto: `Serviço de interesse atualizado${servico ? `: ${servico}` : "."}`, dados: { categoria }, usuarioId });
   });
 }
 

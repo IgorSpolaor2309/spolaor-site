@@ -12,7 +12,7 @@ export default async function PainelLayout({ children }: { children: React.React
     <div className="min-h-dvh pb-[calc(70px+env(safe-area-inset-bottom))] lg:pb-12">
       <header className="sticky top-0 z-30 border-b border-line bg-ink-950/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[1240px] items-center gap-4 px-4 sm:px-6">
-          <Link href="/leads" className="flex items-center gap-2.5" aria-label="Leads: atendimento">
+          <Link href="/leads" className="flex items-center gap-2.5" aria-label="Leads: depende de mim">
             <LogoMark className="h-7 w-7" />
             <span className="font-[family-name:var(--font-display)] text-[1.02rem] font-semibold tracking-[-0.01em]">Leads</span>
           </Link>

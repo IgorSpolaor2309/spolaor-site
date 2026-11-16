@@ -39,9 +39,11 @@ export async function processLead(lead: LeadRecord) {
   }
 
   let gravado = false;
+  let tarefaId: string | null = null;
   if (crm) {
     try {
-      await crmConnector.send(lead);
+      const { registrarEnvio } = await import("@/lib/crm/entrada");
+      tarefaId = (await registrarEnvio(lead, email)).tarefaId;
       gravado = true;
     } catch (err) {
       console.error("[lead] CRM não gravou o lead", lead.id, (err as Error).message);
@@ -56,14 +58,17 @@ export async function processLead(lead: LeadRecord) {
       await sendLeadEmail(lead, { semCrm: crm });
     }
   }
-  if (gravado) {
-    // Primeiro contato automático (só se estiver ligado e houver canal integrado): depois da resposta.
+  if (tarefaId) {
+    // A tarefa de primeiro contato já está gravada com o lead (mesma transação). Aqui ela só é acionada logo depois
+    // da resposta ao visitante: publicada no QStash ou, sem ele, executada ali mesmo. Se isto falhar, a rotina a
+    // encontra pendente no banco.
+    const id = tarefaId;
     after(async () => {
       try {
-        const { primeiroContatoDoEnvio } = await import("@/lib/crm/mensagens");
-        await primeiroContatoDoEnvio(lead.id);
+        const { despacharTarefa } = await import("@/lib/crm/tarefas");
+        await despacharTarefa(id);
       } catch (e) {
-        console.error("[lead] primeiro contato automático falhou", lead.id, (e as Error).message);
+        console.error("[lead] tarefa de primeiro contato não acionada agora", lead.id, (e as Error).message);
       }
     });
   }

@@ -1,5 +1,19 @@
 import { db, type Db } from "./db";
-import { atribuicao, ETAPAS_ABERTAS, type Canal, type CustoTipo, type Envio, type Etapa, type Evento, type Mensagem, type Oportunidade, type Usuario } from "./tipos";
+import {
+  atribuicao,
+  ETAPAS_ABERTAS,
+  fmtRelativo,
+  PENDENCIA_ROTULO,
+  type Canal,
+  type Categoria,
+  type CustoTipo,
+  type Envio,
+  type Etapa,
+  type Evento,
+  type Mensagem,
+  type Oportunidade,
+  type Usuario,
+} from "./tipos";
 
 // Leituras do CRM. Só o servidor chama; quem chama já conferiu a sessão (exigirUsuario).
 
@@ -17,6 +31,7 @@ function mapOp(r: Row): Oportunidade {
     etapa: r.etapa as Etapa,
     aguardando: s("aguardando") as Oportunidade["aguardando"],
     servico: s("servico"),
+    categoria: (s("categoria") ?? "a-classificar") as Categoria,
     canal: r.canal as Canal,
     origem: s("origem"),
     registro: r.registro as Oportunidade["registro"],
@@ -57,54 +72,167 @@ function mapOp(r: Row): Oportunidade {
       site: s("c_site"),
     },
     falha: r.falha === true,
+    pendencia: s("pendencia"),
+    ultimaEntradaEm: d("ultima_entrada_em"),
+    avisoVersao: s("aviso_versao"),
+    ultimaMensagem: r.um_corpo ? { corpo: r.um_corpo as string, direcao: r.um_direcao as "saida" | "entrada", em: iso(r.um_em as Date)!, tipo: r.um_tipo as string, automatica: r.um_automatica === true } : null,
+    tarefa: r.t_status ? { status: r.t_status as string, resultado: s("t_resultado") } : null,
+    contatoBloqueado: r.c_bloqueado === true,
   };
 }
 
+// "falha" = algo que não saiu ou não se sabe se saiu: aviso de lead recusado, mensagem recusada ou de resultado incerto.
 const base = (sql: Db) => sql`
   select o.*, c.nome as c_nome, c.empresa as c_empresa, c.whatsapp as c_whatsapp, c.email as c_email, c.instagram as c_instagram, c.site as c_site,
+    c.wa_bloqueado_em is not null as c_bloqueado,
     u.nome as responsavel_nome,
     (exists (select 1 from crm_envios e where e.oportunidade_id = o.id and e.aviso_status = 'falhou')
-      or exists (select 1 from crm_mensagens m where m.oportunidade_id = o.id and m.status = 'falhou')) as falha
+      or exists (select 1 from crm_mensagens m where m.oportunidade_id = o.id and m.status in ('falhou', 'incerta'))) as falha,
+    um.corpo as um_corpo, um.direcao as um_direcao, um.em as um_em, um.tipo as um_tipo, um.automatica as um_automatica,
+    t.status as t_status, t.resultado as t_resultado
   from crm_oportunidades o
   join crm_contatos c on c.id = o.contato_id
-  left join crm_usuarios u on u.id = o.responsavel_id`;
+  left join crm_usuarios u on u.id = o.responsavel_id
+  left join lateral (
+    select m.corpo, m.direcao, m.tipo, m.automatica, coalesce(m.ocorrida_em, m.criado_em) as em from crm_mensagens m
+    where m.oportunidade_id = o.id and m.status <> 'cancelada' order by coalesce(m.ocorrida_em, m.criado_em) desc limit 1
+  ) um on true
+  left join crm_tarefas t on t.oportunidade_id = o.id and t.tipo = 'primeiro_contato'`;
 
 /* ───────────────────────────── fila de atendimento ───────────────────────────── */
 
+export type ItemFila = {
+  o: Oportunidade;
+  /** por que este item está na fila (texto pronto para a tela) */
+  motivo: string;
+  /** desde quando espera (ISO) */
+  desde: string;
+  alerta: boolean;
+};
+
+/** Conversa de WhatsApp com mensagens que o CRM não conseguiu ligar a uma oportunidade. */
+export type ConversaSolta = {
+  contatoId: string;
+  nome: string;
+  whatsapp: string | null;
+  mensagens: number;
+  ultima: string;
+  desde: string;
+  /** oportunidades da mesma pessoa, para associar com um clique */
+  oportunidades: { id: string; servico: string | null; categoria: string | null; etapa: Etapa }[];
+};
+
 export type Fila = {
-  novos: Oportunidade[];
-  aguardandoRetorno: Oportunidade[];
-  retornos: Oportunidade[]; // com próxima ação marcada (atrasadas primeiro)
+  /** "Depende de mim": cada oportunidade aparece uma vez, no primeiro grupo em que se encaixa. */
+  respostas: ItemFila[];
+  retornosVencidos: ItemFila[];
+  acaoManual: ItemFila[];
+  semResponsavel: ItemFila[];
+  conversasSoltas: ConversaSolta[];
+  /** Fora da fila principal. */
   aguardandoInteressado: Oportunidade[];
-  falhas: Oportunidade[];
-  /** envios de teste abertos, fora da fila (aparecem na lista com o filtro de testes) */
+  retornosFuturos: Oportunidade[];
+  automacaoNaFila: Oportunidade[];
   testesOcultos: number;
   agora: number;
 };
 
-export async function fila(): Promise<Fila> {
+const ms = (i: string | null) => (i ? new Date(i).getTime() : 0);
+
+export async function fila(categoria?: Categoria): Promise<Fila> {
   const sql = await db();
-  const rows = (await sql`${base(sql)} where o.teste = false and o.etapa in ${sql(ETAPAS_ABERTAS)} order by o.recebido_em desc limit 500`).map((r) => mapOp(r as Row));
-  const [{ n: testesOcultos }] = await sql<{ n: number }[]>`select count(*)::int as n from crm_oportunidades where teste and etapa in ${sql(ETAPAS_ABERTAS)}`;
-  // Falha de comunicação também aparece para oportunidades já encerradas: o aviso precisa de ação mesmo assim.
-  const falhasFechadas = (await sql`${base(sql)} where o.teste = false and o.etapa not in ${sql(ETAPAS_ABERTAS)} and (
+  const cat = categoria ? sql`and o.categoria = ${categoria}` : sql``;
+  const rows = (await sql`${base(sql)} where o.teste = false and o.etapa in ${sql(ETAPAS_ABERTAS)} ${cat} order by o.recebido_em desc limit 500`).map((r) => mapOp(r as Row));
+  // Falha de comunicação também aparece para oportunidades já encerradas: precisa de ação mesmo assim.
+  const fechadasComFalha = (await sql`${base(sql)} where o.teste = false and o.etapa not in ${sql(ETAPAS_ABERTAS)} ${cat} and (
       exists (select 1 from crm_envios e where e.oportunidade_id = o.id and e.aviso_status = 'falhou')
-      or exists (select 1 from crm_mensagens m where m.oportunidade_id = o.id and m.status = 'falhou')) limit 50`).map((r) => mapOp(r as Row));
-  const t = (o: Oportunidade) => new Date(o.proximaAcaoEm!).getTime();
-  return {
-    novos: rows.filter((o) => o.etapa === "novo"),
-    aguardandoRetorno: rows.filter((o) => o.etapa !== "novo" && o.aguardando === "nos"),
-    retornos: rows.filter((o) => o.proximaAcaoEm).sort((a, b) => t(a) - t(b)),
-    aguardandoInteressado: rows.filter((o) => o.etapa !== "novo" && o.aguardando === "cliente" && !o.proximaAcaoEm),
-    falhas: [...rows.filter((o) => o.falha), ...falhasFechadas],
-    testesOcultos,
-    agora: Date.now(),
+      or exists (select 1 from crm_mensagens m where m.oportunidade_id = o.id and m.status in ('falhou', 'incerta'))) limit 50`).map((r) => mapOp(r as Row));
+  const [{ n: testesOcultos }] = await sql<{ n: number }[]>`select count(*)::int as n from crm_oportunidades where teste and etapa in ${sql(ETAPAS_ABERTAS)}`;
+  const soltas = await sql`
+    select c.id, c.nome, c.whatsapp, count(*)::int as mensagens, min(coalesce(m.ocorrida_em, m.criado_em)) as desde,
+      (array_agg(m.corpo order by coalesce(m.ocorrida_em, m.criado_em) desc))[1] as ultima,
+      coalesce((select json_agg(json_build_object('id', o.id, 'servico', o.servico, 'categoria', o.categoria, 'etapa', o.etapa) order by o.recebido_em desc)
+        from crm_oportunidades o where o.contato_id = c.id and o.teste = false), '[]'::json) as oportunidades
+    from crm_mensagens m join crm_contatos c on c.id = m.contato_id
+    where m.oportunidade_id is null and m.conferida_em is null and m.direcao = 'entrada' and m.tipo <> 'reaction'
+    group by c.id order by 5 limit 100`;
+
+  const agora = Date.now();
+  const usadas = new Set<string>();
+  const pegar = (filtro: (o: Oportunidade) => boolean, item: (o: Oportunidade) => Omit<ItemFila, "o">): ItemFila[] => {
+    const out: ItemFila[] = [];
+    for (const o of rows) {
+      if (usadas.has(o.id) || !filtro(o)) continue;
+      usadas.add(o.id);
+      out.push({ o, ...item(o) });
+    }
+    return out.sort((a, b) => ms(a.desde) - ms(b.desde));
   };
+
+  const respostas = pegar(
+    (o) => o.aguardando === "nos",
+    (o) => ({ motivo: PENDENCIA_ROTULO[o.pendencia ?? "resposta"] ?? PENDENCIA_ROTULO.resposta, desde: o.ultimaEntradaEm ?? o.atualizadoEm, alerta: o.pendencia === "pediu_parar" }),
+  );
+  const retornosVencidos = pegar(
+    (o) => !!o.proximaAcaoEm && ms(o.proximaAcaoEm) < agora,
+    (o) => ({ motivo: `Retorno vencido ${fmtRelativo(o.proximaAcaoEm, agora)}${o.proximaAcao ? `: ${o.proximaAcao}` : ""}`, desde: o.proximaAcaoEm!, alerta: true }),
+  );
+  // Primeiro contato automático ainda vai sair: não depende de ninguém agora.
+  const automacaoNaFila = rows.filter((o) => !usadas.has(o.id) && o.etapa === "novo" && !!o.tarefa && ["pendente", "processando"].includes(o.tarefa.status));
+  automacaoNaFila.forEach((o) => usadas.add(o.id));
+  const acaoManual = pegar(
+    (o) => o.falha || o.etapa === "novo",
+    (o) => ({
+      motivo: o.falha
+        ? o.tarefa && ["falhou", "incerta"].includes(o.tarefa.status) && o.tarefa.resultado
+          ? o.tarefa.resultado
+          : "Falha ou resultado incerto de envio: abra a ficha"
+        : o.tarefa?.status === "falhou" && o.tarefa.resultado
+          ? `Sem primeiro contato automático: ${o.tarefa.resultado}`
+          : "Novo contato sem primeiro atendimento",
+      desde: o.recebidoEm,
+      alerta: o.falha,
+    }),
+  );
+  const semResponsavel = pegar(
+    (o) => !o.responsavelId && (o.etapa === "em_conversa" || o.etapa === "proposta_enviada"),
+    (o) => ({ motivo: "Em andamento sem responsável definido", desde: o.atualizadoEm, alerta: false }),
+  );
+  for (const o of fechadasComFalha) acaoManual.push({ o, motivo: "Falha de envio em oportunidade encerrada: abra a ficha", desde: o.atualizadoEm, alerta: true });
+
+  const resto = rows.filter((o) => !usadas.has(o.id));
+  return {
+    respostas,
+    retornosVencidos,
+    acaoManual,
+    semResponsavel,
+    conversasSoltas: categoria
+      ? []
+      : soltas.map((r) => ({ contatoId: r.id, nome: r.nome, whatsapp: r.whatsapp, mensagens: r.mensagens, ultima: r.ultima, desde: iso(r.desde)!, oportunidades: r.oportunidades })),
+    aguardandoInteressado: resto.filter((o) => !o.proximaAcaoEm),
+    retornosFuturos: resto.filter((o) => o.proximaAcaoEm).sort((a, b) => ms(a.proximaAcaoEm) - ms(b.proximaAcaoEm)),
+    automacaoNaFila,
+    testesOcultos,
+    agora,
+  };
+}
+
+/** Carimbo barato do estado do CRM: muda quando chega mensagem, lead, estado de envio ou alguém altera algo. */
+export async function pulso(): Promise<string> {
+  const sql = await db();
+  const [r] = await sql<{ p: string }[]>`
+    select concat_ws(':',
+      (select coalesce(extract(epoch from max(atualizado_em))::bigint, 0) from crm_oportunidades),
+      (select count(*) from crm_oportunidades),
+      (select coalesce(extract(epoch from max(greatest(criado_em, coalesce(entregue_em, criado_em), coalesce(lida_em, criado_em), coalesce(enviado_em, criado_em))))::bigint, 0) from crm_mensagens),
+      (select count(*) from crm_mensagens),
+      (select count(*) from crm_tarefas where status in ('pendente', 'processando'))) as p`;
+  return r.p;
 }
 
 /* ───────────────────────────── lista e funil ───────────────────────────── */
 
-export type FiltroLista = { q?: string; etapa?: Etapa; servico?: string; origem?: string; canal?: Canal; testes?: boolean; pagina?: number };
+export type FiltroLista = { q?: string; etapa?: Etapa; categoria?: Categoria; origem?: string; canal?: Canal; testes?: boolean; pagina?: number };
 export const POR_PAGINA = 50;
 
 export async function lista(f: FiltroLista): Promise<{ itens: Oportunidade[]; total: number }> {
@@ -115,7 +243,7 @@ export async function lista(f: FiltroLista): Promise<{ itens: Oportunidade[]; to
   const onde = sql`
     where (${f.testes === true} or o.teste = false)
       ${f.etapa ? sql`and o.etapa = ${f.etapa}` : sql``}
-      ${f.servico ? sql`and o.servico = ${f.servico}` : sql``}
+      ${f.categoria ? sql`and o.categoria = ${f.categoria}` : sql``}
       ${f.origem ? sql`and o.origem = ${f.origem}` : sql``}
       ${f.canal ? sql`and o.canal = ${f.canal}` : sql``}
       ${
@@ -130,26 +258,35 @@ export async function lista(f: FiltroLista): Promise<{ itens: Oportunidade[]; to
   return { itens, total: n };
 }
 
-export async function opcoesFiltro(): Promise<{ servicos: string[]; origens: string[] }> {
+export async function opcoesFiltro(): Promise<{ origens: string[] }> {
   const sql = await db();
-  const s = await sql<{ v: string }[]>`select distinct servico as v from crm_oportunidades where servico is not null order by 1`;
   const o = await sql<{ v: string }[]>`select distinct origem as v from crm_oportunidades where origem is not null order by 1`;
-  return { servicos: s.map((r) => r.v), origens: o.map((r) => r.v) };
+  return { origens: o.map((r) => r.v) };
 }
 
 /** Funil: todas as abertas e as encerradas dos últimos 60 dias (testes fora). */
-export async function funil(): Promise<Oportunidade[]> {
+export async function funil(categoria?: Categoria): Promise<Oportunidade[]> {
   const sql = await db();
   return (
     await sql`${base(sql)}
       where o.teste = false and (o.etapa in ${sql(ETAPAS_ABERTAS)} or coalesce(o.fechado_em, o.perdido_em, o.atualizado_em) > now() - interval '60 days')
+        ${categoria ? sql`and o.categoria = ${categoria}` : sql``}
       order by o.recebido_em desc limit 600`
   ).map((r) => mapOp(r as Row));
 }
 
 /* ───────────────────────────── ficha ───────────────────────────── */
 
-export type Ficha = { oportunidade: Oportunidade; mensagens: Mensagem[]; eventos: Evento[]; envios: Envio[]; outras: Oportunidade[] };
+export type Ficha = {
+  oportunidade: Oportunidade;
+  /** Mensagens desta oportunidade e toda a conversa de WhatsApp da pessoa (uma conversa por número). */
+  mensagens: Mensagem[];
+  eventos: Evento[];
+  envios: Envio[];
+  outras: Oportunidade[];
+  /** Última mensagem recebida da pessoa no WhatsApp: a janela de 24 h para texto livre conta daqui. */
+  waUltimaEntradaEm: string | null;
+};
 
 export async function ficha(id: string): Promise<Ficha | null> {
   if (!/^[0-9a-f-]{36}$/.test(id)) return null;
@@ -157,19 +294,26 @@ export async function ficha(id: string): Promise<Ficha | null> {
   const [r] = await sql`${base(sql)} where o.id = ${id}`;
   if (!r) return null;
   const oportunidade = mapOp(r as Row);
-  const [msgs, evs, envs, outras] = await Promise.all([
-    sql`select m.*, u.nome as usuario_nome from crm_mensagens m left join crm_usuarios u on u.id = m.usuario_id where m.oportunidade_id = ${id} order by m.criado_em`,
+  const [msgs, evs, envs, outras, contato] = await Promise.all([
+    sql`
+      select m.*, u.nome as usuario_nome from crm_mensagens m left join crm_usuarios u on u.id = m.usuario_id
+      where m.oportunidade_id = ${id} or (m.contato_id = ${oportunidade.contatoId} and m.canal = 'whatsapp' and m.modo = 'sistema')
+      order by coalesce(m.ocorrida_em, m.criado_em), m.criado_em`,
     sql`select e.*, u.nome as usuario_nome from crm_eventos e left join crm_usuarios u on u.id = e.usuario_id where e.oportunidade_id = ${id} order by e.criado_em desc, e.id`,
     sql`select * from crm_envios where oportunidade_id = ${id} order by recebido_em desc`,
     sql`${base(sql)} where o.contato_id = ${oportunidade.contatoId} and o.id <> ${id} order by o.recebido_em desc limit 20`,
+    sql<{ wa_ultima_entrada_em: Date | null }[]>`select wa_ultima_entrada_em from crm_contatos where id = ${oportunidade.contatoId}`,
   ]);
   return {
     oportunidade,
     mensagens: msgs.map((m) => ({
       id: m.id,
+      oportunidadeId: m.oportunidade_id,
       canal: m.canal,
       direcao: m.direcao,
       modo: m.modo,
+      via: m.via ?? (m.modo === "manual" ? "registro" : null),
+      tipo: m.tipo,
       automatica: m.automatica,
       assunto: m.assunto,
       corpo: m.corpo,
@@ -177,6 +321,9 @@ export async function ficha(id: string): Promise<Ficha | null> {
       tentativas: m.tentativas,
       erro: m.erro,
       enviadoEm: iso(m.enviado_em),
+      entregueEm: iso(m.entregue_em),
+      lidaEm: iso(m.lida_em),
+      em: iso(m.ocorrida_em ?? m.enviado_em ?? m.criado_em)!,
       criadoEm: iso(m.criado_em)!,
       usuarioNome: m.usuario_nome,
     })),
@@ -191,6 +338,7 @@ export async function ficha(id: string): Promise<Ficha | null> {
       avisoEnviadoEm: iso(e.aviso_enviado_em),
     })),
     outras: outras.map((x) => mapOp(x as Row)),
+    waUltimaEntradaEm: iso(contato[0]?.wa_ultima_entrada_em ?? null),
   };
 }
 

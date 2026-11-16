@@ -5,9 +5,12 @@ import { Painel } from "@/components/crm/ui";
 import { emailsAutorizados, exigirUsuario } from "@/lib/crm/auth";
 import { avisoConfigurado } from "@/lib/crm/aviso";
 import { estadoFormularios, estadoMensagens } from "@/lib/crm/consultas";
-import { dbStatus } from "@/lib/crm/db";
-import { automacaoEmailAtiva, emailCliente } from "@/lib/crm/mensagens";
-import { fmtDataHora } from "@/lib/crm/tipos";
+import { db, dbStatus } from "@/lib/crm/db";
+import { emailCliente } from "@/lib/crm/mensagens";
+import { fmtDataHora, fmtWhatsapp } from "@/lib/crm/tipos";
+import { canalAutomacao, modeloPrimeiroContato, waEnv, waEnvio } from "@/lib/crm/whatsapp/config";
+import { estadoWebhook } from "@/lib/crm/whatsapp/webhook";
+import { estadoNumero, modeloAprovado } from "@/lib/crm/whatsapp/ycloud";
 
 export const metadata: Metadata = { title: "Integrações" };
 
@@ -38,7 +41,20 @@ function Canal({ nome, estado, children }: { nome: string; estado: Estado; child
 // fato recebe ou envia por ali. O que depende de credencial, aprovação ou decisão fica dito como tal.
 export default async function IntegracoesPage() {
   await exigirUsuario();
-  const [banco, forms, msgs, automacao] = await Promise.all([dbStatus(), estadoFormularios(), estadoMensagens(), automacaoEmailAtiva()]);
+  const [banco, forms, msgs, canal] = await Promise.all([dbStatus(), estadoFormularios(), estadoMensagens(), canalAutomacao()]);
+  // WhatsApp: cada linha abaixo é uma evidência lida agora (configuração, YCloud, notificações recebidas), não uma suposição.
+  const wa = waEnvio();
+  const segredo = !!waEnv.webhookSecret();
+  const [numero, wh, modeloWa] = await Promise.all([wa.pronto ? estadoNumero() : null, estadoWebhook(), modeloPrimeiroContato()]);
+  const modeloEstado = wa.pronto && modeloWa.nome ? await modeloAprovado(modeloWa.nome, modeloWa.idioma) : null;
+  const sql = await db();
+  const [falhasWa] = await sql<{ falhas: number; incertas: number }[]>`
+    select count(*) filter (where status = 'falhou')::int as falhas, count(*) filter (where status = 'incerta')::int as incertas
+    from crm_mensagens where canal = 'whatsapp' and via = 'api' and criado_em > now() - interval '7 days'`;
+  const avisos = await sql<{ chave: string; valor: Record<string, string>; atualizado_em: Date }[]>`
+    select chave, valor, atualizado_em from crm_config where chave in ('whatsapp:evento-numero', 'whatsapp:evento-conta')`;
+  const conectadoNaYCloud = !!numero && numero.ok && numero.encontrado && numero.status === "CONNECTED";
+  const estadoWa: Estado = !wa.pronto || !conectadoNaYCloud ? "desconectado" : segredo && wh.total > 0 ? "conectado" : "parcial";
   const aviso = avisoConfigurado();
   const email = emailCliente();
   const autorizados = emailsAutorizados();
@@ -72,8 +88,8 @@ export default async function IntegracoesPage() {
                 Enviado pelo Resend a cada envio de formulário. Aceitos pelo provedor: <strong>{forms.avisosEnviados}</strong>
                 {forms.ultimoAvisoEm ? <> (último em {fmtDataHora(forms.ultimoAvisoEm)})</> : null} · na fila: <strong>{forms.avisosPendentes}</strong> · com falha:{" "}
                 <strong>{forms.avisosFalhos}</strong>. Falhas são tentadas de novo pela rotina do site e aparecem em{" "}
-                <Link href="/leads#falhas" className="font-semibold text-sky underline-offset-4 hover:underline">
-                  Atendimento
+                <Link href="/leads#manual" className="font-semibold text-sky underline-offset-4 hover:underline">
+                  Depende de mim
                 </Link>
                 . “Aceito” não comprova chegada à caixa de entrada.
               </p>
@@ -95,7 +111,7 @@ export default async function IntegracoesPage() {
               )}
             </p>
             <p>
-              <strong>Primeiro contato automático:</strong> {automacao ? "ligado" : "desligado"} (
+              <strong>Primeiro contato automático por e-mail:</strong> {canal === "email" ? "ligado" : canal === "whatsapp" ? "desligado (o canal escolhido é o WhatsApp)" : "desligado"} (
               <Link href="/leads/configuracoes" className="font-semibold text-sky underline-offset-4 hover:underline">
                 Configurações
               </Link>
@@ -107,15 +123,61 @@ export default async function IntegracoesPage() {
             </p>
           </Canal>
 
-          <Canal nome="WhatsApp" estado="manual">
+          <Canal nome="WhatsApp (YCloud, com o aplicativo no celular)" estado={estadoWa}>
             <p>
-              <strong>Sem integração oficial.</strong> O número de atendimento é pessoal: o CRM não lê nem envia mensagens. O que existe: botão que abre a conversa no WhatsApp com o
-              texto do modelo, e registro manual do que foi enviado e respondido.
+              <strong>Configuração no servidor:</strong>{" "}
+              {wa.pronto ? `chave da YCloud definida; número comercial ${fmtWhatsapp(waEnv.numero())}` : `incompleta. Falta ${wa.falta.join(" e ")}`}
+              {segredo ? "; segredo do webhook definido." : "; falta YCLOUD_WEBHOOK_SECRET (sem ele nenhuma notificação é aceita)."} Ter a chave não prova que o número
+              funciona: veja as linhas abaixo.
+            </p>
+            <p data-wa-numero>
+              <strong>Número na YCloud:</strong>{" "}
+              {!numero
+                ? "não consultado (configuração incompleta)."
+                : !numero.ok
+                  ? `não foi possível consultar agora: ${numero.erro}.`
+                  : !numero.encontrado
+                    ? `o número configurado não aparece na conta da YCloud (${numero.numeros} ${numero.numeros === 1 ? "número" : "números"} na conta).`
+                    : `estado ${numero.status}${numero.nomeVerificado ? `, nome ${numero.nomeVerificado}` : ""}${numero.qualidade ? `, qualidade ${numero.qualidade}` : ""}${numero.limite ? `, limite ${numero.limite}` : ""}.`}
+            </p>
+            <p data-wa-modelo>
+              <strong>Modelo do primeiro contato:</strong>{" "}
+              {!modeloWa.nome
+                ? "nenhum escolhido em Configurações."
+                : !modeloEstado
+                  ? `${modeloWa.nome} (não conferido: configuração incompleta).`
+                  : modeloEstado.ok
+                    ? `${modeloWa.nome} (${modeloWa.idioma}) aprovado${modeloEstado.categoria ? `, categoria ${modeloEstado.categoria}` : ""}.`
+                    : `pendente ou indisponível. ${modeloEstado.motivo}`}
+            </p>
+            <p data-wa-webhook>
+              <strong>Notificações recebidas:</strong>{" "}
+              {wh.total === 0
+                ? "nenhuma até agora. Enquanto nenhuma chegar, não há prova de que o webhook está ligado na YCloud."
+                : `${wh.total} no total, a última em ${fmtDataHora(wh.ultimoEm)}. Última mensagem recebida: ${wh.ultimaEntradaEm ? fmtDataHora(wh.ultimaEntradaEm) : "nenhuma ainda"}. Última resposta sincronizada do aplicativo: ${wh.ultimoEcoEm ? fmtDataHora(wh.ultimoEcoEm) : "nenhuma ainda"}. Último estado de entrega: ${wh.ultimoEstadoEm ? fmtDataHora(wh.ultimoEstadoEm) : "nenhum ainda"}.`}
+              {wh.semProcessar > 0 ? ` ${wh.semProcessar} aguardando processamento.` : ""}
+              {wh.historico > 0 ? ` ${wh.historico} de histórico do aplicativo, guardadas sem virar mensagem nem pendência.` : ""}
             </p>
             <p>
-              Para automatizar é preciso a WhatsApp Business Platform (API oficial da Meta), o que exige uma decisão sua: número comercial separado, ou migrar o atual para o
-              WhatsApp Business e usar a coexistência (aplicativo e API no mesmo número, por um parceiro da Meta). Mensagem iniciada pela empresa só com modelo aprovado e
-              consentimento da pessoa; as mensagens pela API são cobradas.
+              <strong>Primeiro contato automático pelo WhatsApp:</strong> {canal === "whatsapp" ? "ligado" : "desligado"} (
+              <Link href="/leads/configuracoes" className="font-semibold text-sky underline-offset-4 hover:underline">
+                Configurações
+              </Link>
+              ). Envios pelo CRM nos últimos 7 dias com falha: <strong>{falhasWa.falhas}</strong> · com resultado incerto: <strong>{falhasWa.incertas}</strong>.
+            </p>
+            {avisos.map((a) => (
+              <p key={a.chave} className="text-ember">
+                <strong className="!text-ember">Aviso da YCloud em {fmtDataHora(new Date(a.atualizado_em).toISOString())}:</strong>{" "}
+                {a.chave.endsWith("numero")
+                  ? `número ${a.valor.updateEvent ?? a.valor.qualityUpdateEvent ?? a.valor.tipo}${a.valor.qualityRating ? `, qualidade ${a.valor.qualityRating}` : ""}`
+                  : `conta ${a.valor.removedReason ?? a.valor.updateEvent ?? a.valor.banState ?? a.valor.tipo}`}
+                .
+              </p>
+            ))}
+            <p>
+              Sem a integração completa, o CRM segue no modo manual: abre a conversa no aplicativo e você registra o que enviou e o que a pessoa respondeu. Para a coexistência
+              funcionar: use o WhatsApp Business (não o pessoal) no celular do número comercial, desligue a mensagem de saudação e a de ausência do aplicativo (senão a pessoa
+              recebe duas recepções) e abra o aplicativo ao menos uma vez a cada duas semanas (a Meta desconecta números inativos).
             </p>
           </Canal>
 

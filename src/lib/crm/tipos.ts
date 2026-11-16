@@ -31,17 +31,66 @@ export const CANAIS_MENSAGEM = ["whatsapp", "instagram", "email", "telefone", "o
 export type CanalMensagem = (typeof CANAIS_MENSAGEM)[number];
 export const isCanalMensagem = (v: unknown): v is CanalMensagem => typeof v === "string" && (CANAIS_MENSAGEM as readonly string[]).includes(v);
 
-/** Serviços oferecidos no site, para o cadastro manual e os filtros (texto livre também é aceito). */
-export const SERVICOS = [
-  "Site ou landing page",
-  "Loja virtual",
-  "Agendamento online",
-  "Automação da rotina",
-  "Atendimento com IA no WhatsApp",
-  "Diagnóstico e melhoria de site",
-  "Sistema sob medida",
-  "Consultoria",
-] as const;
+/**
+ * Categorias de serviço, padronizadas a partir das ofertas do site. É o que os filtros da fila, da lista e do funil
+ * usam. "a-classificar" = o pedido não diz qual serviço é (diagnóstico geral, contato com várias opções ou nenhuma).
+ */
+export const CATEGORIAS = ["sites", "lojas", "agendamento", "automacao", "atendimento-ia", "diagnostico", "sistemas", "consultoria", "a-classificar"] as const;
+export type Categoria = (typeof CATEGORIAS)[number];
+export const CATEGORIA_ROTULO: Record<Categoria, string> = {
+  sites: "Sites e landing pages",
+  lojas: "Lojas virtuais",
+  agendamento: "Agendamento online",
+  automacao: "Automação de processos",
+  "atendimento-ia": "Atendimento com IA no WhatsApp",
+  diagnostico: "Diagnóstico de site",
+  sistemas: "Sistemas sob medida",
+  consultoria: "Consultoria",
+  "a-classificar": "A classificar",
+};
+export const isCategoria = (v: unknown): v is Categoria => typeof v === "string" && (CATEGORIAS as readonly string[]).includes(v);
+
+const POR_ORIGEM: Record<string, Categoria> = {
+  sites: "sites",
+  "lojas-virtuais": "lojas",
+  "agendamento-online": "agendamento",
+  automacao: "automacao",
+  "atendimento-ia": "atendimento-ia",
+  "diagnostico-site": "diagnostico",
+};
+const POR_ESCOLHA: [RegExp, Categoria][] = [
+  [/^site ou landing/i, "sites"],
+  [/^automa[cç][aã]o/i, "automacao"],
+  [/^loja/i, "lojas"],
+  [/^agendamento/i, "agendamento"],
+  [/^sistema/i, "sistemas"],
+  [/^consultoria/i, "consultoria"],
+];
+
+/**
+ * Categoria de um envio de formulário. A escolha explícita da pessoa vale primeiro (uma única opção marcada que
+ * corresponda a um serviço); depois, a página do formulário. Várias opções, "Outro" ou diagnóstico geral ficam
+ * "a classificar": quem atende decide, o sistema não adivinha.
+ */
+export function categoriaDoEnvio(origem: string, escolhas: string[] | undefined): Categoria {
+  const marcadas = (escolhas ?? []).filter(Boolean);
+  if (marcadas.length === 1) {
+    const achou = POR_ESCOLHA.find(([re]) => re.test(marcadas[0].trim()));
+    if (achou) return achou[1];
+    return POR_ORIGEM[origem] ?? "a-classificar";
+  }
+  if (marcadas.length > 1) return "a-classificar";
+  return POR_ORIGEM[origem] ?? "a-classificar";
+}
+
+/** Por que uma oportunidade depende de nós (quando aguardando = nos). */
+export const PENDENCIA_ROTULO: Record<string, string> = {
+  resposta: "Respondeu e aguarda retorno",
+  pediu_parar: "Pediu para parar: confira antes de qualquer contato",
+  novo_envio: "Enviou o formulário de novo",
+  novo_pedido: "Novo pedido de quem já está em conversa",
+  nao_suportado: "Mandou um conteúdo que o CRM não mostra: veja no aplicativo",
+};
 
 export const CUSTO_TIPOS = ["meta_verba", "crush_taxa", "crush_assinatura", "outro"] as const;
 export type CustoTipo = (typeof CUSTO_TIPOS)[number];
@@ -71,6 +120,7 @@ export type Oportunidade = {
   etapa: Etapa;
   aguardando: "nos" | "cliente" | null;
   servico: string | null;
+  categoria: Categoria;
   canal: Canal;
   origem: string | null;
   registro: "automatico" | "manual";
@@ -104,23 +154,73 @@ export type Oportunidade = {
   contato: Contato;
   /** Há aviso por e-mail ou mensagem do sistema com falha pendente de ação. */
   falha: boolean;
+  /** Motivo de depender de nós (veja PENDENCIA_ROTULO); null quando não depende. */
+  pendencia: string | null;
+  /** Desde quando o interessado espera (última mensagem dele ainda sem resposta nossa). */
+  ultimaEntradaEm: string | null;
+  /** Versão do texto de retorno pelo WhatsApp que estava no formulário; null = sem autorização registrada. */
+  avisoVersao: string | null;
+  /** Última mensagem da conversa (qualquer direção), para as filas. */
+  ultimaMensagem: { corpo: string; direcao: "saida" | "entrada"; em: string; tipo: string; automatica: boolean } | null;
+  /** Estado da tarefa de primeiro contato automático, se houver. */
+  tarefa: { status: string; resultado: string | null } | null;
+  contatoBloqueado: boolean;
 };
+
+export const STATUS_MENSAGEM = ["pendente", "enviando", "aceita", "enviada", "entregue", "lida", "falhou", "incerta", "cancelada", "registrada", "recebida"] as const;
+export type StatusMensagem = (typeof STATUS_MENSAGEM)[number];
 
 export type Mensagem = {
   id: string;
+  oportunidadeId: string | null;
   canal: CanalMensagem;
   direcao: "saida" | "entrada";
   modo: "sistema" | "manual";
+  /** api = enviada pelo CRM; app = enviada pelo aplicativo e sincronizada; webhook = recebida; registro = anotada à mão */
+  via: "api" | "app" | "webhook" | "registro" | null;
+  tipo: string;
   automatica: boolean;
   assunto: string | null;
   corpo: string;
-  status: "pendente" | "enviando" | "enviada" | "falhou" | "cancelada" | "registrada";
+  status: StatusMensagem;
   tentativas: number;
   erro: string | null;
   enviadoEm: string | null;
+  entregueEm: string | null;
+  lidaEm: string | null;
+  /** hora real da mensagem (provedor) ou do registro */
+  em: string;
   criadoEm: string;
   usuarioNome: string | null;
 };
+
+/** Rótulo do estado de envio, só com o que há evidência. No e-mail, "enviada" é "aceita pelo provedor". */
+export function rotuloStatus(m: Pick<Mensagem, "status" | "canal" | "via">): string {
+  switch (m.status) {
+    case "pendente":
+      return "Na fila de envio";
+    case "enviando":
+      return "Enviando";
+    case "aceita":
+      return "Aceita pelo provedor";
+    case "enviada":
+      return m.canal === "email" ? "Aceita pelo provedor" : m.via === "app" ? "Enviada pelo aplicativo" : "Enviada";
+    case "entregue":
+      return "Entregue";
+    case "lida":
+      return "Lida";
+    case "falhou":
+      return "Falhou";
+    case "incerta":
+      return "Resultado incerto: confira no aplicativo antes de reenviar";
+    case "cancelada":
+      return "Cancelada";
+    case "recebida":
+      return "Recebida";
+    default:
+      return "Registrada à mão";
+  }
+}
 
 export type Evento = {
   id: string;

@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { cadastrarAction, type EstadoCadastro } from "@/app/leads/actions";
-import { CANAIS, CANAL_ROTULO, SERVICOS } from "@/lib/crm/tipos";
+import { CANAIS, CANAL_ROTULO, CATEGORIA_ROTULO, CATEGORIAS } from "@/lib/crm/tipos";
 import { Enviar } from "./enviar";
 import { Aviso, btnPrimary, Campo, input } from "./ui";
 
@@ -40,13 +40,17 @@ export function CadastroForm({ agoraLocal }: { agoraLocal: string }) {
         </select>
       </Campo>
       <Campo rotulo="Serviço de interesse">
-        <input name="servico" list="servicos-novo" maxLength={200} className={input} />
+        <select name="categoria" defaultValue="a-classificar" className={input}>
+          {CATEGORIAS.map((c) => (
+            <option key={c} value={c}>
+              {CATEGORIA_ROTULO[c]}
+            </option>
+          ))}
+        </select>
       </Campo>
-      <datalist id="servicos-novo">
-        {SERVICOS.map((s) => (
-          <option key={s} value={s} />
-        ))}
-      </datalist>
+      <Campo rotulo="Detalhe do pedido (opcional)">
+        <input name="servico" maxLength={200} className={input} />
+      </Campo>
       <Campo rotulo="Como chegou até a Spolaor (opcional)" dica="Ex.: indicação da Marina, anúncio que mencionou, grupo de empresários.">
         <input name="origem" maxLength={200} className={input} />
       </Campo>

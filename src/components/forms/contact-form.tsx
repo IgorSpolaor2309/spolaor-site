@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { maskPhone, validateLead, type LeadOrigem, type LeadPayload } from "@/lib/leads/schema";
+import { AVISO_RETORNO, maskPhone, validateLead, type LeadOrigem, type LeadPayload } from "@/lib/leads/schema";
 import { formStartProps, submitLead } from "@/lib/leads/client";
 import { FormUnavailable, SubmitError } from "./submit-error";
 
@@ -46,6 +46,7 @@ export function ContactForm({
     email: "",
     site: "",
     servicos: [],
+    aviso: AVISO_RETORNO.versao,
     mensagem: "",
     urgencia: "",
     origem,
@@ -191,6 +192,9 @@ export function ContactForm({
       <Button type="submit" size="lg" arrow disabled={status === "sending" || !available}>
         {status === "sending" ? "Enviando…" : submitLabel}
       </Button>
+      <p className="-mt-3 text-xs leading-relaxed text-dim" data-aviso-retorno={AVISO_RETORNO.versao}>
+        {AVISO_RETORNO.texto}
+      </p>
     </form>
   );
 }

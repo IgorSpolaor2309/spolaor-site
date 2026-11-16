@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { INTERESSES, LIMITS, isOrigem, normalizeUrl, origemFromPath, validateLead, type LeadPayload } from "@/lib/leads/schema";
+import { AVISO_RETORNO, INTERESSES, LIMITS, isOrigem, normalizeUrl, origemFromPath, validateLead, type LeadPayload } from "@/lib/leads/schema";
 import { NoLeadDestinationError, processLead } from "@/lib/leads/server/pipeline";
 import type { LeadRecord } from "@/lib/leads/server/types";
 
@@ -46,6 +46,8 @@ export async function POST(req: Request) {
       body.utm && typeof body.utm === "object"
         ? Object.fromEntries(Object.entries(body.utm as Record<string, unknown>).slice(0, 12).map(([k, v]) => [k.slice(0, 40), String(v).slice(0, 200)]))
         : {},
+    // Só vale a versão vigente do texto de retorno pelo WhatsApp; qualquer outro valor fica sem registro.
+    aviso: body.aviso === AVISO_RETORNO.versao ? AVISO_RETORNO.versao : undefined,
   };
 
   const errors = validateLead(lead);

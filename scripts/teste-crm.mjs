@@ -88,8 +88,20 @@ if (!existe) {
   await post(lead({ nome: "TESTE criação do esquema", whatsapp: "(11) 90000-0000", email: "esquema@validacao.local" }));
   await ate(async () => (await sql`select to_regclass('crm_oportunidades') as t`)[0].t, 15000);
 }
-await sql`truncate crm_eventos, crm_mensagens, crm_envios, crm_oportunidades, crm_contatos, crm_sessoes, crm_login_codigos, crm_custos, crm_usuarios cascade`;
+// Faz o servidor abrir a conexão com o banco (é nela que ele aplica o esquema) antes de esperar pela versão.
+await cron();
+// Espera o servidor terminar de aplicar a versão atual do esquema (ele faz isso na primeira conexão).
+const versaoEsquema = readFileSync(new URL("../src/lib/crm/schema.ts", import.meta.url), "utf8").match(/CRM_SCHEMA_VERSAO = "([0-9a-f]+)"/)[1];
+const esquemaPronto = await ate(async () => (await sql`select valor from crm_config where chave = 'esquema'`.catch(() => []))[0]?.valor === versaoEsquema, 30000);
+if (!esquemaPronto) {
+  console.error("O servidor não aplicou a versão atual do esquema (o build está atualizado? o servidor usa este banco?).");
+  process.exit(2);
+}
+// Zera os dados do CRM sem tocar no registro de versão do esquema (um TRUNCATE ... CASCADE o apagaria, porque
+// crm_config referencia crm_usuarios).
+for (const t of ["crm_tarefas", "crm_webhook_eventos", "crm_eventos", "crm_mensagens", "crm_envios", "crm_oportunidades", "crm_contatos", "crm_sessoes", "crm_login_codigos", "crm_custos"]) await sql.unsafe(`delete from ${t}`);
 await sql`delete from crm_config where chave <> 'esquema'`;
+await sql`delete from crm_usuarios`;
 emails.length = 0;
 
 const exe = "C:/Program Files/Google/Chrome/Application/chrome.exe";
@@ -109,6 +121,7 @@ async function contexto(opts = {}) {
 async function acao(page, seletor) {
   await Promise.all([page.waitForResponse((r) => r.request().method() === "POST" && !!r.request().headers()["next-action"]), page.click(seletor)]);
   await page.waitForLoadState("networkidle");
+  await espera(300);
 }
 
 try {
@@ -280,9 +293,11 @@ try {
   /* ───────────────────────────── atendimento ───────────────────────────── */
   secao("Fluxo de atendimento (navegador, com sessão)");
   await page.goto(`${B}/leads`);
-  const novosTxt = await page.locator("#novos").innerText();
-  ok(/Marina Albuquerque/.test(novosTxt) && /Rogério Tavares/.test(novosTxt) && /Bianca Furtado/.test(novosTxt), "fila: os contatos dos formulários aparecem em “Novos contatos”");
-  ok(/Anúncio na Meta/.test(novosTxt), "fila mostra a fonte declarada na URL (Anúncio na Meta)");
+  const novosTxt = await page.locator("#manual").evaluate((el) => el.textContent ?? "");
+  ok(/Marina Albuquerque/.test(novosTxt) && /Rogério Tavares/.test(novosTxt) && /Bianca Furtado/.test(novosTxt) && /Novo contato sem primeiro atendimento/.test(novosTxt), "fila: com a automação desligada, os contatos dos formulários aparecem em “Depende de mim” como novos sem primeiro atendimento");
+  await page.goto(`${B}/leads/lista`);
+  ok(/Anúncio na Meta/.test(await page.locator("#conteudo").innerText()), "lista mostra a fonte declarada na URL (Anúncio na Meta)");
+  await page.goto(`${B}/leads`);
   ok(!/TESTE — formulário/.test(novosTxt) && /envio de teste aberto fica fora desta fila/.test(await page.locator("#conteudo").innerText()), "fila: envio de teste não entra na fila de atendimento (fica indicado e acessível pela lista)");
   await page.goto(`${B}/leads/o/${env1.oportunidade_id}`);
   ok((await page.locator("h1").innerText()).includes("Marina Albuquerque"), "ficha abre com nome e empresa");
@@ -318,7 +333,7 @@ try {
   ok(m1.modo === "manual" && m1.status === "registrada" && m1.canal === "whatsapp" && m1.corpo.includes("Oi, Marina!"), "mensagem de WhatsApp fica como “registrada à mão” (sem estado de entrega inventado)");
   await page.goto(`${B}/leads`);
   const link1 = `a[href="/leads/o/${env1.oportunidade_id}"]`;
-  ok((await page.locator(`#interessado ${link1}`).count()) === 1 && (await page.locator(`#novos ${link1}`).count()) === 0, "fila: saiu de Novos e está em “Aguardando resposta do interessado”");
+  ok((await page.locator(`#interessado ${link1}`).count()) === 1 && (await page.locator(`#manual ${link1}, #respostas ${link1}`).count()) === 0, "fila: saiu de “Depende de mim” e está em “Aguardando o interessado”");
 
   await page.goto(`${B}/leads/o/${env1.oportunidade_id}`);
   await page.fill('form:has(button:has-text("Registrar resposta recebida")) textarea[name="corpo"]', "Pode ser amanhã às 15h?");
@@ -326,7 +341,7 @@ try {
   [o1] = await sql`select * from crm_oportunidades where id = ${env1.oportunidade_id}`;
   ok(o1.etapa === "em_conversa" && o1.aguardando === "nos", "registrar resposta: etapa Em conversa, aguardando o nosso retorno");
   await page.goto(`${B}/leads`);
-  ok(/Marina Albuquerque/.test(await page.locator("#retorno").innerText()), "fila: aparece em “Responderam e aguardam seu retorno”");
+  ok(/Marina Albuquerque/.test(await page.locator("#respostas").innerText()) && /Disse: Pode ser amanhã às 15h\?/.test(await page.locator("#respostas").innerText()), "fila: aparece em “Respostas aguardando seu retorno”, com a última mensagem");
 
   await page.goto(`${B}/leads/o/${env1.oportunidade_id}`);
   await page.fill('input[name="texto"]', "Ligar para confirmar o escopo");
@@ -335,7 +350,11 @@ try {
   [o1] = await sql`select proxima_acao, proxima_acao_em from crm_oportunidades where id = ${env1.oportunidade_id}`;
   ok(new Date(o1.proxima_acao_em).toISOString() === "2026-01-05T13:00:00.000Z", `próxima ação gravada no fuso de Brasília (${new Date(o1.proxima_acao_em).toISOString()})`);
   await page.goto(`${B}/leads`);
-  ok(/Atrasado/.test(await page.locator("#agendados").innerText()) && /Ligar para confirmar o escopo/.test(await page.locator("#agendados").innerText()), "fila: retorno com data passada aparece como Atrasado");
+  // a resposta ainda espera retorno, então o item continua em “Respostas”; ao responder, passa a aparecer pelo retorno vencido
+  await page.goto(`${B}/leads/o/${env1.oportunidade_id}`);
+  await acao(page, 'button:has-text("Registrar como enviada")');
+  await page.goto(`${B}/leads`);
+  ok(/Retorno vencido/.test(await page.locator("#vencidos").innerText()) && /Ligar para confirmar o escopo/.test(await page.locator("#vencidos").innerText()), "fila: retorno com data passada aparece em “Retornos vencidos”");
 
   await page.goto(`${B}/leads/o/${env1.oportunidade_id}`);
   await page.selectOption('select[name="etapa"]', "proposta_enviada");
@@ -417,7 +436,7 @@ try {
   // integrações: estado verdadeiro
   await page.goto(`${B}/leads/integracoes`);
   const integ = await page.locator("#conteudo").innerText();
-  ok(/Formulários do site\s+Conectado/.test(integ) && /WhatsApp\s+Manual/.test(integ) && /Instagram Direct\s+Manual/.test(integ) && /Campanhas da Meta[^\n]*\s+Não conectado/.test(integ) && /Crush\s+Não conectado/.test(integ), "integrações: formulários conectados; WhatsApp e Instagram manuais; Meta Ads e Crush não conectados");
+  ok(/Formulários do site\s+Conectado/.test(integ) && /WhatsApp \(YCloud[^)]*\)\s+Não conectado/.test(integ) && /Configuração no servidor:\s*incompleta/.test(integ) && /Instagram Direct\s+Manual/.test(integ) && /Campanhas da Meta[^\n]*\s+Não conectado/.test(integ) && /Crush\s+Não conectado/.test(integ), "integrações: formulários conectados; WhatsApp não conectado (configuração incompleta); Instagram manual; Meta Ads e Crush não conectados");
   ok(/Recebimento: não conectado/.test(integ), "integrações: recebimento de e-mail declarado como não conectado");
 
   /* ───────────────────────────── mensagens por e-mail ───────────────────────────── */
@@ -425,17 +444,20 @@ try {
   const paraCliente = (email) => emails.filter((e) => e.to?.[0] === email);
   ok(paraCliente("marina@validacao.local").length === 0 && paraCliente("bianca@validacao.local").length === 0 && (await sql`select count(*)::int as n from crm_mensagens where automatica`)[0].n === 0, "automação desligada (padrão): nenhum e-mail automático saiu para os interessados");
   await page.goto(`${B}/leads/configuracoes`);
-  await page.click('button:has-text("Ligar o envio automático")');
-  await page.waitForURL(/msg=automacao/);
-  ok(/Ligado/.test(await page.locator("#conteudo").innerText()), "automação de primeiro contato ligada pela tela de configurações");
+  await page.check('input[name="canal"][value="whatsapp"]');
+  await acao(page, 'button:has-text("Salvar canal")');
+  ok(/o WhatsApp ainda não está configurado no servidor/.test(await page.locator("#conteudo").innerText()), "sem credenciais do provedor, o canal WhatsApp não pode ser ligado");
+  await page.check('input[name="canal"][value="email"]');
+  await acao(page, 'button:has-text("Salvar canal")');
+  ok(/Agora: E-mail/.test(await page.locator("#automacao").innerText()), "primeiro contato automático ligado no canal e-mail pela tela de configurações");
 
   const a1 = await post(lead({ nome: "Helena Prado", empresa: "Prado Arquitetura", whatsapp: "(51) 91111-0010", email: "helena@validacao.local" }));
   const auto1 = await ate(async () => (await sql`select m.* from crm_mensagens m join crm_envios e on e.oportunidade_id = m.oportunidade_id where e.id = ${a1.body.id} and m.status = 'enviada'`)[0]);
   ok(!!auto1 && auto1.automatica && auto1.modo === "sistema" && paraCliente("helena@validacao.local").length === 1, "lead com e-mail: 1 e-mail automático de primeiro contato, aceito pelo provedor");
   const eh = paraCliente("helena@validacao.local")[0];
   ok(eh?.reply_to === "comercial@teste.local" && eh.text.startsWith("Olá, Helena.") && eh.text.includes("Site ou landing page") && eh.idem === `crm-mensagem-${auto1.id}`, "e-mail automático usa o modelo, o endereço de resposta comercial e chave de idempotência");
-  const [oh] = await sql`select o.etapa, o.primeiro_contato_em, o.assumida_em from crm_oportunidades o where o.id = ${auto1.oportunidade_id}`;
-  ok(oh.etapa === "novo" && oh.primeiro_contato_em && oh.assumida_em === null, "depois do e-mail automático o contato continua em Novo (ninguém assumiu ainda)");
+  const [oh] = await sql`select o.etapa, o.aguardando, o.primeiro_contato_em, o.assumida_em from crm_oportunidades o where o.id = ${auto1.oportunidade_id}`;
+  ok(oh.etapa === "aguardando_resposta" && oh.aguardando === "cliente" && oh.primeiro_contato_em && oh.assumida_em === null, "depois do e-mail automático o contato aguarda o interessado, sem contar como atendimento humano");
   await post(lead({ nome: "Helena Prado", whatsapp: "(51) 91111-0010", email: "helena@validacao.local", mensagem: "Reenviando para garantir." }));
   await espera(1500);
   ok(paraCliente("helena@validacao.local").length === 1, "a mesma pessoa reenviando o formulário NÃO recebe outro e-mail automático");
@@ -449,7 +471,7 @@ try {
   const auto2 = await ate(async () => (await sql`select m.* from crm_mensagens m join crm_envios e on e.oportunidade_id = m.oportunidade_id where e.id = ${a2.body.id} and m.status = 'falhou'`)[0]);
   ok(!!auto2 && auto2.tentativas === 1, `falha do provedor no e-mail automático: mensagem marcada como falhou (${auto2?.erro})`);
   await page.goto(`${B}/leads`);
-  ok(/Caio Menezes/.test(await page.locator("#falhas").innerText()), "fila: a falha aparece em “Falhas de comunicação”");
+  ok(/Caio Menezes/.test(await page.locator("#manual").innerText()), "fila: a falha aparece em “Falhas e contatos que pedem ação manual”");
   mode = "ok";
   await cron();
   await ate(async () => (await sql`select status from crm_mensagens where id = ${auto2.id}`)[0].status === "enviada");
@@ -458,6 +480,7 @@ try {
   await cron();
   await espera(600);
   ok(paraCliente("caio@validacao.local").filter((e) => e.aceito).length === 1 && (await sql`select count(*)::int as n from crm_mensagens where oportunidade_id = ${auto2.oportunidade_id}`)[0].n === 1, "reprocessar não duplica a mensagem");
+  ok((await sql`select status from crm_tarefas where oportunidade_id = ${auto2.oportunidade_id}`)[0].status === "concluida", "a tarefa de primeiro contato fica concluída quando o e-mail sai na nova tentativa");
 
   // falha → pessoa assume → automação para
   mode = "fail";
@@ -527,8 +550,17 @@ try {
   const m = await ctxM.newPage();
   for (const p of ["/leads", "/leads/lista", "/leads/funil", "/leads/indicadores", "/leads/integracoes", "/leads/configuracoes", "/leads/novo", `/leads/o/${env1.oportunidade_id}`]) {
     await m.goto(`${B}${p}`);
-    const larg = await m.evaluate(() => ({ doc: document.documentElement.scrollWidth, tela: window.innerWidth }));
-    ok(larg.doc <= larg.tela + 1, `${p.replace(/\/o\/.*/, "/o/[id]")}: sem rolagem horizontal (${larg.doc} px de ${larg.tela})`);
+    const larg = await m.evaluate(() => {
+      // maior borda direita de qualquer elemento do conteúdo, fora das faixas feitas para rolar de lado
+      let max = 0;
+      for (const el of document.querySelectorAll("#conteudo *")) {
+        if (el.closest(".overflow-x-auto")) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && r.right > max) max = r.right;
+      }
+      return { doc: document.documentElement.scrollWidth, borda: Math.round(max), tela: window.innerWidth };
+    });
+    ok(larg.doc <= larg.tela + 1 && larg.borda <= larg.tela + 1, `${p.replace(/\/o\/.*/, "/o/[id]")}: nada passa da borda da tela no celular (conteúdo até ${larg.borda} px de ${larg.tela})`);
   }
   await m.goto(`${B}/leads`);
   ok(await m.locator('nav[aria-label="Seções do CRM"] >> visible=true').first().isVisible(), "navegação fixa no rodapé visível no celular");

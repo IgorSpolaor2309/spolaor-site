@@ -5,8 +5,9 @@ import { redirect } from "next/navigation";
 import { acessoPronto, entrarComCodigo, exigirUsuario, renomearUsuario, sair, solicitarCodigo } from "@/lib/crm/auth";
 import { enviarAviso } from "@/lib/crm/aviso";
 import { db } from "@/lib/crm/db";
-import { cadastrarManual } from "@/lib/crm/entrada";
-import { definirAutomacaoEmail, emailCliente, enfileirarEmail, enviarMensagem, restaurarModelo, salvarModelo } from "@/lib/crm/mensagens";
+import { associarMensagens, conferirMensagens, efeitosDoEnvioAceito } from "@/lib/crm/conversa";
+import { cadastrarManual, criarParaContato, registrarEvento } from "@/lib/crm/entrada";
+import { emailCliente, enfileirarEmail, enviarMensagem, restaurarModelo, salvarModelo } from "@/lib/crm/mensagens";
 import { normEmail, normWhatsapp, texto, valorMonetario } from "@/lib/crm/normalizar";
 import {
   adicionarCusto,
@@ -22,7 +23,11 @@ import {
   removerCusto,
   salvarNegocio,
 } from "@/lib/crm/operacoes";
-import { deInputLocal, ETAPAS, isCanal, isCanalMensagem, isCustoTipo, isEtapa } from "@/lib/crm/tipos";
+import { CATEGORIAS, deInputLocal, ETAPAS, isCanal, isCanalMensagem, isCategoria, isCustoTipo, isEtapa, type Categoria } from "@/lib/crm/tipos";
+import { definirCanalAutomacao, salvarFrases, salvarModeloPrimeiroContato, VARIAVEIS_MODELO, waEnvio } from "@/lib/crm/whatsapp/config";
+import { enviarWhatsapp } from "@/lib/crm/whatsapp/envio";
+import { listarModelos, modeloAprovado } from "@/lib/crm/whatsapp/ycloud";
+import { randomUUID } from "node:crypto";
 
 // Ações do CRM. TODAS (menos as duas de entrada) começam por exigirUsuario(): uma Server Action é um endpoint
 // público, então a sessão é conferida aqui, não só na página que mostra o botão.
@@ -173,7 +178,7 @@ export async function reenviarMensagemAction(fd: FormData) {
   if (!id || !msg) return;
   const r = await enviarMensagem(msg, true);
   atualizar(id);
-  redirect(ficha(id, r === "enviada" ? "email-enviado" : r === "cancelada" ? "email-cancelado" : "email-falhou"));
+  redirect(ficha(id, r === "enviada" ? "email-enviado" : r === "cancelada" ? "email-cancelado" : r === "ignorada" ? "salvo" : "email-falhou"));
 }
 
 export async function reenviarAvisoAction(fd: FormData) {
@@ -223,7 +228,8 @@ export async function contatoAction(fd: FormData) {
     { nome: String(fd.get("nome") ?? ""), empresa: s(fd, "empresa", 200), whatsapp: s(fd, "whatsapp", 40), email: s(fd, "email", 200), instagram: s(fd, "instagram", 80), site: s(fd, "site", 300) },
     u.id,
   );
-  if (r.ok) await editarServico(id, s(fd, "servico", 200), u.id);
+  const categoria = fd.get("categoria");
+  if (r.ok && isCategoria(categoria)) await editarServico(id, categoria, s(fd, "servico", 200), u.id);
   atualizar(id);
   redirect(ficha(id, r.ok ? "salvo" : r.erro));
 }
@@ -252,6 +258,7 @@ export async function cadastrarAction(_prev: EstadoCadastro, fd: FormData): Prom
     instagram: s(fd, "instagram", 80),
     site: s(fd, "site", 300),
     servico: s(fd, "servico", 200),
+    categoria: isCategoria(fd.get("categoria")) ? (fd.get("categoria") as Categoria) : "a-classificar",
     canal,
     origem: s(fd, "origem", 200),
     mensagem: s(fd, "mensagem", 4000),
@@ -299,13 +306,41 @@ export async function modeloAction(fd: FormData) {
   redirect("/leads/configuracoes?msg=modelo-salvo");
 }
 
+/** Canal do primeiro contato automático: desligado, WhatsApp ou e-mail. Um só, para a mesma recepção não sair duas vezes. */
 export async function automacaoAction(fd: FormData) {
   const u = await exigirUsuario();
-  const ligar = fd.get("ativo") === "1";
-  if (ligar && !emailCliente().pronto) redirect("/leads/configuracoes?msg=email-config");
-  await definirAutomacaoEmail(ligar, u.id);
+  const canal = fd.get("canal");
+  if (canal !== "desligado" && canal !== "whatsapp" && canal !== "email") return;
+  if (canal === "email" && !emailCliente().pronto) redirect("/leads/configuracoes?msg=email-config");
+  // WhatsApp só liga com tudo o que o envio precisa: credenciais, número e um modelo aprovado escolhido.
+  if (canal === "whatsapp") {
+    if (!waEnvio().pronto) redirect("/leads/configuracoes?msg=wa-config");
+    const m = await (await import("@/lib/crm/whatsapp/config")).modeloPrimeiroContato();
+    if (!m.nome) redirect("/leads/configuracoes?msg=wa-modelo");
+    const ok = await modeloAprovado(m.nome, m.idioma, true);
+    if (!ok.ok) redirect("/leads/configuracoes?msg=wa-modelo");
+  }
+  await definirCanalAutomacao(canal, u.id);
   revalidatePath("/leads", "layout");
   redirect("/leads/configuracoes?msg=automacao");
+}
+
+/** Modelo aprovado usado no primeiro contato pelo WhatsApp, o que entra em cada variável e a frase de cada serviço. */
+export async function modeloWhatsappAction(fd: FormData) {
+  const u = await exigirUsuario();
+  const nome = (s(fd, "nome", 120) ?? "").toLowerCase();
+  if (nome && !/^[a-z0-9_]{1,120}$/.test(nome)) redirect("/leads/configuracoes?msg=wa-nome");
+  const variaveis = [1, 2, 3, 4].map((i) => String(fd.get(`var${i}`) ?? "")).filter((v) => (VARIAVEIS_MODELO as readonly string[]).includes(v));
+  await salvarModeloPrimeiroContato({ nome, idioma: s(fd, "idioma", 12) ?? "pt_BR", variaveis }, u.id);
+  const fr: Partial<Record<Categoria, string>> = {};
+  for (const c of CATEGORIAS) {
+    const v = s(fd, `frase-${c}`, 120);
+    if (v) fr[c] = v;
+  }
+  await salvarFrases(fr, u.id);
+  await listarModelos(true).catch(() => null);
+  revalidatePath("/leads", "layout");
+  redirect("/leads/configuracoes?msg=wa-salvo");
 }
 
 export async function nomeAction(fd: FormData) {
@@ -314,4 +349,114 @@ export async function nomeAction(fd: FormData) {
   if (nome && nome.length >= 2) await renomearUsuario(u.id, nome);
   revalidatePath("/leads", "layout");
   redirect("/leads/configuracoes?msg=salvo");
+}
+
+/* ───────────────────────────── WhatsApp pelo CRM ───────────────────────────── */
+
+/**
+ * Envia uma mensagem de WhatsApp pelo número da empresa. Dentro da janela de 24 h (contada da última mensagem da
+ * pessoa) vai o texto escrito; fora dela a Meta só aceita o modelo aprovado. A chave vem do formulário aberto:
+ * clique duplo ou reenvio do mesmo formulário não manda duas vezes.
+ */
+export async function enviarWhatsappAction(fd: FormData) {
+  const u = await exigirUsuario();
+  const id = uuid(fd.get("id"));
+  const chave = s(fd, "chave", 80);
+  const modo = fd.get("modo") === "modelo" ? "modelo" : "texto";
+  const corpo = s(fd, "corpo", 4000);
+  if (!id || !chave) return;
+  if (!waEnvio().pronto) redirect(ficha(id, "wa-config"));
+  const sql = await db();
+  const [o] = await sql<{ contato_id: string; whatsapp: string | null; nome: string; empresa: string | null; categoria: string | null; janela: boolean }[]>`
+    select o.contato_id, c.whatsapp, c.nome, c.empresa, o.categoria,
+      (c.wa_ultima_entrada_em is not null and c.wa_ultima_entrada_em > now() - interval '24 hours') as janela
+    from crm_oportunidades o join crm_contatos c on c.id = o.contato_id where o.id = ${id}`;
+  if (!o?.whatsapp) redirect(ficha(id, "wa-sem-numero"));
+
+  let envio: Parameters<typeof enviarWhatsapp>[1];
+  let texto: string;
+  let nomeModelo: string | null = null;
+  if (modo === "texto") {
+    if (!corpo) redirect(ficha(id, "wa-vazio"));
+    // A janela é conferida aqui, no servidor, com a hora da última mensagem recebida.
+    if (!o.janela) redirect(ficha(id, "wa-janela"));
+    envio = { tipo: "texto", para: o.whatsapp, texto: corpo };
+    texto = corpo;
+  } else {
+    const cfg = await import("@/lib/crm/whatsapp/config");
+    const m = await cfg.modeloPrimeiroContato();
+    const aprovado = m.nome ? await modeloAprovado(m.nome, m.idioma) : ({ ok: false, motivo: "" } as const);
+    if (!aprovado.ok) redirect(ficha(id, "wa-modelo"));
+    const fr = await cfg.frases();
+    const parametros = cfg.parametrosDoModelo(m, { nome: o.nome, empresa: o.empresa, pedido: fr[isCategoria(o.categoria) ? o.categoria : "a-classificar"] });
+    envio = { tipo: "modelo", para: o.whatsapp, modelo: m.nome, idioma: m.idioma, parametros };
+    texto = cfg.textoDoModelo(aprovado.corpo, parametros, m.nome);
+    nomeModelo = m.nome;
+  }
+  const mensagemId = randomUUID();
+  const r0 = await sql`
+    insert into crm_mensagens (id, oportunidade_id, contato_id, canal, direcao, modo, via, tipo, automatica, corpo, status, chave, provedor, modelo, usuario_id, tentativas, tentado_em)
+    values (${mensagemId}, ${id}, ${o.contato_id}, 'whatsapp', 'saida', 'sistema', 'api', ${modo === "modelo" ? "template" : "text"}, false, ${texto}, 'enviando',
+      ${`manual-wa:${id}:${chave}`}, 'ycloud', ${nomeModelo}, ${u.id}, 1, now())
+    on conflict (chave) do nothing`;
+  if (!r0.count) redirect(ficha(id, "wa-repetido"));
+  const r = await enviarWhatsapp(mensagemId, envio);
+  atualizar(id);
+  redirect(ficha(id, r === "aceita" ? "wa-enviado" : r === "incerta" ? "wa-incerto" : "wa-falhou"));
+}
+
+/**
+ * Uma pessoa resolve um envio de resultado incerto depois de conferir no aplicativo: "saiu" confirma a mensagem
+ * (com os efeitos de um envio aceito); "nao_saiu" cancela, e aí é seguro escrever de novo.
+ */
+export async function resolverIncertaAction(fd: FormData) {
+  const u = await exigirUsuario();
+  const id = uuid(fd.get("id"));
+  const msg = uuid(fd.get("mensagem"));
+  const saiu = fd.get("decisao") === "saiu";
+  if (!id || !msg) return;
+  const sql = await db();
+  await sql.begin(async (tx) => {
+    const [m] = await tx<{ id: string }[]>`
+      update crm_mensagens set status = ${saiu ? "enviada" : "cancelada"}, erro = ${saiu ? null : "Conferido no aplicativo: a mensagem não saiu."},
+        enviado_em = case when ${saiu} then coalesce(enviado_em, tentado_em, now()) else enviado_em end,
+        ocorrida_em = case when ${saiu} then coalesce(ocorrida_em, tentado_em, now()) else ocorrida_em end
+      where id = ${msg} and oportunidade_id = ${id} and status = 'incerta' returning id`;
+    if (!m) return;
+    if (saiu) await efeitosDoEnvioAceito(tx, msg, new Date().toISOString());
+    else await tx`update crm_tarefas set status = 'falhou', resultado = 'Conferido no aplicativo: o primeiro contato automático não saiu.', atualizado_em = now() where mensagem_id = ${msg} and status = 'incerta'`;
+    await registrarEvento(tx, { oportunidadeId: id, tipo: "incerta_resolvida", texto: saiu ? "Envio incerto conferido no aplicativo: a mensagem saiu." : "Envio incerto conferido no aplicativo: a mensagem não saiu.", usuarioId: u.id });
+  });
+  atualizar(id);
+  redirect(ficha(id, "salvo"));
+}
+
+/** Associa a esta oportunidade as mensagens de WhatsApp da pessoa que ficaram sem oportunidade. */
+export async function associarAction(fd: FormData) {
+  const u = await exigirUsuario();
+  const id = uuid(fd.get("id"));
+  if (!id) return;
+  await associarMensagens(id, u.id);
+  atualizar(id);
+  redirect(ficha(id, "associado"));
+}
+
+export async function criarDaConversaAction(fd: FormData) {
+  const u = await exigirUsuario();
+  const contato = uuid(fd.get("contato"));
+  if (!contato) return;
+  const id = await criarParaContato(contato, u.id);
+  if (!id) return;
+  await associarMensagens(id, u.id);
+  atualizar(id);
+  redirect(ficha(id, "criado"));
+}
+
+export async function conferirConversaAction(fd: FormData) {
+  await exigirUsuario();
+  const contato = uuid(fd.get("contato"));
+  if (!contato) return;
+  await conferirMensagens(contato);
+  atualizar();
+  redirect("/leads#sem-associacao");
 }

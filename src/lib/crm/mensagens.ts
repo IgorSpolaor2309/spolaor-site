@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { site } from "@/lib/site";
+import { efeitosDoEnvioAceito } from "./conversa";
 import { db, type Db } from "./db";
 import { registrarEvento } from "./entrada";
 
@@ -113,19 +114,6 @@ export function emailCliente() {
   return { pronto: falta.length === 0, from, replyTo, falta };
 }
 
-export async function automacaoEmailAtiva(): Promise<boolean> {
-  const sql = await db();
-  const [r] = await sql<{ valor: { ativo?: boolean } }[]>`select valor from crm_config where chave = 'automacao:email'`;
-  return r?.valor?.ativo === true;
-}
-
-export async function definirAutomacaoEmail(ativo: boolean, usuarioId: string) {
-  const sql = await db();
-  await sql`
-    insert into crm_config (chave, valor, usuario_id) values ('automacao:email', ${sql.json({ ativo })}, ${usuarioId})
-    on conflict (chave) do update set valor = excluded.valor, usuario_id = excluded.usuario_id, atualizado_em = now()`;
-}
-
 /** Coloca um e-mail na fila. Devolve o id, ou null se a chave já existia (mesma mensagem pedida de novo). */
 export async function enfileirarEmail(
   tx: Db,
@@ -133,8 +121,9 @@ export async function enfileirarEmail(
 ): Promise<string | null> {
   const id = randomUUID();
   const r = await tx`
-    insert into crm_mensagens (id, oportunidade_id, canal, direcao, modo, automatica, assunto, corpo, status, chave, usuario_id)
-    values (${id}, ${m.oportunidadeId}, 'email', 'saida', 'sistema', ${m.automatica}, ${m.assunto.slice(0, 200)}, ${m.corpo.slice(0, 8000)}, 'pendente', ${m.chave}, ${m.usuarioId ?? null})
+    insert into crm_mensagens (id, oportunidade_id, contato_id, canal, direcao, modo, via, automatica, assunto, corpo, status, chave, usuario_id)
+    select ${id}, o.id, o.contato_id, 'email', 'saida', 'sistema', 'api', ${m.automatica}, ${m.assunto.slice(0, 200)}, ${m.corpo.slice(0, 8000)}, 'pendente', ${m.chave}, ${m.usuarioId ?? null}
+    from crm_oportunidades o where o.id = ${m.oportunidadeId}
     on conflict (chave) do nothing`;
   return r.count ? id : null;
 }
@@ -147,7 +136,7 @@ export async function enviarMensagem(id: string, forcar = false): Promise<"envia
   const sql = await db();
   const [m] = await sql<{ oportunidade_id: string; automatica: boolean; assunto: string | null; corpo: string; canal: string }[]>`
     update crm_mensagens set status = 'enviando', tentativas = tentativas + 1, tentado_em = now()
-    where id = ${id} and modo = 'sistema' and direcao = 'saida'
+    where id = ${id} and modo = 'sistema' and direcao = 'saida' and canal = 'email'
       and (status in ('pendente', 'falhou') or (status = 'enviando' and tentado_em < now() - interval '10 minutes'))
       and (${forcar} or tentativas < ${MENSAGEM_MAX_TENTATIVAS})
     returning oportunidade_id, automatica, assunto, corpo, canal`;
@@ -181,10 +170,12 @@ export async function enviarMensagem(id: string, forcar = false): Promise<"envia
     if (!res.ok) return falhar(`Provedor de e-mail recusou o envio (HTTP ${res.status})`);
     const body = (await res.json().catch(() => ({}))) as { id?: string };
     await sql.begin(async (tx) => {
-      await tx`update crm_mensagens set status = 'enviada', enviado_em = now(), erro = null, provedor_id = ${body.id ?? null} where id = ${id}`;
+      await tx`update crm_mensagens set status = 'enviada', enviado_em = now(), ocorrida_em = now(), erro = null, provedor = 'resend', provedor_id = ${body.id ?? null} where id = ${id}`;
       await tx`
         update crm_oportunidades set primeiro_contato_em = coalesce(primeiro_contato_em, now()), ultimo_contato_em = now(), atualizado_em = now()
         where id = ${m.oportunidade_id}`;
+      // Mensagem automática aceita: a oportunidade passa a aguardar o interessado, sem contar como atendimento humano.
+      if (m.automatica) await efeitosDoEnvioAceito(tx, id, new Date().toISOString());
       await registrarEvento(tx, {
         oportunidadeId: m.oportunidade_id,
         tipo: "mensagem_enviada",
@@ -197,44 +188,12 @@ export async function enviarMensagem(id: string, forcar = false): Promise<"envia
   }
 }
 
-/**
- * Primeiro contato automático de um envio de formulário. Só age se a automação de e-mail estiver ligada, o envio
- * tiver criado uma oportunidade nova (não um reenvio), não for teste, houver e-mail e ninguém tiver assumido.
- * Uma mensagem por oportunidade (chave única): reprocessar o mesmo envio não duplica.
- */
-export async function primeiroContatoDoEnvio(envioId: string): Promise<string> {
-  if (!emailCliente().pronto) return "e-mail não configurado";
-  if (!(await automacaoEmailAtiva())) return "automação desligada";
-  const sql = await db();
-  const [o] = await sql<{ id: string; etapa: string; assumida_em: Date | null; teste: boolean; servico: string | null; nome: string; empresa: string | null; email: string | null; primeiro: string }[]>`
-    select o.id, o.etapa, o.assumida_em, o.teste, o.servico, c.nome, c.empresa, c.email,
-      (select e2.id from crm_envios e2 where e2.oportunidade_id = o.id order by e2.recebido_em, e2.id limit 1) as primeiro
-    from crm_envios e join crm_oportunidades o on o.id = e.oportunidade_id join crm_contatos c on c.id = o.contato_id
-    where e.id = ${envioId}`;
-  if (!o) return "envio não encontrado";
-  if (o.primeiro !== envioId) return "reenvio: sem nova mensagem";
-  if (o.teste) return "teste: sem mensagem";
-  if (!o.email) return "sem e-mail";
-  if (o.assumida_em || o.etapa !== "novo") return "já assumido";
-  const modelo = (await modelos()).find((m) => m.id === "email-formulario")!;
-  const v = { nome: o.nome, empresa: o.empresa, servico: o.servico };
-  const id = await enfileirarEmail(sql, {
-    oportunidadeId: o.id,
-    assunto: preencher(modelo.assunto ?? "", v),
-    corpo: preencher(modelo.corpo, v),
-    chave: `primeiro-contato:${o.id}`,
-    automatica: true,
-  });
-  if (!id) return "já enfileirada";
-  return enviarMensagem(id);
-}
-
 /** Rotina: mensagens do sistema pendentes, falhas ou travadas, dentro do limite de tentativas. */
 export async function rotinaMensagens(): Promise<string[]> {
   const sql = await db();
   const rows = await sql<{ id: string }[]>`
     select id from crm_mensagens
-    where modo = 'sistema' and direcao = 'saida' and tentativas < ${MENSAGEM_MAX_TENTATIVAS}
+    where modo = 'sistema' and direcao = 'saida' and canal = 'email' and tentativas < ${MENSAGEM_MAX_TENTATIVAS}
       and (status = 'falhou'
         or (status = 'pendente' and criado_em < now() - interval '2 minutes')
         or (status = 'enviando' and tentado_em < now() - interval '10 minutes'))

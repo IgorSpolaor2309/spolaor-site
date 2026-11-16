@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const itens = [
-  { href: "/leads", rotulo: "Atendimento", curto: "Hoje" },
+  { href: "/leads", rotulo: "Depende de mim", curto: "Fila" },
   { href: "/leads/lista", rotulo: "Lista", curto: "Lista" },
   { href: "/leads/funil", rotulo: "Funil", curto: "Funil" },
   { href: "/leads/indicadores", rotulo: "Indicadores", curto: "Números" },

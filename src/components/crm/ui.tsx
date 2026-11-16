@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { atribuicao, ETAPA_ROTULO, fmtMoeda, fmtRelativo, fmtWhatsapp, type Etapa, type Oportunidade } from "@/lib/crm/tipos";
+import { atribuicao, CATEGORIA_ROTULO, CATEGORIAS, ETAPA_ROTULO, fmtMoeda, fmtRelativo, fmtWhatsapp, type Categoria, type Etapa, type Oportunidade } from "@/lib/crm/tipos";
 import { linkWhatsapp } from "@/lib/crm/normalizar";
 
 // Peças visuais do CRM: base clara do site (gesso, branco, marinho), azul da marca na ação principal e laranja só
@@ -16,7 +16,7 @@ export const btnQuiet = "inline-flex min-h-9 items-center rounded-md px-2 text-[
 
 export function Painel({ children, className = "", id }: { children: ReactNode; className?: string; id?: string }) {
   return (
-    <section id={id} className={`rounded-[14px] border border-line bg-white ${className}`}>
+    <section id={id} className={`min-w-0 rounded-[14px] border border-line bg-white ${className}`}>
       {children}
     </section>
   );
@@ -78,7 +78,7 @@ export function OpLinha({ o, agora, destaque }: { o: Oportunidade; agora: number
   const atrasado = o.proximaAcaoEm ? new Date(o.proximaAcaoEm).getTime() < agora : false;
   return (
     <li className="flex items-start gap-3 border-b border-line px-4 py-3.5 last:border-b-0 sm:px-5">
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 [overflow-wrap:anywhere]">
         <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
           <Link href={`/leads/o/${o.id}`} className="text-[1rem] font-semibold text-fg underline-offset-4 hover:underline">
             {o.contato.nome}
@@ -87,7 +87,7 @@ export function OpLinha({ o, agora, destaque }: { o: Oportunidade; agora: number
           {o.teste && <span className="rounded bg-ink-800 px-1.5 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wide text-dim">teste</span>}
         </p>
         <p className="mt-1 text-[0.86rem] leading-snug text-muted">
-          {o.servico ?? "Serviço não informado"} · {atr.fonte} · chegou {fmtRelativo(o.recebidoEm, agora)}
+          {CATEGORIA_ROTULO[o.categoria]} · {atr.fonte} · chegou {fmtRelativo(o.recebidoEm, agora)}
         </p>
         {destaque === "retorno" && o.proximaAcaoEm && (
           <p className={`mt-1 text-[0.86rem] font-semibold ${atrasado ? "text-ember" : "text-fg"}`}>
@@ -101,6 +101,74 @@ export function OpLinha({ o, agora, destaque }: { o: Oportunidade; agora: number
           <EtapaMarca etapa={o.etapa} />
           {o.valorProposta !== null && <span className="text-[0.8rem] text-muted">Proposta {fmtMoeda(o.valorProposta)}</span>}
           {o.responsavelNome && <span className="text-[0.8rem] text-dim">{o.responsavelNome}</span>}
+        </p>
+      </div>
+      {o.contato.whatsapp && (
+        <a
+          href={linkWhatsapp(o.contato.whatsapp)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 rounded-[10px] border border-line-strong px-3 py-2 text-[0.82rem] font-semibold text-fg hover:border-fg/40"
+          aria-label={`Abrir WhatsApp de ${o.contato.nome} (${fmtWhatsapp(o.contato.whatsapp)})`}
+        >
+          WhatsApp
+        </a>
+      )}
+    </li>
+  );
+}
+
+/** Filtro por serviço (categoria), em links: funciona sem JavaScript e mantém os outros parâmetros da página. */
+export function FiltroServico({ base, atual, outros = {} }: { base: string; atual?: Categoria; outros?: Record<string, string> }) {
+  const href = (c?: Categoria) => {
+    const u = new URLSearchParams(outros);
+    if (c) u.set("servico", c);
+    const q = u.toString();
+    return `${base}${q ? `?${q}` : ""}`;
+  };
+  const cls = (on: boolean) => `whitespace-nowrap rounded-lg px-3 py-2 text-[0.84rem] font-semibold ${on ? "bg-fg text-white" : "border border-line-strong text-muted hover:text-fg"}`;
+  return (
+    <nav aria-label="Filtrar por serviço" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
+      <Link href={href()} className={cls(!atual)} aria-current={!atual ? "true" : undefined}>
+        Todos os serviços
+      </Link>
+      {CATEGORIAS.map((c) => (
+        <Link key={c} href={href(c)} className={cls(atual === c)} aria-current={atual === c ? "true" : undefined}>
+          {CATEGORIA_ROTULO[c]}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+/**
+ * Item de "Depende de mim": quem é, qual serviço, por que está aqui, a última mensagem, há quanto tempo espera e
+ * quem é o responsável.
+ */
+export function ItemFilaLinha({ o, motivo, desde, alerta, agora }: { o: Oportunidade; motivo: string; desde: string; alerta: boolean; agora: number }) {
+  const um = o.ultimaMensagem;
+  return (
+    <li className="flex items-start gap-3 border-b border-line px-4 py-3.5 last:border-b-0 sm:px-5" data-oportunidade={o.id}>
+      <div className="min-w-0 flex-1 [overflow-wrap:anywhere]">
+        <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <Link href={`/leads/o/${o.id}`} className="text-[1rem] font-semibold text-fg underline-offset-4 hover:underline">
+            {o.contato.nome}
+          </Link>
+          {o.contato.empresa && <span className="text-[0.88rem] text-muted">{o.contato.empresa}</span>}
+        </p>
+        <p className={`mt-1 text-[0.88rem] font-semibold leading-snug ${alerta ? "text-ember" : "text-fg"}`}>{motivo}</p>
+        {um && (
+          <p className="mt-1 line-clamp-2 text-[0.88rem] leading-snug text-muted">
+            <span className="text-dim">{um.direcao === "entrada" ? "Disse: " : um.automatica ? "Automática: " : "Você: "}</span>
+            {um.corpo}
+          </p>
+        )}
+        {!um && o.mensagem && <p className="mt-1 line-clamp-2 text-[0.88rem] leading-snug text-muted">{o.mensagem}</p>}
+        <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8rem] text-dim">
+          <span>{CATEGORIA_ROTULO[o.categoria]}</span>
+          <EtapaMarca etapa={o.etapa} />
+          <span>esperando {fmtRelativo(desde, agora)}</span>
+          <span>{o.responsavelNome ?? "sem responsável"}</span>
         </p>
       </div>
       {o.contato.whatsapp && (
