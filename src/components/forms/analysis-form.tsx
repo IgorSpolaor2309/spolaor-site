@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { AVISO_RETORNO, maskPhone, validateLead, type LeadOrigem, type LeadPayload } from "@/lib/leads/schema";
+import { mascararTelefone } from "@/lib/leads/phone-input";
+import { AVISO_RETORNO, validateLead, type LeadOrigem, type LeadPayload } from "@/lib/leads/schema";
 import { formStartProps, submitLead } from "@/lib/leads/client";
 import { PROBLEMAS, SEGMENTOS, SEGMENTO_DA_ORIGEM } from "@/lib/segments";
 import { FormUnavailable, SubmitError } from "./submit-error";
@@ -228,7 +229,7 @@ export function AnalysisForm({
                       placeholder={ph}
                       className="field"
                       value={data[k]}
-                      onChange={(e) => set(k, k === "whatsapp" ? maskPhone(e.target.value) : e.target.value)}
+                      onChange={(e) => set(k, k === "whatsapp" ? mascararTelefone(e, data.whatsapp) : e.target.value)}
                       aria-invalid={!!errors[k]}
                       aria-describedby={errors[k] ? id(`${k}-err`) : undefined}
                     />
