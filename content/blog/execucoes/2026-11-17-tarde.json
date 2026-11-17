@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-17-tarde",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "whatsapp-api-cobranca-mensagens-de-servico",
   "inicio": "2026-11-17T18:05:54-03:00",
@@ -120,6 +120,10 @@
     "observacoes": "Subagente conferiu as 9 afirmações contra o texto da página da Meta: 7 confirmadas, 2 parciais (marcação no webhook e escopo da página), ambas reescritas. Também corrigido: 'quem troca poucas mensagens, nada muda' (utilidade em resposta é cobrada desde a primeira); título e descrição agora dizem 'mensagens de serviço' e 'em cada número'; afirmação sobre prática interna da Spolaor trocada por recomendação; lembretes desvinculados de /automacao; 'cinco categorias, duas importam' corrigido; não entrega restrita a mensagens de serviço; faixa gratuita não vale para modelos; 'regra da faixa gratuita é a mesma para todos'. Trecho do front matter literal; conta do exemplo conferida; links internos válidos."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-17T21:11:06.104Z",
+    "url": "https://blog.spolaortecnologia.com.br/whatsapp-api-cobranca-mensagens-de-servico",
+    "commit": "5f4e0993132bdc33b5846d4ebcb972db9de8a4d8",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
