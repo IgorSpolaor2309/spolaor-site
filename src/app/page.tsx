@@ -22,7 +22,7 @@ const wash = "bg-[linear-gradient(180deg,#e6eefb_0px,#f5f4f0_520px)]";
 export default function Home() {
   return (
     <>
-      <div className={sky}>
+      <div className={sky} data-topo-azul>
         <Hero />
         <Offers />
       </div>
