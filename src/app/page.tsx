@@ -13,9 +13,7 @@ import { FinalCta } from "@/components/sections/final-cta";
 import { TopoAzul } from "@/components/layout/topo-azul";
 
 // Cor da barra do navegador no celular: o mesmo azul-claro do topo da home
-// viewportFit "cover": a página passa a desenhar também atrás do relógio/Wi-Fi do iPhone, e o cabeçalho
-// (com padding da área segura) pinta essa faixa com a mesma cor que acompanha a rolagem.
-export const viewport: Viewport = { themeColor: "#d9e6fc", viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#d9e6fc" };
 
 // Azul bem leve que começa no topo e se desfaz no gesso ao longo das primeiras rolagens
 const sky = "bg-[linear-gradient(180deg,#d9e6fc_0px,#e3ebfb_800px,#edf0f6_1700px,#f5f4f0_2600px)]";

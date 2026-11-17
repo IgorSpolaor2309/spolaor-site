@@ -238,31 +238,24 @@
   }
 }
 
-/* Topo azul (home). O Safari do iPhone 26 ignora theme-color e pinta a área do relógio com a cor de
-   fundo do próprio elemento position:fixed encostado no topo (o <header>, não as camadas dentro dele).
-   Sem isso, usa a cor do começo da página, que nunca muda. Na página com [data-topo-azul], o <header>
-   recebe --topo, que TopoAzul atualiza com a cor do degradê na altura da rolagem; a camada interna
-   fica transparente para não criar uma segunda cor. */
-html:has([data-topo-azul]) header { background-color: var(--topo, #d9e6fc); }
-html:has([data-topo-azul]) header > div:first-child { background-color: transparent; }
-
-/* Com viewport-fit=cover (só na home), a página ocupa também a faixa do relógio e as laterais do
-   entalhe. O cabeçalho cresce para cobrir a faixa do relógio com a cor dele, e o resto da página
-   desce na mesma medida. Fora do iPhone, env() vale 0 e nada muda. */
-html:has([data-topo-azul]) {
-  --sat: env(safe-area-inset-top, 0px);
-  --sal: env(safe-area-inset-left, 0px);
-  --sar: env(safe-area-inset-right, 0px);
-  scroll-padding-top: calc(80px + var(--sat));
+/* Topo azul (home). O Safari do iPhone 26 ignora theme-color: pinta a faixa do relógio com a cor de
+   fundo do elemento fixo que estiver ~4px abaixo do topo da tela, no meio. Se esse elemento tem
+   backdrop-filter (o desfoque do cabeçalho rolado), o Safari não o trata como uma cor só e cai na cor
+   do começo da página, que nunca muda. Por isso, na página com [data-topo-azul]:
+   - o cabeçalho e as camadas internas (a que o Safari acerta é a de dentro) têm cor sólida --topo (TopoAzul a atualiza conforme a rolagem);
+   - sem backdrop-filter;
+   - a barra fixa de baixo do celular também fica sólida e sem desfoque, no gesso. */
+html:has([data-topo-azul]) header,
+html:has([data-topo-azul]) header > div:first-child,
+html:has([data-topo-azul]) header > div:first-child > div {
+  background-color: var(--topo, #d9e6fc);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
-html:has([data-topo-azul]) header { padding: var(--sat) var(--sar) 0 var(--sal); }
-html:has([data-topo-azul]) body { padding-left: var(--sal); padding-right: var(--sar); }
-html:has([data-topo-azul]) section[aria-labelledby="hero-title"] { padding-top: calc(60px + var(--sat)); }
-html:has([data-topo-azul]) #menu-mobile { top: calc(60px + var(--sat)); }
-@media (min-width: 640px) {
-  html:has([data-topo-azul]) { scroll-padding-top: calc(96px + var(--sat)); }
-  html:has([data-topo-azul]) section[aria-labelledby="hero-title"] { padding-top: calc(72px + var(--sat)); }
-  html:has([data-topo-azul]) #menu-mobile { top: calc(72px + var(--sat)); }
+html:has([data-topo-azul]) [data-cta-bar] {
+  background-color: #f5f4f0;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 /* Entrada do hero em CSS puro: roda antes da hidratação e não atrasa o LCP */
