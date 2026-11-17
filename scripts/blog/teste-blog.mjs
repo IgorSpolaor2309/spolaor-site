@@ -34,7 +34,7 @@ const metaBase = (turno = "2026-11-17-manha", extra = {}) => ({
   atualizadoEm: "2026-11-17T08:40:00-03:00",
   turno,
   servicos: ["lojas"],
-  fontes: [{ titulo: "Fonte oficial", url: "https://exemplo.com/doc", consultadoEm: "2026-11-17" }],
+  fontes: [{ titulo: "Fonte oficial", url: "https://exemplo.com/doc", consultadoEm: "2026-11-17", trecho: "Trecho lido na fonte original que sustenta o texto." }],
   historico: [{ em: "2026-11-17T08:40:00-03:00", turno, tipo: "publicacao", resumo: "Publicação inicial." }],
   ...extra,
 });
@@ -114,6 +114,7 @@ caso(
   { artigos: {}, execucoes: { [T]: execucao(T, { situacao: "sem-publicacao", acao: "nenhuma", artigo: null, verificacao: { situacao: "nao-se-aplica" } }) } },
   null,
 );
+caso("fonte sem trecho lido", { artigos: { "loja-plataforma-ou-propria": artigo(metaBase(T, { fontes: [{ titulo: "Fonte oficial", url: "https://exemplo.com/doc", consultadoEm: "2026-11-17" }] })) }, execucoes: { [T]: execucao(T) } }, "trecho obrigatório");
 caso("serviço fora do catálogo", { artigos: { "loja-plataforma-ou-propria": artigo(metaBase(T, { servicos: ["trafego-pago"] })) }, execucoes: { [T]: execucao(T) } }, "servicos");
 caso("data sem fuso", { artigos: { "loja-plataforma-ou-propria": artigo(metaBase(T, { publicadoEm: "2026-11-17 08:40" })) }, execucoes: { [T]: execucao(T) } }, "publicadoEm");
 
