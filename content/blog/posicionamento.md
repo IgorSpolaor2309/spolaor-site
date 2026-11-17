@@ -31,6 +31,7 @@ Só os de `servicos.json`, com os caminhos de lá: sites e landing pages, lojas 
 - Estrutura conforme o assunto. Nem todo texto precisa de lista, tabela ou FAQ. Sem tamanho fixo, sem repetir palavra-chave.
 - Diferenciar fato (com fonte), hipótese ("pode", "depende de") e recomendação ("recomendamos", "na maioria dos casos faz sentido").
 - Preços e regras de terceiros (plataformas, Google, Meta, WhatsApp, meios de pagamento, LGPD) só com fonte oficial ou de alta confiança consultada na execução, com data de consulta. Se não deu para confirmar, não afirme.
+- Resultado de busca serve para achar a fonte, não para citá-la: toda fonte do artigo é aberta e lida no original, e o artigo descreve a fonte como ela é (tipo de estudo, tamanho, local, data) sem generalizar além do que ela diz. Afirmação importante sem confirmação na fonte lida sai do texto; se o artigo depende dela, troca-se o tema ou não se publica.
 - Exemplos práticos são permitidos quando apresentados como ilustração ("imagine uma clínica que...") e não como caso real.
 - Chamada para a Spolaor só quando o assunto leva naturalmente a um serviço da lista. Uma ou duas no texto, sem empurrar.
 - Links internos: para páginas de serviço do site (endereços completos `https://www.spolaortecnologia.com.br/...`) e para outros artigos do blog (`/slug-do-artigo`), quando ajudarem o leitor.

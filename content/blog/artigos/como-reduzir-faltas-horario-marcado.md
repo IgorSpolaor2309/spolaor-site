@@ -1,45 +1,49 @@
 ---
 {
   "titulo": "Como reduzir faltas em horário marcado: por que só mandar lembrete não basta",
-  "descricao": "Lembrete sozinho nem sempre reduz faltas. Pedir confirmação, facilitar a remarcação e ter quem chamar para o horário vago tende a funcionar melhor.",
+  "descricao": "Em estudos com consultas de saúde, lembrete sozinho nem sempre reduziu faltas. O que as pesquisas mostram e o que recomendamos para qualquer agenda.",
   "status": "publicado",
   "publicadoEm": "2026-11-16T22:41:49-03:00",
-  "atualizadoEm": "2026-11-16T22:41:49-03:00",
+  "atualizadoEm": "2026-11-16T23:20:00-03:00",
   "turno": "2026-11-16-tarde",
   "servicos": ["agendamento", "atendimento"],
   "fontes": [
     {
-      "titulo": "O impacto dos sistemas de lembrete na redução da não comparência dos utentes às consultas externas: revisão de âmbito (Barão e Coelho)",
+      "titulo": "O impacto dos sistemas de lembrete na redução da não comparência dos utentes às consultas externas: revisão de âmbito (Barão et al., Saúde & Tecnologia, 2025)",
       "url": "https://journals.ipl.pt/stecnologia/article/view/901",
-      "consultadoEm": "2026-11-16"
+      "consultadoEm": "2026-11-16",
+      "trecho": "Foram identificados 429 artigos, dos quais 15 foram incluídos [...] reduziu a Tx.NC [...] até 40-50%. Embora o SMS tenha sido a estratégia mais observada, foi a chamada telefónica, com confirmação de consulta, que revelou maior efetividade."
     },
     {
-      "titulo": "Estudo com grupo controle sobre lembrete por WhatsApp e absenteísmo em subespecialidades pediátricas (ACIMED)",
+      "titulo": "Impacto das mensagens de texto para redução do absenteísmo às consultas especializadas: um estudo aleatorizado (Rodrigues et al., Revista Cubana de Información en Ciencias de la Salud, 2020)",
       "url": "https://acimed.sld.cu/index.php/acimed/article/download/1566/pdf_44",
-      "consultadoEm": "2026-11-16"
+      "consultadoEm": "2026-11-16",
+      "trecho": "Um total de 998 participantes [...] A taxa de absenteísmo no grupo experimental foi de 24 % e no grupo controle, 25,5 % [...] (p= 0,580)."
     },
     {
-      "titulo": "How can new technologies help reduce absenteeism in pediatric consultation? (Revista Paulista de Pediatria, 2020)",
+      "titulo": "How can new technologies help reduce absenteeism in pediatric consultation? (Bueno et al., Revista Paulista de Pediatria, 2020)",
       "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6958533/",
-      "consultadoEm": "2026-11-16"
+      "consultadoEm": "2026-11-16",
+      "trecho": "A randomized clinical trial [...] 78 children [...] at a tertiary center in Curitiba [...] Giving a reminder to the patient's guardian prior to the consultation, regardless of the intervention (p=0.021)."
     }
   ],
   "historico": [
-    { "em": "2026-11-16T22:41:49-03:00", "turno": "2026-11-16-tarde", "tipo": "publicacao", "resumo": "Publicação." }
+    { "em": "2026-11-16T22:41:49-03:00", "turno": "2026-11-16-tarde", "tipo": "publicacao", "resumo": "Publicação." },
+    { "em": "2026-11-16T23:20:00-03:00", "turno": null, "tipo": "correcao", "resumo": "Fontes lidas na íntegra: abertura e resumo deixam claro que os estudos são de consultas de saúde e que confirmação, remarcação e lista de espera são recomendações nossas; tipo, tamanho e local de cada estudo corrigidos; títulos das fontes conforme o original." }
   ]
 }
 ---
-Os estudos indicam que, em negócios com hora marcada, lembrete sozinho nem sempre reduz faltas. Recomendamos transformar o lembrete numa **confirmação**: a pessoa precisa responder se vem ou não, com antecedência suficiente para o horário ser remarcado ou oferecido a outra pessoa. Lembrete que ninguém responde informa o cliente, mas não devolve nada para a agenda.
+Em estudos feitos com consultas de saúde, mandar só um lembrete nem sempre reduziu as faltas, e o contato que pedia confirmação foi o que teve melhor resultado. A partir disso, recomendamos transformar o lembrete numa **confirmação**: a pessoa precisa responder se vem ou não, com antecedência suficiente para o horário ser remarcado ou oferecido a outra pessoa. Lembrete que ninguém responde informa o cliente, mas não devolve nada para a agenda.
 
-Isso vale para clínica, consultório, salão, estúdio, oficina, aula particular, visita de corretor: qualquer negócio em que um horário vazio é receita que não volta.
+As pesquisas citadas abaixo são da área da saúde. A recomendação vale, como hipótese razoável, para clínica, consultório, salão, estúdio, oficina, aula particular, visita de corretor: qualquer negócio em que um horário vazio é receita que não volta.
 
 ## O que as pesquisas mostram sobre lembretes
 
 A área da saúde estuda faltas há bastante tempo, e os resultados ajudam a entender o que funciona.
 
-- Uma [revisão de literatura publicada numa revista do Instituto Politécnico de Lisboa](https://journals.ipl.pt/stecnologia/article/view/901), que reuniu 15 estudos sobre consultas externas, encontrou reduções de até 40% a 50% na taxa de não comparecimento com sistemas de lembrete. O SMS foi o meio mais estudado, mas a **ligação telefônica com confirmação da consulta** foi a que se mostrou mais eficaz.
-- Um [estudo com grupo controle em consultas de subespecialidades pediátricas](https://acimed.sld.cu/index.php/acimed/article/download/1566/pdf_44) testou um lembrete simples por WhatsApp. A taxa de faltas ficou em 24% no grupo que recebeu a mensagem e em 25,5% no grupo controle, uma diferença que os autores consideraram sem significância estatística. A conclusão deles foi que, naquele formato, o lembrete por WhatsApp não reduziu as faltas.
-- Outro estudo, [publicado na Revista Paulista de Pediatria em 2020](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6958533/) com crianças com tuberculose pulmonar ou suspeita da doença, em Curitiba, encontrou associação entre lembrar o responsável antes da consulta, inclusive por WhatsApp, e o comparecimento.
+- Uma [revisão de escopo publicada na revista Saúde & Tecnologia, da Escola Superior de Saúde de Lisboa](https://journals.ipl.pt/stecnologia/article/view/901), incluiu 15 estudos originais sobre lembretes em consultas externas. Neles, os sistemas de lembrete reduziram a taxa de não comparecimento em até 40% a 50%. O SMS foi o meio mais estudado, mas a **ligação telefônica com confirmação da consulta** foi a que se mostrou mais eficaz.
+- Um [estudo aleatorizado de pesquisadores da Universidade Federal do Espírito Santo](https://acimed.sld.cu/index.php/acimed/article/download/1566/pdf_44), com 998 participantes de consultas de subespecialidades pediátricas, testou um lembrete simples por WhatsApp. A taxa de faltas foi de 24% no grupo que recebeu a mensagem e de 25,5% no grupo controle, diferença sem significância estatística (p = 0,58). Os autores concluíram que, naquele contexto, o lembrete por WhatsApp não foi eficaz para reduzir as faltas.
+- Um [ensaio clínico randomizado publicado na Revista Paulista de Pediatria em 2020](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6958533/), com 78 crianças acompanhadas por tuberculose pulmonar (confirmada ou suspeita) num centro de referência em Curitiba, comparou ligação, mensagem (quase sempre por WhatsApp) e nenhum contato. Lembrar o responsável antes da consulta, por qualquer desses meios, esteve associado a menos faltas. A amostra é pequena.
 
 Os resultados não são iguais entre si, e são de contextos de saúde, não de comércio ou serviços em geral. Ainda assim, apontam numa direção que faz sentido para qualquer agenda: **um aviso que não pede resposta pode não bastar**. Uma mensagem que só avisa pode ser lida e esquecida. Um contato que pede uma resposta obriga a pessoa a decidir, e dá ao negócio a informação de que ele precisa a tempo.
 
@@ -82,7 +86,7 @@ Se quiser entender o que faz sentido para a sua agenda, a Spolaor pode ajudar a 
 
 ## Em resumo
 
-- Lembrete sozinho pode não mudar nada. Confirmação com resposta e um plano para quem não respondeu tende a funcionar melhor.
+- Nos estudos de saúde, lembrete sozinho nem sempre reduziu faltas, e a ligação com confirmação foi o meio mais eficaz. Por isso recomendamos confirmação com resposta e um plano para quem não respondeu.
 - A antecedência deve dar tempo de preencher o horário.
 - Remarcar precisa ser fácil, e a regra precisa ser clara desde o começo.
 - Meça a taxa de faltas antes e depois de qualquer mudança.

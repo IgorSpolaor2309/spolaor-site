@@ -130,6 +130,11 @@ export function validarTudo(raiz = process.cwd()) {
         else if (urls.has(f.url)) erro(o, "fonte repetida");
         else urls.add(f.url);
         if (!f || typeof f.consultadoEm !== "string" || !DIA_RE.test(f.consultadoEm)) erro(o, "consultadoEm no formato AAAA-MM-DD");
+        // A fonte precisa ter sido aberta e lida: o trecho é o que sustenta o uso dela no texto
+        // (resultado de busca não conta como leitura). Curto, para não reproduzir a fonte.
+        if (meta.status === "publicado" && (!f || typeof f.trecho !== "string" || f.trecho.trim().length < 20 || f.trecho.length > 400)) {
+          erro(o, "trecho obrigatório (20 a 400 caracteres): o que foi lido na fonte original e sustenta o texto");
+        }
       });
     }
 

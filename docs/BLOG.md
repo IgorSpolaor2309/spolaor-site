@@ -36,7 +36,8 @@ revisa, valida                     (só content/blog)                      confe
 
 - Duas rotinas do Claude Code (claude.ai/code/routines), no ambiente de nuvem padrão, com o repositório `IgorSpolaor2309/spolaor-site`: "Blog Spolaor 08h" (`0 11 * * 1-5` UTC) e "Blog Spolaor 18h" (`0 21 * * 1-5` UTC). O Brasil não tem horário de verão desde 2019; se voltar a ter, os horários UTC precisam ser revistos.
 - O prompt de cada uma só define o turno e manda seguir `content/blog/ROTINA.md`. Para mudar o comportamento, edite esse arquivo por PR.
-- Ferramentas da rotina: Bash, leitura/escrita de arquivos, WebSearch, WebFetch e Agent (revisão independente por subagente). Rede: lista padrão da nuvem (GitHub liberado; o site e a maioria dos domínios bloqueados para `curl`/WebFetch). A pesquisa usa WebSearch; abrir as fontes por WebFetch depende de liberar a rede do ambiente.
+- Ferramentas da rotina: Bash, leitura/escrita de arquivos, WebSearch, WebFetch e Agent (revisão independente por subagente). Ambiente de nuvem dedicado "Blog Spolaor (rede para fontes)" (`env_01XDt8bFavxSWzTi7Cpb8pMD`): rede **Completa** (qualquer domínio por HTTPS), sem segredos, sem variáveis de ambiente, sem script de configuração e sem conectores. A rede aberta serve para ler as fontes e conferir a página publicada; as credenciais e as travas de publicação são as mesmas (push só de `blog-publicacao/*`, Action como única via para a `main`). O ambiente "Default" das outras rotinas não foi alterado.
+- Fontes: busca só localiza; cada fonte citada é aberta e lida, e o artigo guarda em `fontes[].trecho` o trecho do original que sustenta o uso (o validador exige).
 - Para acompanhar: execuções em claude.ai/code/routines; publicações nos workflows "Blog - publicar" do GitHub; registro de cada turno em `content/blog/execucoes`.
 
 ## Testes
