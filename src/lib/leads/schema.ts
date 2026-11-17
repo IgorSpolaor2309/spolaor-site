@@ -130,8 +130,19 @@ export function normalizeUrl(url: string) {
   return /^https?:\/\//i.test(v) ? v : `https://${v}`;
 }
 
+/**
+ * Máscara do campo WhatsApp. Aceita o número nacional (DDD + número) e também com o DDI do Brasil:
+ * "+55 13 99747-2309" vira "+55 (13) 99747-2309" com os 13 dígitos preservados. Antes o campo cortava
+ * tudo em 11 dígitos, então quem digitava o +55 perdia os dois últimos dígitos do número.
+ * Zeros à esquerda (prefixo de operadora/longa distância digitado por hábito) são descartados.
+ */
 export function maskPhone(value: string) {
-  const d = value.replace(/\D/g, "").slice(0, 11);
+  const d = value.replace(/\D/g, "").replace(/^0+/, "").slice(0, 13);
+  if (d.length >= 12 && d.startsWith("55")) return `+55 ${maskNacional(d.slice(2))}`;
+  return maskNacional(d.slice(0, 11));
+}
+
+function maskNacional(d: string) {
   if (d.length <= 2) return d.length ? `(${d}` : "";
   if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
   if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
