@@ -1,6 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 // Área privada: nunca indexada (além do noindex, o robots.txt e o cabeçalho X-Robots-Tag bloqueiam /leads).
+export const viewport: Viewport = { themeColor: "#f5f4f0" };
+
 export const metadata: Metadata = {
   title: { default: "Leads", template: "%s · Leads Spolaor" },
   description: "Área interna da Spolaor Tecnologia.",

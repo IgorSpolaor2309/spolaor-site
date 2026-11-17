@@ -238,12 +238,26 @@
   }
 }
 
-/* Topo azul (home). O Safari do iPhone 26 ignora theme-color: pinta a faixa do relógio com a cor de
-   fundo do elemento fixo que estiver ~4px abaixo do topo da tela, no meio. Se esse elemento tem
-   backdrop-filter (o desfoque do cabeçalho rolado), o Safari não o trata como uma cor só e cai na cor
-   do começo da página, que nunca muda. Por isso, na página com [data-topo-azul]:
-   - o cabeçalho e as camadas internas (a que o Safari acerta é a de dentro) têm cor sólida --topo (TopoAzul a atualiza conforme a rolagem);
-   - sem backdrop-filter;
+/* Azul bem leve que começa no topo da página e se desfaz no gesso ao longo das primeiras rolagens.
+   As paradas são as mesmas de TopoAzul (src/components/layout/topo-azul.tsx). */
+html:has([data-topo-azul]) body {
+  background-image: linear-gradient(180deg, #d9e6fc 0px, #e3ebfb 800px, #edf0f6 1700px, #f5f4f0 2600px, #f5f4f0 100%);
+}
+/* Abertura de todas as landings: a expressão em destaque do título fica azul com marca-texto laranja,
+   como na home (a abertura é sempre a primeira seção do <main>). */
+#conteudo > section:first-child h1 :is(.text-ember, .text-sky, .text-signal):not(.underline) {
+  color: var(--color-sky);
+  background-image: linear-gradient(transparent 62%, rgb(240 122 18 / 0.32) 62%, rgb(240 122 18 / 0.32) 92%, transparent 92%);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Topo azul (páginas do site; TopoAzul, montado no layout, liga estas regras). O Safari do iPhone 26
+   ignora theme-color: pinta a faixa do relógio com a cor de fundo do elemento fixo ~4px abaixo do topo
+   da tela, no meio. Com backdrop-filter (o desfoque do cabeçalho rolado) ele não trata o elemento como
+   uma cor só e cai na cor do começo da página, que nunca muda. Por isso:
+   - o cabeçalho e as camadas internas (o Safari acerta a de dentro) têm cor sólida --topo, que
+     TopoAzul atualiza conforme a rolagem, sem desfoque e sem transição;
    - a barra fixa de baixo do celular também fica sólida e sem desfoque, no gesso. */
 html:has([data-topo-azul]) header,
 html:has([data-topo-azul]) header > div:first-child,

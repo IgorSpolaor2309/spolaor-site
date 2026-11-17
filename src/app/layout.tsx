@@ -9,6 +9,7 @@ import { LeadAttribution } from "@/components/layout/lead-attribution";
 import { Analytics } from "@/components/layout/analytics";
 import { RevealReady } from "@/components/layout/reveal-ready";
 import { SiteOnly } from "@/components/layout/site-only";
+import { TopoAzul } from "@/components/layout/topo-azul";
 import { isIndexable, site, siteBaseUrl } from "@/lib/site";
 import { headPixelId, pixelHeadScript } from "@/lib/pixel-head";
 import "./globals.css";
@@ -62,7 +63,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f5f4f0",
+  // Azul-claro do topo das páginas do site (TopoAzul acompanha a rolagem). /leads e o blog usam gesso.
+  themeColor: "#d9e6fc",
   colorScheme: "light",
 };
 
@@ -102,6 +104,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <RevealReady />
         {/* A área privada (/leads) não leva o cabeçalho, o rodapé, a barra de conversão nem a medição do site. */}
         <SiteOnly>
+          <TopoAzul />
           <SmoothScroll />
           <LeadAttribution />
           <Analytics />

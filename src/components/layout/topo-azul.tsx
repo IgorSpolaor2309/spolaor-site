@@ -56,5 +56,6 @@ export function TopoAzul() {
       metas().forEach((m, i) => original[i] != null && m.setAttribute("content", original[i]!));
     };
   }, []);
-  return null;
+  // Marcador: liga as regras de "Topo azul" do globals.css (fundo, cabeçalho e barra de baixo)
+  return <span data-topo-azul hidden />;
 }
