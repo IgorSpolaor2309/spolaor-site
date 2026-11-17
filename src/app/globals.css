@@ -162,6 +162,64 @@
     box-shadow: 0 0 0 4px rgb(30 91 230 / 0.14);
   }
   .field[aria-invalid="true"] { border-color: var(--color-ember); }
+
+  /* Texto dos artigos do blog (HTML gerado do Markdown em content/blog/artigos) */
+  .artigo-corpo {
+    max-width: 44rem;
+    font-size: 1.075rem;
+    line-height: 1.75;
+    color: var(--color-fg);
+    overflow-wrap: anywhere;
+  }
+  .artigo-corpo > * + * { margin-top: 1.15em; }
+  .artigo-corpo h2,
+  .artigo-corpo h3,
+  .artigo-corpo h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--color-fg);
+    scroll-margin-top: 96px;
+  }
+  .artigo-corpo h2 { margin-top: 2.2em; font-size: 1.6rem; line-height: 1.2; letter-spacing: -0.025em; }
+  .artigo-corpo h3 { margin-top: 1.8em; font-size: 1.25rem; line-height: 1.3; letter-spacing: -0.015em; }
+  .artigo-corpo h4 { margin-top: 1.5em; font-size: 1.08rem; }
+  .artigo-corpo h2 + *,
+  .artigo-corpo h3 + *,
+  .artigo-corpo h4 + * { margin-top: 0.7em; }
+  .artigo-corpo a { color: var(--color-sky); text-decoration: underline; text-underline-offset: 3px; }
+  .artigo-corpo a:hover { color: var(--color-navy); }
+  .artigo-corpo strong { font-weight: 700; }
+  .artigo-corpo ul { list-style: disc; padding-left: 1.4em; }
+  .artigo-corpo ol { list-style: decimal; padding-left: 1.4em; }
+  .artigo-corpo li + li { margin-top: 0.45em; }
+  .artigo-corpo li > ul,
+  .artigo-corpo li > ol { margin-top: 0.45em; }
+  .artigo-corpo blockquote {
+    border-left: 3px solid var(--color-sky);
+    padding: 0.2em 0 0.2em 1em;
+    color: var(--color-muted);
+  }
+  .artigo-corpo hr { border: 0; border-top: 1px solid var(--color-line); margin: 2em 0; }
+  .artigo-corpo code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--color-ink-800);
+    border-radius: 6px;
+    padding: 0.1em 0.35em;
+  }
+  .artigo-corpo pre { overflow-x: auto; background: var(--color-ink-800); border-radius: 12px; padding: 1em; }
+  .artigo-corpo pre code { background: none; padding: 0; }
+  .artigo-corpo table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+  .artigo-corpo th,
+  .artigo-corpo td { border: 1px solid var(--color-line); padding: 0.55em 0.8em; text-align: left; vertical-align: top; }
+  .artigo-corpo th { background: var(--color-ink-800); font-weight: 600; }
 }
 
 @media (prefers-reduced-motion: reduce) {

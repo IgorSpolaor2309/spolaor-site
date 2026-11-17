@@ -1,0 +1,61 @@
+# Publicação do blog (blog.spolaortecnologia.com.br).
+#
+# A rotina editorial (Claude, na nuvem) só envia uma branch blog-publicacao/<turno> com arquivos de
+# content/blog. Este workflow é quem escreve na main: confere que o envio só cria/altera artigos, registros
+# de execução e a pauta; valida; aplica sobre a main num commit próprio; espera o deploy da Vercel; confere
+# o artigo em produção (HTTP 200, título, canonical, sem noindex, sitemap) e grava o resultado em
+# content/blog/execucoes/<turno>.json. Reexecutar é seguro: o que já está na main não é publicado de novo.
+# Detalhes em docs/BLOG.md.
+name: Blog - publicar
+
+on:
+  push:
+    branches: ["blog-publicacao/**"]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch blog-publicacao/<turno> a publicar"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blog-publicar
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      ORIGEM: ${{ inputs.branch || github.ref_name }}
+      BLOG_ORIGEM: ${{ vars.BLOG_ORIGEM || 'https://blog.spolaortecnologia.com.br' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.branch || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Conferir o envio (só content/blog permitido)
+        run: |
+          case "$ORIGEM" in blog-publicacao/*) ;; *) echo "branch fora do padrão blog-publicacao/*"; exit 1 ;; esac
+          git fetch --quiet origin "$ORIGEM"
+          node scripts/blog/publicar.mjs conferir "origin/$ORIGEM"
+
+      - name: Validar o conteúdo
+        run: node scripts/blog/validar.mjs
+
+      - name: Publicar na main
+        run: node scripts/blog/publicar.mjs integrar "origin/$ORIGEM"
+
+      - name: Conferir em produção e registrar
+        run: node scripts/blog/publicar.mjs verificar "origin/$ORIGEM"
+
+      - name: Remover a branch do envio
+        if: success()
+        run: git push --quiet origin --delete "$ORIGEM" || true

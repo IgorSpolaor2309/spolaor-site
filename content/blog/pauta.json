@@ -1,0 +1,21 @@
+{
+  "_comentario": "Assuntos planejados. A rotina escolhe daqui ou da pesquisa do dia, marca 'usado' com o slug quando publica e pode acrescentar ideias novas (situacao 'ideia'). Ideias sem utilidade para quem contrata os serviços de servicos.json não entram.",
+  "itens": [
+    { "id": "site-ou-instagram", "servico": "sites", "pergunta": "Minha empresa precisa de site se já vende pelo Instagram?", "situacao": "ideia", "slug": null },
+    { "id": "orcamento-de-site", "servico": "sites", "pergunta": "O que pedir e comparar num orçamento de criação de site", "situacao": "ideia", "slug": null },
+    { "id": "landing-page-anuncio", "servico": "sites", "pergunta": "Landing page para anúncio: o que ela precisa ter para o contato acontecer", "situacao": "ideia", "slug": null },
+    { "id": "dominio-e-hospedagem", "servico": "sites", "pergunta": "Domínio, hospedagem e desenvolvimento: o que é de quem e como não ficar preso a um fornecedor", "situacao": "ideia", "slug": null },
+    { "id": "loja-plataforma-ou-propria", "servico": "lojas", "pergunta": "Loja virtual em plataforma pronta ou loja sob medida: como decidir", "situacao": "ideia", "slug": null },
+    { "id": "vender-whatsapp-para-loja", "servico": "lojas", "pergunta": "Quando vale sair do pedido pelo WhatsApp para uma loja virtual", "situacao": "ideia", "slug": null },
+    { "id": "faltas-horario-marcado", "servico": "agendamento", "pergunta": "Como reduzir faltas e remarcações em negócios com hora marcada", "situacao": "ideia", "slug": null },
+    { "id": "agenda-por-mensagem", "servico": "agendamento", "pergunta": "Agendar por mensagem custa caro: quando migrar para agendamento online", "situacao": "ideia", "slug": null },
+    { "id": "o-que-automatizar-primeiro", "servico": "automacao", "pergunta": "O que automatizar primeiro numa empresa pequena", "situacao": "ideia", "slug": null },
+    { "id": "orcamento-sem-retorno", "servico": "automacao", "pergunta": "Orçamentos enviados e sem resposta: como organizar o retorno", "situacao": "ideia", "slug": null },
+    { "id": "ia-whatsapp-limites", "servico": "atendimento", "pergunta": "Atendimento com IA no WhatsApp: o que ela resolve bem e quando passar para uma pessoa", "situacao": "ideia", "slug": null },
+    { "id": "whatsapp-api-oficial", "servico": "atendimento", "pergunta": "WhatsApp Business app ou API oficial: diferenças práticas para atendimento", "situacao": "ideia", "slug": null },
+    { "id": "crm-planilha", "servico": "sistemas", "pergunta": "Quando a planilha de clientes deixa de dar conta e um CRM passa a fazer sentido", "situacao": "ideia", "slug": null },
+    { "id": "sistema-pronto-ou-sob-medida", "servico": "sistemas", "pergunta": "Sistema pronto ou sob medida: perguntas para decidir antes de contratar", "situacao": "ideia", "slug": null },
+    { "id": "por-onde-comecar-tecnologia", "servico": "consultoria", "pergunta": "Sei que tenho problema operacional, mas não sei que tecnologia preciso: por onde começar", "situacao": "ideia", "slug": null },
+    { "id": "site-lento-contato", "servico": "diagnostico-site", "pergunta": "Sinais de que o site está atrapalhando o contato e como conferir sem ser técnico", "situacao": "ideia", "slug": null }
+  ]
+}
