@@ -111,8 +111,8 @@ export function validateLead(data: Partial<LeadPayload>): LeadErrors {
   const diagnosticoSite = data.origem === "diagnostico-site";
   if (!data.nome || data.nome.trim().length < 2) errors.nome = "Informe seu nome.";
   if (!diagnosticoSite && (!data.empresa || data.empresa.trim().length < 2)) errors.empresa = "Informe o nome da empresa.";
-  const digits = (data.whatsapp ?? "").replace(/\D/g, "");
-  if (digits.length < 10 || digits.length > 13) errors.whatsapp = "Informe um WhatsApp com DDD.";
+  if (!(data.whatsapp ?? "").replace(/\D/g, "")) errors.whatsapp = "Informe um WhatsApp com DDD.";
+  else if (!whatsappNacional(data.whatsapp ?? "")) errors.whatsapp = "Confira o WhatsApp: DDD e número, com ou sem +55.";
   // No diagnóstico o e-mail é opcional (o retorno é pelo WhatsApp); se vier, precisa ser válido.
   const email = (data.email ?? "").trim();
   if (data.tipo === "projeto" ? !emailRe.test(email) : email && !emailRe.test(email)) errors.email = "Informe um e-mail válido.";
@@ -130,8 +130,37 @@ export function normalizeUrl(url: string) {
   return /^https?:\/\//i.test(v) ? v : `https://${v}`;
 }
 
+/**
+ * WhatsApp brasileiro em dígitos nacionais (DDD + número, sem DDI e sem zeros à esquerda), ou null se não
+ * for um número possível. Aceita com ou sem o DDI 55. Regras: DDD de 11 a 99 sem zero; celular com 11 dígitos
+ * e 9 depois do DDD; fixo com 10 dígitos começando por 2 a 5. Assim um número cortado ou com dígito a mais
+ * é recusado em vez de virar, sem aviso, outro número válido (ex.: "(55) 13997-4723", resto de um +55 cortado).
+ */
+export function whatsappNacional(value: string): string | null {
+  let d = value.replace(/\D/g, "").replace(/^0+/, "");
+  if ((d.length === 12 || d.length === 13) && d.startsWith("55")) d = d.slice(2);
+  if (!/^[1-9]{2}/.test(d)) return null;
+  if (d.length === 11) return d[2] === "9" ? d : null;
+  if (d.length === 10) return /[2-5]/.test(d[2]) ? d : null;
+  return null;
+}
+
+/**
+ * Máscara do campo WhatsApp. Aceita o número nacional (DDD + número) e também com o DDI do Brasil:
+ * "+55 13 99747-2309" vira "+55 (13) 99747-2309" com os 13 dígitos preservados. Antes o campo cortava
+ * tudo em 11 dígitos, então quem digitava o +55 perdia os dois últimos dígitos do número.
+ * Zeros à esquerda (prefixo de operadora/longa distância digitado por hábito) são descartados.
+ * Nenhum dígito digitado é descartado em silêncio: além do que cabe num número brasileiro (até 15 dígitos),
+ * o valor fica só com os dígitos, sem formatação, e a validação (whatsappNacional) recusa.
+ */
 export function maskPhone(value: string) {
-  const d = value.replace(/\D/g, "").slice(0, 11);
+  const d = value.replace(/\D/g, "").replace(/^0+/, "").slice(0, 15);
+  if (d.length <= 11) return maskNacional(d);
+  if (d.length <= 13 && d.startsWith("55")) return `+55 ${maskNacional(d.slice(2))}`;
+  return d;
+}
+
+function maskNacional(d: string) {
   if (d.length <= 2) return d.length ? `(${d}` : "";
   if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
   if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
