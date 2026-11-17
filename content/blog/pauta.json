@@ -19,6 +19,7 @@
     { "id": "site-lento-contato", "servico": "diagnostico-site", "pergunta": "Sinais de que o site está atrapalhando o contato e como conferir sem ser técnico", "situacao": "usado", "slug": "site-lento-como-conferir-sem-ser-tecnico" },
     { "id": "whatsapp-api-cobranca-servico", "servico": "atendimento", "pergunta": "Cobrança das mensagens de serviço na API oficial do WhatsApp: o que muda no custo do atendimento (confirmar na tabela oficial da Meta antes de escrever)", "situacao": "ideia", "slug": null },
     { "id": "gemini-perfil-empresa", "servico": "consultoria", "pergunta": "Gemini ligado ao Perfil da Empresa no Google: o que ele faz pelo negócio e o que ainda não se sabe (confirmar disponibilidade e preço no Brasil)", "situacao": "ideia", "slug": null },
-    { "id": "pix-boleto-mesmo-documento", "servico": "sistemas", "pergunta": "Boleto e Pix no mesmo documento de cobrança: o que muda para quem emite cobranças (confirmar a norma e a data no site do Banco Central antes de escrever)", "situacao": "ideia", "slug": null }
+    { "id": "pix-boleto-mesmo-documento", "servico": "sistemas", "pergunta": "Boleto e Pix no mesmo documento de cobrança: o que muda para quem emite cobranças (confirmar a norma e a data no site do Banco Central antes de escrever)", "situacao": "usado", "slug": "boleto-e-pix-no-mesmo-documento-cobranca-hibrida" },
+    { "id": "conciliacao-recebimentos", "servico": "automacao", "pergunta": "Como conferir quem pagou quando os clientes pagam por Pix, boleto e cartão: organizar a baixa dos recebimentos", "situacao": "ideia", "slug": null }
   ]
 }

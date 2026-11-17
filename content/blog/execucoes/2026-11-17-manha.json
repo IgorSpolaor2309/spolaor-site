@@ -1,0 +1,127 @@
+{
+  "turno": "2026-11-17-manha",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "boleto-e-pix-no-mesmo-documento-cobranca-hibrida",
+  "inicio": "2026-11-17T08:05:37-03:00",
+  "fim": "2026-11-17T08:10:13-03:00",
+  "motivo": "Regra nova com prazo (cobrança híbrida boleto + Pix, Resolução BCB 587/2026, vigência em 1º/2/2027) que afeta empresas que cobram por boleto, com o texto oficial da norma aberto e lido na API de normativos do Banco Central. Item da pauta (pix-boleto-mesmo-documento) que antes fora descartado por falta da fonte oficial; agora ela foi lida. Serviço (sistemas/automação) diferente dos dois artigos anteriores (agendamento e diagnóstico de site).",
+  "temas": [
+    {
+      "tema": "Boleto e Pix no mesmo documento (cobrança híbrida, Resolução BCB 587)",
+      "notas": "utilidade 4, servico 3, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Norma oficial lida na íntegra; tem prazo e o que fazer; serviço diferente dos artigos anteriores."
+    },
+    {
+      "tema": "Quando a planilha de clientes deixa de dar conta e um CRM faz sentido",
+      "notas": "utilidade 4, servico 5, busca 4, original 2",
+      "decisao": "descartado",
+      "motivo": "Fontes encontradas seguem sendo blogs de fornecedores de CRM; continua na pauta."
+    },
+    {
+      "tema": "Busca direta por empresas e agentes de IA no WhatsApp",
+      "notas": "utilidade 3, servico 3, busca 3, original 2",
+      "decisao": "descartado",
+      "motivo": "Só notícias de terceiros; sem página oficial lida com disponibilidade e preço no Brasil."
+    },
+    {
+      "tema": "Agendar por mensagem custa caro: quando migrar para agendamento online",
+      "notas": "utilidade 4, servico 4, busca 3, original 3",
+      "decisao": "descartado",
+      "motivo": "Mesmo serviço (agendamento) de um artigo recente; fica para outro turno."
+    }
+  ],
+  "pesquisas": [
+    "WhatsApp Business novidades novembro 2026 empresas",
+    "Pix Automático boleto Pix Banco Central regra 2026 empresas cobrança",
+    "quando trocar planilha por CRM pequena empresa dúvidas",
+    "Resolução BCB nº 587 2026 Pix cobrança boleto bcb.gov.br",
+    "\"Pix Cobrança\" com vencimento juros multa desconto Banco Central o que é"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?tipo=Resolu%C3%A7%C3%A3o%20BCB&numero=587",
+      "lida": true,
+      "como": "curl na API oficial de normativos do BCB (https://www.bcb.gov.br/api/conteudo/app/normativos/exibenormativo?p1=Resolução BCB&p2=587) + extração de texto (python)",
+      "observacao": "Texto integral da Resolução BCB 587, de 18/9/2026, DOU 21/9/2026. A página exibenormativo é a versão para pessoas do mesmo conteúdo."
+    },
+    {
+      "url": "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?tipo=Resolu%C3%A7%C3%A3o%20BCB&numero=1",
+      "lida": true,
+      "como": "curl na API oficial de normativos do BCB (p2=1) + extração de texto (python)",
+      "observacao": "Regulamento do Pix consolidado; lidos art. 11-A (Pix Cobrança) e art. 39. Ainda não incorpora o art. 11-AA, que só vigora em 2027."
+    },
+    {
+      "url": "https://agenciagov.ebc.com.br/noticias/202610/pix-amplia-funcionalidades-e-reforca-seguranca-com-nova-rodada-de-aperfeicoamentos-regulatorios",
+      "lida": true,
+      "como": "WebFetch e curl + extração de texto (python)",
+      "observacao": "Notícia de 5/10/2026; título publicado: 'Pix poderá ser usado em conta-salário em 2027 e tem segurança reforçada'."
+    },
+    {
+      "url": "https://agenciagov.ebc.com.br/noticias/202609/ajustes-pontuais-organizam-regras-operacionais-do-pix-automatico",
+      "lida": true,
+      "como": "WebFetch",
+      "observacao": "Trata de IN BCB 769 (Pix Automático/MPI), não de cobrança híbrida; não usada."
+    }
+  ],
+  "fontesNaoAbertas": [
+    {
+      "url": "https://velloza.com.br/news-bancario-no-1011/",
+      "motivo": "apareceu na busca; substituída pela norma oficial; não usada"
+    },
+    {
+      "url": "https://www.letsmoney.com.br/pix/bc-pix-resolucao-587-fraude-dispensa-500-mil/",
+      "motivo": "apareceu na busca; substituída pela norma oficial; não usada"
+    }
+  ],
+  "afirmacoes": [
+    {
+      "afirmacao": "Regras da cobrança híbrida passam a valer em 1º/2/2027",
+      "fonte": "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?tipo=Resolu%C3%A7%C3%A3o%20BCB&numero=587",
+      "trecho": "Art. 5º Esta Resolução entra em vigor: I - em 1º de fevereiro de 2027, em relação às alterações promovidas pelo art. 2º referentes a: a) art. 11-AA;"
+    },
+    {
+      "afirmacao": "Vale só para Pix Cobrança com vencimento",
+      "fonte": "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?tipo=Resolu%C3%A7%C3%A3o%20BCB&numero=587",
+      "trecho": "§ 2º A cobrança híbrida aplica-se exclusivamente ao Pix Cobrança com vencimento."
+    },
+    {
+      "afirmacao": "Oferta é facultativa e a mesma instituição emite boleto e Pix",
+      "fonte": "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?tipo=Resolu%C3%A7%C3%A3o%20BCB&numero=587",
+      "trecho": "§ 4º A oferta da cobrança híbrida é facultativa para o participante prestador de serviços de pagamento do usuário recebedor. § 5º O participante prestador de serviços de pagamento do usuário recebedor deve ser a mesma instituição emissora do boleto."
+    },
+    {
+      "afirmacao": "Boleto comum e dinâmico não vinculado a ativo financeiro",
+      "fonte": "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?tipo=Resolu%C3%A7%C3%A3o%20BCB&numero=587",
+      "trecho": "I - boleto de cobrança comum; e II - boleto de cobrança dinâmico, desde que não esteja vinculado a ativo financeiro objeto de escrituração, de registro ou de depósito centralizado em sistemas autorizados pelo Banco Central do Brasil."
+    },
+    {
+      "afirmacao": "Pago o boleto, cancela-se o Pix Cobrança e rejeita-se Pix posterior",
+      "fonte": "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?tipo=Resolu%C3%A7%C3%A3o%20BCB&numero=587",
+      "trecho": "Nas hipóteses de pagamento da cobrança híbrida por meio do boleto [...] deve providenciar o cancelamento do Pix Cobrança correspondente. / Art. 39 [...] V - a cobrança híbrida já tiver sido paga por meio do arranjo de pagamento do boleto"
+    },
+    {
+      "afirmacao": "Pix liquidado após boleto pago: devolução integral em até 24 h com recursos próprios",
+      "fonte": "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?tipo=Resolu%C3%A7%C3%A3o%20BCB&numero=587",
+      "trecho": "deve devolver a totalidade dos recursos ao usuário pagador, usando recursos próprios, em até vinte e quatro horas após a liquidação do Pix Cobrança."
+    },
+    {
+      "afirmacao": "Pix Cobrança com vencimento admite juros, multa, descontos e abatimentos",
+      "fonte": "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?tipo=Resolu%C3%A7%C3%A3o%20BCB&numero=1",
+      "trecho": "pagamentos com vencimento, que são aqueles relativos a modelos de negócio em que o pagamento pode ser realizado em data futura, contemplando a possibilidade de tratamento de juros, multas, outros acréscimos, descontos e outros abatimentos"
+    },
+    {
+      "afirmacao": "Mesmo documento com código de barras e QR Code; já usado por algumas instituições; Pix pago → boleto cancelado (atribuído à notícia)",
+      "fonte": "https://agenciagov.ebc.com.br/noticias/202610/pix-amplia-funcionalidades-e-reforca-seguranca-com-nova-rodada-de-aperfeicoamentos-regulatorios",
+      "trecho": "reúne em um mesmo documento o código de barras do boleto e o QR Code do Pix Cobrança. Embora essa solução já venha sendo utilizada por algumas instituições [...] quando o Pix Cobrança for pago, a instituição deve cancelar o boleto."
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Subagente conferiu as 11 afirmações contra o texto original (todas confirmadas) e os trechos do front matter (literais). Apontou e foi corrigido: devolução em 24 h generalizada para qualquer pagamento em dobro (restrita ao caso do Pix pago após o boleto); título errado da notícia da Agência Gov; resumo que isentava empresa e cliente de responsabilidade (reescrito conforme o §6º); §3º encurtado; exigência de usar o banco atual (a regra só exige a mesma instituição para boleto e Pix); descrição que sugeria regra inexistente; 'Pix feito para uma chave'; 'Até lá' sem referência. Nenhum problema de gravidade alta."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}
