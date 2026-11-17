@@ -159,7 +159,7 @@ export function SameProduct({ index = "02", label = "Sites", showLink = true }: 
         <Reveal className="max-w-4xl">
           <SectionLabel index={index} tone="ember">{label}</SectionLabel>
           <h2 id="same-title" className="mt-8 max-w-[16ch] text-h2 font-semibold">
-            Mesmo produto. Mesmo preço. <span className="text-sky">O cliente escolheu a outra.</span>
+            Mesmo produto. Mesmo preço. <span className="marca text-sky">O cliente escolheu a outra.</span>
           </h2>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted">
             Seu produto pode não ser o problema. Duas empresas com ofertas parecidas raramente perdem pelo que vendem. Perdem

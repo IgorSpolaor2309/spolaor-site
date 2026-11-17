@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Viewport } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
 import { mailtoLink, site, whatsappLink } from "@/lib/site";
@@ -7,6 +8,8 @@ import { catalogo } from "@/lib/blog/conteudo";
 
 // Cabeçalho e rodapé do blog. Os do site principal (SiteOnly) ficam de fora nas rotas do blog porque
 // usam caminhos relativos, que no subdomínio apontariam para o blog. Aqui todo link para o site é absoluto.
+
+export const viewport: Viewport = { themeColor: "#f5f4f0" };
 
 export default function BlogLayout({ children }: { children: ReactNode }) {
   const { servicos, contato } = catalogo();

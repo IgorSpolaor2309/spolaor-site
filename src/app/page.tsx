@@ -10,20 +10,31 @@ import { AnalysisBlock } from "@/components/sections/analysis-block";
 import { Faq } from "@/components/sections/faq";
 import { FinalCta } from "@/components/sections/final-cta";
 
+// Lavagem azul curta no começo de algumas seções, para dar ritmo sem trocar o fundo
+const wash = "bg-[linear-gradient(180deg,#e6eefb_0px,#f5f4f0_520px)]";
+
 export default function Home() {
   return (
     <>
       <Hero />
       <Offers />
       <HomeSituations />
-      <Automation />
+      <div className={wash}>
+        <Automation />
+      </div>
       <Segments />
       <SameProduct index="05" />
-      <Case />
+      <div className={wash}>
+        <Case />
+      </div>
       <HowItWorks index="07" />
-      <AnalysisBlock index="08" origem="home" submitLabel="Quero descobrir onde perco clientes" />
+      <div className={wash}>
+        <AnalysisBlock index="08" origem="home" submitLabel="Quero descobrir onde perco clientes" />
+      </div>
       <Faq />
-      <FinalCta primary={{ href: "#analise", label: "Analisar minha empresa" }} />
+      <div className={wash}>
+        <FinalCta primary={{ href: "#analise", label: "Analisar minha empresa" }} />
+      </div>
     </>
   );
 }
