@@ -238,19 +238,12 @@
   }
 }
 
-/* Topo azul (home): o Safari do iPhone 26 não usa mais theme-color e pinta a área da Dynamic Island
-   com a cor de fundo do elemento fixo no topo (o cabeçalho) ou do html. Na página que tem
-   [data-topo-azul], os dois seguem a cor do degradê (ver TopoAzul). */
-html:has([data-topo-azul]) { background-color: var(--topo, #d9e6fc); }
-/* --topo é atualizado por TopoAzul conforme a rolagem: o cabeçalho (rolado ou não) tem sempre a cor
-   da página naquela altura, e o Safari usa essa cor na área da Dynamic Island. */
-html:has([data-topo-azul]) header > div:first-child { background-color: var(--topo, #d9e6fc); }
-/* O body também começa azul (cor de fundo amostrada pelo Safari), mas a imagem por cima volta ao
-   gesso no mesmo ritmo do degradê da página: o resto da home continua no fundo de sempre. */
-html:has([data-topo-azul]) body {
-  background-color: var(--topo, #d9e6fc);
-  background-image: linear-gradient(180deg, #d9e6fc 0px, #e3ebfb 800px, #edf0f6 1700px, #f5f4f0 2600px, #f5f4f0 100%);
-}
+/* Topo azul (home): o Safari do iPhone 26 ignora theme-color, escolhe a cor da área do relógio
+   (e da faixa de baixo) ao carregar a página, a partir do cabeçalho fixo e do fundo, e não troca
+   mais durante a rolagem. Por isso o cabeçalho da página com [data-topo-azul] fica sempre no mesmo
+   azul-claro do começo do degradê: topo do aparelho e menu combinam em qualquer ponto da página.
+   O fundo continua gesso, então a faixa de baixo do Safari combina com o resto da página. */
+html:has([data-topo-azul]) header > div:first-child { background-color: #d9e6fc; }
 
 /* Entrada do hero em CSS puro: roda antes da hidratação e não atrasa o LCP */
 @keyframes rise {

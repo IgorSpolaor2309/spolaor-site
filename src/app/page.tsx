@@ -10,7 +10,6 @@ import { HowItWorks } from "@/components/home/how-it-works";
 import { AnalysisBlock } from "@/components/sections/analysis-block";
 import { Faq } from "@/components/sections/faq";
 import { FinalCta } from "@/components/sections/final-cta";
-import { TopoAzul } from "@/components/layout/topo-azul";
 
 // Cor da barra do navegador no celular: o mesmo azul-claro do topo da home
 export const viewport: Viewport = { themeColor: "#d9e6fc" };
@@ -24,7 +23,6 @@ export default function Home() {
   return (
     <>
       <div className={sky} data-topo-azul>
-        <TopoAzul />
         <Hero />
         <Offers />
       </div>
