@@ -238,20 +238,13 @@
   }
 }
 
-/* Topo azul (home). O Safari do iPhone 26 ignora theme-color: ao carregar a página, pinta a área do
-   relógio e a faixa de baixo com a cor de fundo do html/body e não troca mais durante a rolagem.
-   Então, na página com [data-topo-azul]:
-   - html e body têm cor de fundo azul-claro (é a cor que o Safari usa), mas a imagem do body desfaz
-     o degradê no gesso, e a página continua com o fundo de sempre;
-   - o cabeçalho e a barra fixa de baixo do celular ficam sempre nesse azul, para combinar com as
-     duas faixas do Safari em qualquer ponto da rolagem. */
-html:has([data-topo-azul]) { background-color: #d9e6fc; }
-html:has([data-topo-azul]) body {
-  background-color: #d9e6fc;
-  background-image: linear-gradient(180deg, #d9e6fc 0px, #e3ebfb 800px, #edf0f6 1700px, #f5f4f0 2600px, #f5f4f0 100%);
-}
-html:has([data-topo-azul]) header > div:first-child,
-html:has([data-topo-azul]) [data-cta-bar] { background-color: #d9e6fc; }
+/* Topo azul (home). O Safari do iPhone 26 ignora theme-color e pinta a área do relógio com a cor de
+   fundo do próprio elemento position:fixed encostado no topo (o <header>, não as camadas dentro dele).
+   Sem isso, usa a cor do começo da página, que nunca muda. Na página com [data-topo-azul], o <header>
+   recebe --topo, que TopoAzul atualiza com a cor do degradê na altura da rolagem; a camada interna
+   fica transparente para não criar uma segunda cor. */
+html:has([data-topo-azul]) header { background-color: var(--topo, #d9e6fc); }
+html:has([data-topo-azul]) header > div:first-child { background-color: transparent; }
 
 /* Entrada do hero em CSS puro: roda antes da hidratação e não atrasa o LCP */
 @keyframes rise {
