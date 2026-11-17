@@ -1,16 +1,36 @@
 {
   "turno": "2026-11-16-tarde",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "como-reduzir-faltas-horario-marcado",
   "inicio": "2026-11-16T22:38:31-03:00",
   "fim": "2026-11-16T22:42:01-03:00",
   "motivo": "Primeiro artigo do blog. Dúvida duradoura de operação da pauta (faltas em horário marcado), ligada a agendamento online e atendimento no WhatsApp, com fontes acadêmicas que sustentam um ângulo próprio: lembrete sozinho nem sempre reduz faltas; confirmação com resposta e plano para o horário vago. Execução piloto, iniciada fora do horário do turno (22:38).",
   "temas": [
-    { "tema": "Como reduzir faltas em horário marcado (confirmação em vez de só lembrete)", "notas": "utilidade 5, servico 5, busca 4, original 4", "decisao": "escolhido", "motivo": "Maior soma; fontes de pesquisa explícitas nos resultados de busca; não há artigo anterior." },
-    { "tema": "Cobrança das mensagens de serviço na API do WhatsApp desde 1/10/2026", "notas": "utilidade 4, servico 4, busca 4, original 3", "decisao": "descartado", "motivo": "Página oficial da Meta inacessível nesta sessão e fontes de terceiros divergem sobre a faixa gratuita; regra de preço exige fonte oficial. Foi para a pauta." },
-    { "tema": "Gemini integrado ao Perfil da Empresa no Google", "notas": "utilidade 2, servico 2, busca 3, original 2", "decisao": "descartado", "motivo": "Preço e disponibilidade no Brasil não confirmados; relação fraca com os serviços. Foi para a pauta." },
-    { "tema": "Respostas rápidas e etiquetas do WhatsApp Business para organizar orçamentos", "notas": "utilidade 3, servico 3, busca 3, original 2", "decisao": "descartado", "motivo": "Fontes só de terceiros e pouca contribuição original." }
+    {
+      "tema": "Como reduzir faltas em horário marcado (confirmação em vez de só lembrete)",
+      "notas": "utilidade 5, servico 5, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Maior soma; fontes de pesquisa explícitas nos resultados de busca; não há artigo anterior."
+    },
+    {
+      "tema": "Cobrança das mensagens de serviço na API do WhatsApp desde 1/10/2026",
+      "notas": "utilidade 4, servico 4, busca 4, original 3",
+      "decisao": "descartado",
+      "motivo": "Página oficial da Meta inacessível nesta sessão e fontes de terceiros divergem sobre a faixa gratuita; regra de preço exige fonte oficial. Foi para a pauta."
+    },
+    {
+      "tema": "Gemini integrado ao Perfil da Empresa no Google",
+      "notas": "utilidade 2, servico 2, busca 3, original 2",
+      "decisao": "descartado",
+      "motivo": "Preço e disponibilidade no Brasil não confirmados; relação fraca com os serviços. Foi para a pauta."
+    },
+    {
+      "tema": "Respostas rápidas e etiquetas do WhatsApp Business para organizar orçamentos",
+      "notas": "utilidade 3, servico 3, busca 3, original 2",
+      "decisao": "descartado",
+      "motivo": "Fontes só de terceiros e pouca contribuição original."
+    }
   ],
   "pesquisas": [
     "WhatsApp Business mudanças novembro 2026 empresas",
@@ -22,6 +42,15 @@
     "taxa de absenteísmo consultas estudo lembrete SMS redução faltas revisão sistemática",
     "ensaio randomizado lembrete WhatsApp absenteísmo subespecialidades pediátricas"
   ],
-  "revisao": { "situacao": "aprovado", "observacoes": "Revisor independente (subagente): aprovado com correções, sem ponto grave. Corrigido: tese de abertura e descrição passaram a recomendação; 'o canal importa menos que o formato' trocado por conclusão sustentada; 'ensaio randomizado' virou 'estudo com grupo controle'; 'pesquisadores portugueses' virou revista do Instituto Politécnico de Lisboa; afirmações sem fonte atenuadas; funções dos serviços limitadas ao descrito em servicos.json; link repetido para agendamento-online removido; pontuação e regência. Limite: WebFetch não abriu nenhuma fonte; o texto só afirma o que os resultados de busca mostraram de forma explícita." },
-  "verificacao": { "situacao": "pendente" }
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Revisor independente (subagente): aprovado com correções, sem ponto grave. Corrigido: tese de abertura e descrição passaram a recomendação; 'o canal importa menos que o formato' trocado por conclusão sustentada; 'ensaio randomizado' virou 'estudo com grupo controle'; 'pesquisadores portugueses' virou revista do Instituto Politécnico de Lisboa; afirmações sem fonte atenuadas; funções dos serviços limitadas ao descrito em servicos.json; link repetido para agendamento-online removido; pontuação e regência. Limite: WebFetch não abriu nenhuma fonte; o texto só afirma o que os resultados de busca mostraram de forma explícita."
+  },
+  "verificacao": {
+    "situacao": "ok",
+    "em": "2026-11-17T01:43:03.287Z",
+    "url": "https://blog.spolaortecnologia.com.br/como-reduzir-faltas-horario-marcado",
+    "commit": "494ebd3ec38aed399b0124da19d582362437c80f",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
+  }
 }
