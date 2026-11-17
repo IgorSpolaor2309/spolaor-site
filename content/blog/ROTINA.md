@@ -13,9 +13,9 @@ Você é a rotina editorial do blog da Spolaor Tecnologia (https://blog.spolaort
 ## Passo 0. Turno e estado
 
 ```bash
-export TZ=America/Sao_Paulo
-DIA=$(date +%F); INICIO=$(date +%FT%T%:z)
-TURNO="$DIA-manha"   # ou "$DIA-tarde", conforme o pedido desta execução
+# Horário de Brasília (UTC-3, sem horário de verão) calculado a partir do UTC: não depende do tzdata do ambiente.
+DIA=$(date -u -d '-3 hours' +%F); INICIO="$(date -u -d '-3 hours' +%FT%T)-03:00"
+TURNO="$DIA-manha"   # ou "$DIA-tarde", conforme o pedido desta execução (o prompt pode fixar o turno)
 git fetch --quiet origin main && git checkout --quiet -B trabalho origin/main
 ```
 
@@ -129,18 +129,22 @@ Se o push for recusado porque a branch já existe, outra execução está neste 
 
 ## Passo 6. Acompanhar a publicação (e recuperar)
 
+O `gh` desta sessão não costuma estar autenticado; o repositório é público, então use a API do GitHub com `curl` (ou as ferramentas do GitHub da sessão, se houver):
+
 ```bash
-gh run list --repo IgorSpolaor2309/spolaor-site --workflow blog-publicar.yml --branch "blog-publicacao/$TURNO" --limit 5 --json databaseId,status,conclusion,createdAt
-gh run watch <databaseId> --repo IgorSpolaor2309/spolaor-site --exit-status
+API=https://api.github.com/repos/IgorSpolaor2309/spolaor-site
+curl -sS "$API/actions/workflows/blog-publicar.yml/runs?per_page=5" | python3 -c "import json,sys;[print(r['id'],r['head_branch'],r['status'],r['conclusion']) for r in json.load(sys.stdin)['workflow_runs']]"
+# depois, a cada 30 s, até 25 minutos, até status = completed:
+curl -sS "$API/actions/runs/<id>" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['status'],d['conclusion'])"
 ```
 
-Se `gh` não estiver autenticado, consulte `https://api.github.com/repos/IgorSpolaor2309/spolaor-site/actions/runs?branch=blog-publicacao/<turno>` com `curl` (repositório público) a cada 30 s, por até 25 minutos.
+O filtro `?branch=` da API pode demorar a enxergar a execução recém-criada; liste as execuções do workflow e procure a sua branch.
 
 Depois: `git fetch origin main` e leia `content/blog/execucoes/$TURNO.json` na `origin/main`.
 
 - `verificacao.situacao` = `ok`: publicado e conferido em produção pela Action. Concluído.
-- Action falhou antes de publicar (conferência ou validação): leia o log (`gh run view <id> --repo IgorSpolaor2309/spolaor-site --log-failed`), corrija na mesma branch e envie um novo commit (até 2 tentativas). Não crie outro turno nem outro slug para fugir do erro.
-- Action publicou mas a verificação falhou (por exemplo, deploy demorado): não reenvie o artigo. Relate o detalhe gravado em `verificacao.detalhes`. Reexecutar a Action (`gh run rerun <id> --repo IgorSpolaor2309/spolaor-site`) é seguro: ela não publica de novo o que já está na `main`, só confere outra vez.
+- Action falhou antes de publicar (conferência ou validação): veja qual passo falhou (`$API/actions/runs/<id>/jobs`) e, se conseguir, o log; o mais comum é erro do validador, que você reproduz com `node scripts/blog/validar.mjs` na sua branch. Corrija na mesma branch e envie um novo commit (até 2 tentativas). Não crie outro turno nem outro slug para fugir do erro.
+- Action publicou mas a verificação falhou (por exemplo, deploy demorado): não reenvie o artigo. Relate o detalhe gravado em `verificacao.detalhes`; a reexecução da Action pode ser feita por uma pessoa no GitHub e é segura (não publica de novo o que já está na `main`, só confere outra vez).
 
 ## Passo 7. Relatório final
 
