@@ -1,0 +1,116 @@
+{
+  "turno": "2026-11-16-manha",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "site-lento-como-conferir-sem-ser-tecnico",
+  "inicio": "2026-11-16T23:00:22-03:00",
+  "fim": "2026-11-16T23:04:01-03:00",
+  "motivo": "Dúvida de operação da pauta (site-lento-contato), ligada ao diagnóstico de site, com fontes oficiais do Google (documentação do PageSpeed Insights e web.dev) abertas e lidas; serviço diferente do artigo anterior (agendamento). Execução disparada às 23:00 de Brasília; pelo cálculo do passo 0 o dia é 2026-11-16, e o turno da manhã desse dia ainda não existia.",
+  "temas": [
+    {
+      "tema": "Site lento: como conferir sem ser técnico (PageSpeed Insights, Core Web Vitals e teste do caminho de contato)",
+      "notas": "utilidade 5, servico 5, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Fontes oficiais abertas e lidas; leva naturalmente ao diagnóstico de site; serviço diferente do artigo anterior."
+    },
+    {
+      "tema": "Quando a planilha de clientes deixa de dar conta e um CRM faz sentido",
+      "notas": "utilidade 4, servico 4, busca 4, original 3",
+      "decisao": "descartado",
+      "motivo": "Fontes encontradas são blogs de fornecedores de CRM; sem fonte independente para sustentar os sinais. Fica na pauta."
+    },
+    {
+      "tema": "Boleto e Pix no mesmo documento (mudança no regulamento do Pix anunciada em setembro de 2026)",
+      "notas": "utilidade 3, servico 2, busca 3, original 3",
+      "decisao": "descartado",
+      "motivo": "Só notícias de terceiros nos resultados; norma oficial do Banco Central não aberta e relação indireta com os serviços. Foi para a pauta."
+    }
+  ],
+  "pesquisas": [
+    "Pix novidades novembro 2026 empresas Banco Central regra",
+    "quando a planilha de clientes deixa de funcionar CRM pequena empresa sinais",
+    "site lento conversão estudo tempo de carregamento abandono web.dev Core Web Vitals"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://developers.google.com/speed/docs/insights/v5/about?hl=pt-br",
+      "lida": true,
+      "como": "curl + extração de texto (python)",
+      "observacao": "Documentação oficial do PageSpeed Insights, atualizada em 2025-07-25."
+    },
+    {
+      "url": "https://web.dev/articles/vitals?hl=pt-br",
+      "lida": true,
+      "como": "curl + extração de texto (python)",
+      "observacao": "Atualizada em 2024-10-31."
+    },
+    {
+      "url": "https://web.dev/case-studies/vitals-business-impact?hl=pt-br",
+      "lida": true,
+      "como": "curl + extração de texto (python)",
+      "observacao": "Atualizada em 2021-09-01."
+    },
+    {
+      "url": "https://web.dev/learn/performance/why-speed-matters?hl=pt-br",
+      "lida": true,
+      "como": "curl + extração de texto (python)",
+      "observacao": "Atualizada em 2023-11-01."
+    },
+    {
+      "url": "https://pagespeed.web.dev/",
+      "lida": false,
+      "como": "curl (HTTP 200)",
+      "observacao": "Só conferido que a ferramenta abre; linkada no texto, não usada como fonte de afirmação."
+    }
+  ],
+  "fontesNaoAbertas": [],
+  "afirmacoes": [
+    {
+      "afirmacao": "LCP bom até 2,5 s, INP até 200 ms, CLS até 0,1",
+      "fonte": "https://web.dev/articles/vitals?hl=pt-br",
+      "trecho": "o LCP deve ocorrer dentro de 2,5 segundos [...] INP de 200 milissegundos ou menos [...] CLS de 0,1 ou menos"
+    },
+    {
+      "afirmacao": "Dados de usuários reais do CrUX, últimos 28 dias",
+      "fonte": "https://developers.google.com/speed/docs/insights/v5/about?hl=pt-br",
+      "trecho": "fornecidos pelo conjunto de dados do Chrome User Experience Report (CrUX) [...] durante o período de coleta anterior de 28 dias"
+    },
+    {
+      "afirmacao": "Percentil 75; aprovação com as três boas, ou LCP e CLS se faltar INP",
+      "fonte": "https://developers.google.com/speed/docs/insights/v5/about?hl=pt-br",
+      "trecho": "aprovada na avaliação das Core Web Vitals se os 75º percentis das três métricas forem \"Bom\" [...] Se o não tiver dados suficientes para INP, ele será aprovado na avaliação se as os percentis de LCP e CLS são bons"
+    },
+    {
+      "afirmacao": "Dados insuficientes: poucas visitas, publicação recente ou URL não pública; recuo para a origem",
+      "fonte": "https://developers.google.com/speed/docs/insights/v5/about?hl=pt-br",
+      "trecho": "Uma página pode não ter dados suficientes se tiver sido publicada recentemente ou tiver poucas amostras de usuários reais. Quando isso acontece, o PSI fica de volta à granularidade no nível da origem"
+    },
+    {
+      "afirmacao": "Nota 90+ boa, 50-89 precisa melhorar, abaixo de 50 ruim; nota boa de laboratório não garante experiência real; nota varia entre execuções",
+      "fonte": "https://developers.google.com/speed/docs/insights/v5/about?hl=pt-br",
+      "trecho": "Uma pontuação de 90 ou mais é considerado bom. De 50 a 89 é uma pontuação que precisa melhorar, e abaixo de 50 é considerada ruim."
+    },
+    {
+      "afirmacao": "Vodafone (Itália): LCP 31% melhor, vendas 8% maiores; teste A/B como melhor forma de medir",
+      "fonte": "https://web.dev/case-studies/vitals-business-impact?hl=pt-br",
+      "trecho": "A Vodafone (Itália) melhorou o LCP em 31% e aumentou as vendas em 8% . [...] O teste A/B é a melhor maneira de medir o impacto significativo."
+    },
+    {
+      "afirmacao": "BBC perdia 10% a mais de usuários por segundo extra de carregamento (citado pelo web.dev)",
+      "fonte": "https://web.dev/learn/performance/why-speed-matters?hl=pt-br",
+      "trecho": "a BBC descobriu que perdeu 10% de usuários a mais para cada segundo a mais que o site levou para carregar"
+    },
+    {
+      "afirmacao": "Técnicas dos estudos de caso: otimizar imagens, reduzir JS que bloqueia a renderização, scripts de terceiros",
+      "fonte": "https://web.dev/case-studies/vitals-business-impact?hl=pt-br",
+      "trecho": "Reduza o JavaScript que impede a renderização. Técnicas de otimização de imagens. [...] A otimização de scripts de terceiros"
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Revisor independente (subagente) conferiu as afirmações contra o texto extraído das fontes: aprovado com correções. Corrigido: Vodafone deixou de dizer 'medido com teste A/B' (a página só recomenda o teste A/B); título da fonte 2 passou a 'Web Vitals'; datas de atualização das fontes no texto e nos títulos; 'é um pedido' virou 'pode ser'; percentil 75 e regra de aprovação descritos com precisão; motivo 'não é pública e indexável' acrescentado; afirmações sem fonte marcadas como avaliação nossa; descrição do diagnóstico reescrita em vez de copiar servicos.json. O revisor apontou ainda turno 'manha' com horário noturno: é o cálculo do passo 0 (execução disparada às 23:00)."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}

@@ -16,8 +16,9 @@
     { "id": "crm-planilha", "servico": "sistemas", "pergunta": "Quando a planilha de clientes deixa de dar conta e um CRM passa a fazer sentido", "situacao": "ideia", "slug": null },
     { "id": "sistema-pronto-ou-sob-medida", "servico": "sistemas", "pergunta": "Sistema pronto ou sob medida: perguntas para decidir antes de contratar", "situacao": "ideia", "slug": null },
     { "id": "por-onde-comecar-tecnologia", "servico": "consultoria", "pergunta": "Sei que tenho problema operacional, mas não sei que tecnologia preciso: por onde começar", "situacao": "ideia", "slug": null },
-    { "id": "site-lento-contato", "servico": "diagnostico-site", "pergunta": "Sinais de que o site está atrapalhando o contato e como conferir sem ser técnico", "situacao": "ideia", "slug": null },
+    { "id": "site-lento-contato", "servico": "diagnostico-site", "pergunta": "Sinais de que o site está atrapalhando o contato e como conferir sem ser técnico", "situacao": "usado", "slug": "site-lento-como-conferir-sem-ser-tecnico" },
     { "id": "whatsapp-api-cobranca-servico", "servico": "atendimento", "pergunta": "Cobrança das mensagens de serviço na API oficial do WhatsApp: o que muda no custo do atendimento (confirmar na tabela oficial da Meta antes de escrever)", "situacao": "ideia", "slug": null },
-    { "id": "gemini-perfil-empresa", "servico": "consultoria", "pergunta": "Gemini ligado ao Perfil da Empresa no Google: o que ele faz pelo negócio e o que ainda não se sabe (confirmar disponibilidade e preço no Brasil)", "situacao": "ideia", "slug": null }
+    { "id": "gemini-perfil-empresa", "servico": "consultoria", "pergunta": "Gemini ligado ao Perfil da Empresa no Google: o que ele faz pelo negócio e o que ainda não se sabe (confirmar disponibilidade e preço no Brasil)", "situacao": "ideia", "slug": null },
+    { "id": "pix-boleto-mesmo-documento", "servico": "sistemas", "pergunta": "Boleto e Pix no mesmo documento de cobrança: o que muda para quem emite cobranças (confirmar a norma e a data no site do Banco Central antes de escrever)", "situacao": "ideia", "slug": null }
   ]
 }
