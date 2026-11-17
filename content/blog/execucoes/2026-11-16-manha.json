@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-16-manha",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "site-lento-como-conferir-sem-ser-tecnico",
   "inicio": "2026-11-16T23:00:22-03:00",
@@ -111,6 +111,10 @@
     "observacoes": "Revisor independente (subagente) conferiu as afirmações contra o texto extraído das fontes: aprovado com correções. Corrigido: Vodafone deixou de dizer 'medido com teste A/B' (a página só recomenda o teste A/B); título da fonte 2 passou a 'Web Vitals'; datas de atualização das fontes no texto e nos títulos; 'é um pedido' virou 'pode ser'; percentil 75 e regra de aprovação descritos com precisão; motivo 'não é pública e indexável' acrescentado; afirmações sem fonte marcadas como avaliação nossa; descrição do diagnóstico reescrita em vez de copiar servicos.json. O revisor apontou ainda turno 'manha' com horário noturno: é o cálculo do passo 0 (execução disparada às 23:00)."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-17T02:04:57.949Z",
+    "url": "https://blog.spolaortecnologia.com.br/site-lento-como-conferir-sem-ser-tecnico",
+    "commit": "46cff5b68aa667c3ad4958ea9a6b933555d38ee9",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
