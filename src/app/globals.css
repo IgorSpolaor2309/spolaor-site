@@ -251,6 +251,9 @@ html:has([data-topo-azul]) header > div:first-child > div {
   background-color: var(--topo, #d9e6fc);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+  /* Sem animação de cor: o cabeçalho tinha transição de 500 ms no fundo, e o Safari lia a cor no
+     meio da transição, o que atrasava a faixa do relógio. */
+  transition: none;
 }
 html:has([data-topo-azul]) [data-cta-bar] {
   background-color: #f5f4f0;
