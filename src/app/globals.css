@@ -246,6 +246,25 @@
 html:has([data-topo-azul]) header { background-color: var(--topo, #d9e6fc); }
 html:has([data-topo-azul]) header > div:first-child { background-color: transparent; }
 
+/* Com viewport-fit=cover (só na home), a página ocupa também a faixa do relógio e as laterais do
+   entalhe. O cabeçalho cresce para cobrir a faixa do relógio com a cor dele, e o resto da página
+   desce na mesma medida. Fora do iPhone, env() vale 0 e nada muda. */
+html:has([data-topo-azul]) {
+  --sat: env(safe-area-inset-top, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  scroll-padding-top: calc(80px + var(--sat));
+}
+html:has([data-topo-azul]) header { padding: var(--sat) var(--sar) 0 var(--sal); }
+html:has([data-topo-azul]) body { padding-left: var(--sal); padding-right: var(--sar); }
+html:has([data-topo-azul]) section[aria-labelledby="hero-title"] { padding-top: calc(60px + var(--sat)); }
+html:has([data-topo-azul]) #menu-mobile { top: calc(60px + var(--sat)); }
+@media (min-width: 640px) {
+  html:has([data-topo-azul]) { scroll-padding-top: calc(96px + var(--sat)); }
+  html:has([data-topo-azul]) section[aria-labelledby="hero-title"] { padding-top: calc(72px + var(--sat)); }
+  html:has([data-topo-azul]) #menu-mobile { top: calc(72px + var(--sat)); }
+}
+
 /* Entrada do hero em CSS puro: roda antes da hidratação e não atrasa o LCP */
 @keyframes rise {
   from { opacity: 0; transform: translateY(0.6em); }
