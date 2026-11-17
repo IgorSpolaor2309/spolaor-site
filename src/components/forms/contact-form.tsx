@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { AVISO_RETORNO, maskPhone, validateLead, type LeadOrigem, type LeadPayload } from "@/lib/leads/schema";
+import { mascararTelefone } from "@/lib/leads/phone-input";
+import { AVISO_RETORNO, validateLead, type LeadOrigem, type LeadPayload } from "@/lib/leads/schema";
 import { formStartProps, submitLead } from "@/lib/leads/client";
 import { FormUnavailable, SubmitError } from "./submit-error";
 
@@ -147,7 +148,7 @@ export function ContactForm({
               className="field"
               value={data[k]}
               placeholder={k === "whatsapp" ? "(00) 00000-0000" : undefined}
-              onChange={(e) => set(k, k === "whatsapp" ? maskPhone(e.target.value) : e.target.value)}
+              onChange={(e) => set(k, k === "whatsapp" ? mascararTelefone(e, data.whatsapp) : e.target.value)}
               aria-invalid={!!errors[k]}
               aria-describedby={errors[k] ? `${k}-err` : undefined}
             />

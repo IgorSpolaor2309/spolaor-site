@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { AVISO_RETORNO, maskPhone, validateLead, type LeadPayload } from "@/lib/leads/schema";
+import { mascararTelefone } from "@/lib/leads/phone-input";
+import { AVISO_RETORNO, validateLead, type LeadPayload } from "@/lib/leads/schema";
 import { formStartProps, submitLead } from "@/lib/leads/client";
 import { FormUnavailable, SubmitError } from "@/components/forms/submit-error";
 import { whatsappLink } from "@/lib/site";
@@ -204,7 +205,7 @@ export function SiteDiagnosisForm({ available = true }: { /** false enquanto nã
                 enterKeyHint="next"
                 placeholder="(00) 00000-0000"
                 value={data.whatsapp}
-                onChange={(e) => set("whatsapp", maskPhone(e.target.value))}
+                onChange={(e) => set("whatsapp", mascararTelefone(e, data.whatsapp))}
                 error={errors.whatsapp}
               />
               <Field
