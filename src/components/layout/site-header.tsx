@@ -55,7 +55,7 @@ export function SiteHeader() {
         className={`transition-[background-color,border-color,backdrop-filter] duration-500 ${
           scrolled || open
             ? "border-b border-line bg-white/70 backdrop-blur-xl backdrop-saturate-150"
-            : "topo-header border-b border-transparent"
+            : "border-b border-transparent"
         }`}
       >
         <div className="container-x flex h-[60px] items-center justify-between gap-6 sm:h-[72px]">
