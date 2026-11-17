@@ -1,0 +1,125 @@
+{
+  "turno": "2026-11-17-tarde",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "whatsapp-api-cobranca-mensagens-de-servico",
+  "inicio": "2026-11-17T18:05:54-03:00",
+  "fim": "2026-11-17T18:10:06-03:00",
+  "motivo": "Item da pauta (whatsapp-api-cobranca-servico) que dependia da página oficial da Meta; nesta execução ela abriu e foi lida. Regra com efeito direto no custo de quem atende pela API (cobrança das mensagens de serviço desde 1/10/2026, faixa gratuita de 1.000 por número). Serviço principal (atendimento) diferente do artigo da manhã (sistemas/automação). Antes, conferido o artigo da manhã: a busca trouxe uma fonte de terceiros dizendo que a devolução em 24 h da cobrança híbrida valeria em 1/7/2027; o art. 5º da Resolução BCB 587 mostra que o art. 41-A (devolução) vale em 1/2/2027 e que 1/7/2027 se refere aos arts. 3º e 11-S (conta-salário/Pix Automático). O artigo da manhã está correto; nenhuma atualização necessária.",
+  "temas": [
+    {
+      "tema": "Cobrança das mensagens de serviço na API do WhatsApp (faixa de 1.000 por número)",
+      "notas": "utilidade 5, servico 5, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Página oficial da Meta aberta e lida; regra recente com o que fazer; serviço diferente do artigo da manhã."
+    },
+    {
+      "tema": "Atualizar o artigo da manhã (cobrança híbrida) com a data de 1/7/2027 citada por terceiros",
+      "notas": "utilidade 2, servico 3, busca 2, original 1",
+      "decisao": "descartado",
+      "motivo": "Conferido no texto oficial: a data de 1/7/2027 não se aplica à cobrança híbrida; o artigo da manhã está correto."
+    },
+    {
+      "tema": "Domínio, hospedagem e desenvolvimento: o que é de quem",
+      "notas": "utilidade 4, servico 4, busca 3, original 3",
+      "decisao": "descartado",
+      "motivo": "Páginas de ajuda do Registro.br são carregadas por JavaScript e não trouxeram o texto nesta sessão; fica na pauta."
+    },
+    {
+      "tema": "O que pedir e comparar num orçamento de criação de site",
+      "notas": "utilidade 4, servico 5, busca 4, original 2",
+      "decisao": "descartado",
+      "motivo": "Fontes encontradas são blogs de fornecedores; menor contribuição original; fica na pauta."
+    }
+  ],
+  "pesquisas": [
+    "cobrança híbrida boleto Pix Banco Central novembro 2026",
+    "Google Perfil da Empresa novidade novembro 2026 pequenas empresas",
+    "o que pedir num orçamento de criação de site perguntas antes de contratar",
+    "WhatsApp Business API mudanças empresas novembro 2026 Meta",
+    "registro.br titular do domínio transferência de titularidade empresa contato técnico ajuda"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing",
+      "lida": true,
+      "como": "curl (redirecionada de developers.facebook.com/docs/whatsapp/pricing/) + extração de texto (python)",
+      "observacao": "Documentação oficial da Meta, 'Updated: Sep 30, 2026'. Lidas as seções de categorias, cobrança, quando não cobra, janela gratuita de anúncio, faixa gratuita de serviço e 'Prior updates' (1/10/2026). Tabelas de tarifas em CSV/PDF não abertas; o artigo não cita valores."
+    },
+    {
+      "url": "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?tipo=Resolu%C3%A7%C3%A3o%20BCB&numero=587",
+      "lida": true,
+      "como": "curl na API oficial de normativos do BCB + extração de texto (python)",
+      "observacao": "Usada só para conferir o artigo da manhã (art. 5º e art. 41-A, §3º); não citada no artigo novo."
+    }
+  ],
+  "fontesNaoAbertas": [
+    {
+      "url": "https://registro.br/ajuda/procedimentos-administrativos/transferencia-de-titularidade/",
+      "motivo": "página carregada por JavaScript; o curl trouxe só a casca (4,6 KB); tema descartado"
+    },
+    {
+      "url": "https://cesconbarrieu.com.br/resolucao-bcb-no-587-2026-novas-obrigacoes-e-impactos-para-participantes-do-pix/",
+      "motivo": "apareceu na busca citando 1/7/2027; conferido direto na norma oficial; não usada"
+    }
+  ],
+  "afirmacoes": [
+    {
+      "afirmacao": "1.000 mensagens de serviço gratuitas por mês por número; cobrança a partir da 1.001ª entregue",
+      "fonte": "https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing",
+      "trecho": "Each business phone number has one free tier of 1,000 delivered service messages per month. Meta charges as of the 1,001st service message per month, after the free tier has been used."
+    },
+    {
+      "afirmacao": "Faixa não acumula de um mês para o outro",
+      "fonte": "https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing",
+      "trecho": "Unused service messages in the free tier do not roll over to the next month."
+    },
+    {
+      "afirmacao": "Serviço era gratuito desde 1/11/2024 e utilidade em resposta desde 1/7/2025; voltaram a ser cobrados em 1/10/2026",
+      "fonte": "https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing",
+      "trecho": "Effective October 1, 2026 [...] Meta resumed charging, on a per-message basis, for messages that were previously free: Service messages, which became free as of Nov. 1, 2024. [...] Utility messages sent in response to users (thus in an open customer service window), which became free as of July 1, 2025."
+    },
+    {
+      "afirmacao": "Sem forma de pagamento, entrega só dentro da faixa gratuita",
+      "fonte": "https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing",
+      "trecho": "If businesses do not have a payment method for their Messaging account(s), Meta will deliver service messages within the free tier but not deliver them after the free tier has been used."
+    },
+    {
+      "afirmacao": "Serviço = mensagem livre na janela de 24 h, por pessoa ou IA de terceiros; templates a qualquer momento",
+      "fonte": "https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing",
+      "trecho": "Non-template messages [...] can only be sent in an open 24-hour customer service window, which opens and resets with each user message. [...] Service – Any non-template message not powered by the Meta Business Agent Platform. These can be powered by a 3rd-party AI solution or people"
+    },
+    {
+      "afirmacao": "Cobra por mensagem, só empresa→usuário, só entregues",
+      "fonte": "https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing",
+      "trecho": "Meta charges on a per-message basis [...] and only for messages from businesses to users. [...] Businesses are only charged when a message is delivered."
+    },
+    {
+      "afirmacao": "Janela gratuita de anúncio de até 7 dias; Meta Business Agent segue cobrado",
+      "fonte": "https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing",
+      "trecho": "The FEP window may remain open for up to 7 days. While open, Meta does not charge for marketing, utility, authentication or service messages. Meta continues to charge for Meta Business Agent messages in the FEP window."
+    },
+    {
+      "afirmacao": "Meta Business Agent cobrado por tokens, sem mensagens gratuitas",
+      "fonte": "https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing",
+      "trecho": "Meter: Per message, based on one per-token charge [...] Free messages: Do not apply."
+    },
+    {
+      "afirmacao": "Preço varia por categoria e país; alterações só no primeiro dia do trimestre",
+      "fonte": "https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing",
+      "trecho": "Rates for messages vary based on 2 factors: a. the message category [...] and b. the recipient WhatsApp phone number's country calling code [...] Meta may update pricing only on the 1st day of each quarter"
+    },
+    {
+      "afirmacao": "Webhook marca mensagem de serviço como gratuita ou cobrada",
+      "fonte": "https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing",
+      "trecho": "\"billable\": false, \"pricing_model\": \"PMP\", \"type\": \"free_customer_service\" [...] \"billable\": true, \"pricing_model\": \"PMP\", \"type\": \"regular\""
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Subagente conferiu as 9 afirmações contra o texto da página da Meta: 7 confirmadas, 2 parciais (marcação no webhook e escopo da página), ambas reescritas. Também corrigido: 'quem troca poucas mensagens, nada muda' (utilidade em resposta é cobrada desde a primeira); título e descrição agora dizem 'mensagens de serviço' e 'em cada número'; afirmação sobre prática interna da Spolaor trocada por recomendação; lembretes desvinculados de /automacao; 'cinco categorias, duas importam' corrigido; não entrega restrita a mensagens de serviço; faixa gratuita não vale para modelos; 'regra da faixa gratuita é a mesma para todos'. Trecho do front matter literal; conta do exemplo conferida; links internos válidos."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}
