@@ -35,7 +35,7 @@ export function HowItWorks({ index = "06", guaranteesVisible = true }: { index?:
             <Reveal>
               <SectionLabel index={index}>Como trabalhamos</SectionLabel>
               <h2 id="how-title" className="mt-8 text-[clamp(1.9rem,1.2rem+2vw,2.9rem)] font-semibold leading-[1.08] tracking-[-0.04em]">
-                Primeiro o diagnóstico. <span className="text-muted">Depois a tecnologia.</span>
+                <span className="marca">Primeiro o diagnóstico.</span> <span className="text-muted">Depois a tecnologia.</span>
               </h2>
               <p className="mt-6 max-w-md text-lg leading-relaxed text-muted">
                 Cada projeto tem orçamento próprio, definido pela necessidade, pela complexidade e pelo prazo. Sem pacote pronto.

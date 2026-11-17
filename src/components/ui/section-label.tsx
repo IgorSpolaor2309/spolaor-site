@@ -5,7 +5,7 @@ export function SectionLabel({ index, children, tone = "default" }: { index?: st
   return (
     <p className="eyebrow inline-flex items-center gap-3">
       {index && <span className={num}>{index}</span>}
-      <span className="h-px w-8 bg-line-strong" aria-hidden />
+      <span className="h-[2px] w-8 rounded-full bg-[#f07a12]" aria-hidden />
       <span>{children}</span>
     </p>
   );

@@ -11,7 +11,7 @@ export function Automation() {
         <Reveal>
           <SectionLabel index="03" tone="signal">Na prática</SectionLabel>
           <h2 id="auto-title" className="mt-8 max-w-[22ch] text-h2 font-semibold">
-            O mesmo pedido de orçamento, com tudo acontecendo na hora certa.
+            O mesmo pedido de orçamento, com tudo acontecendo <span className="marca">na hora certa.</span>
           </h2>
         </Reveal>
 

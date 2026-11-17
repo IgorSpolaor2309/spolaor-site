@@ -82,7 +82,7 @@ export function HomeSituations() {
     <SituationsDay
       index="02"
       label="Onde se perde"
-      title="Situações que parecem normais, mas custam clientes."
+      title={<>Situações que parecem normais, mas <span className="marca">custam clientes.</span></>}
       intro="O contato chega na hora errada, pelo canal errado, e depende de alguém lembrar."
       items={items}
     />

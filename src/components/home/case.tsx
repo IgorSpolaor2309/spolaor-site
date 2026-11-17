@@ -18,7 +18,7 @@ export function Case() {
           <Reveal className="lg:col-span-9">
             <SectionLabel index="06" tone="signal">Projeto em destaque</SectionLabel>
             <h2 id="case-title" className="mt-8 text-h2 font-semibold">
-              Uma operação inteira que saiu das planilhas.
+              Uma operação inteira que <span className="marca">saiu das planilhas.</span>
             </h2>
             <p className="mt-6 max-w-2xl text-[1.05rem] leading-relaxed text-muted">
               Plataforma de gestão e atendimento construída do zero: {caseModules.slice(0, -1).join(", ").toLowerCase()} e{" "}

@@ -29,7 +29,7 @@ export function Segments({ index = "04" }: { index?: string }) {
           <Reveal className="lg:col-span-7">
             <SectionLabel index={index}>Por segmento</SectionLabel>
             <h2 id="segments-title" className="mt-8 text-h2 font-semibold">
-              Cada negócio perde clientes de um jeito.
+              Cada negócio perde clientes <span className="marca">de um jeito.</span>
             </h2>
           </Reveal>
           <Reveal delay={0.08} className="lg:col-span-4 lg:col-start-9 lg:self-end">

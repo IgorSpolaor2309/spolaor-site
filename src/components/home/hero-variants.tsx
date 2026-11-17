@@ -281,7 +281,7 @@ export function HeroF() {
    com círculo claro atrás da ilustração (F) e soluções numeradas em laranja com link (C/D). */
 export function HeroG() {
   return (
-    <section className={`${shell} bg-linear-to-b from-[#dce8fc] via-[#eaf0fb] to-ink-950`} aria-labelledby="hero-title">
+    <section className={shell} aria-labelledby="hero-title">
       <Ribbons className="pointer-events-none absolute right-[4%] top-[63%] -z-10 h-[35%] sm:right-[8%] sm:top-[50%] lg:right-[3%] lg:top-[14%] lg:h-[78%]" width={14} blueOpacity={0.5} />
       <div className={grid}>
         <div className="lg:col-span-7">

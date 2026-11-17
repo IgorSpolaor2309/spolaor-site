@@ -134,6 +134,13 @@
 
 
 
+  /* Marca-texto laranja da marca, atrás de uma expressão-chave do título (uma por seção, no máximo) */
+  .marca {
+    background-image: linear-gradient(transparent 62%, rgb(240 122 18 / 0.32) 62%, rgb(240 122 18 / 0.32) 92%, transparent 92%);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
   .eyebrow {
     font-family: var(--font-mono);
     font-size: 0.72rem;

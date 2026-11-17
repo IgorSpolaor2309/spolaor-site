@@ -54,7 +54,7 @@ export function SiteHeader() {
       <div
         className={`transition-[background-color,border-color,backdrop-filter] duration-500 ${
           scrolled || open
-            ? "border-b border-line bg-ink-950/70 backdrop-blur-xl backdrop-saturate-150"
+            ? "border-b border-line bg-white/70 backdrop-blur-xl backdrop-saturate-150"
             : "border-b border-transparent"
         }`}
       >

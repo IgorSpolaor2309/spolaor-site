@@ -64,7 +64,7 @@ export function Offers() {
             O que fazemos
           </SectionLabel>
           <h2 id="offers-title" className="mt-5 text-h3 font-semibold md:mt-7 md:text-[2.6rem] md:leading-[1.08]">
-            Quatro soluções. Você começa pela que mais faz falta hoje.
+            Quatro soluções. Você começa pela que <span className="marca">mais faz falta hoje.</span>
           </h2>
         </Reveal>
 
@@ -77,7 +77,7 @@ export function Offers() {
                 className="grid scroll-mt-24 grid-cols-[1fr_5.75rem] gap-x-4 gap-y-3 border-b border-line py-7 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem] md:gap-x-10 md:py-9"
               >
                 <div className={s.image ? "" : "col-span-2 md:col-span-1"}>
-                  <span className="font-mono text-[0.72rem] text-sky">0{i + 1}</span>
+                  <span className="font-mono text-[0.72rem] text-ember">0{i + 1}</span>
                   <h3 id={`${s.id}-title`} className="mt-1.5 text-[1.45rem] font-semibold leading-[1.15] tracking-[-0.03em] md:text-[1.75rem]">
                     {s.name}
                   </h3>
