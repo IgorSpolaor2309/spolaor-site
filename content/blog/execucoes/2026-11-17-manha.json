@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-17-manha",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "boleto-e-pix-no-mesmo-documento-cobranca-hibrida",
   "inicio": "2026-11-17T08:05:37-03:00",
@@ -122,6 +122,10 @@
     "observacoes": "Subagente conferiu as 11 afirmações contra o texto original (todas confirmadas) e os trechos do front matter (literais). Apontou e foi corrigido: devolução em 24 h generalizada para qualquer pagamento em dobro (restrita ao caso do Pix pago após o boleto); título errado da notícia da Agência Gov; resumo que isentava empresa e cliente de responsabilidade (reescrito conforme o §6º); §3º encurtado; exigência de usar o banco atual (a regra só exige a mesma instituição para boleto e Pix); descrição que sugeria regra inexistente; 'Pix feito para uma chave'; 'Até lá' sem referência. Nenhum problema de gravidade alta."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-17T11:11:19.449Z",
+    "url": "https://blog.spolaortecnologia.com.br/boleto-e-pix-no-mesmo-documento-cobranca-hibrida",
+    "commit": "5e79e04e651bcd3acc4cb3898e65607a5270ee5b",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
