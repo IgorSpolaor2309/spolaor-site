@@ -151,3 +151,7 @@ Cinco ilustrações 3D (fundo transparente) ajudam a entender a oferta de cada p
 ## 10. CRM de leads (novembro/2026)
 
 `/leads` é a área privada de acompanhamento comercial: fila de atendimento, lista, funil, ficha com histórico, retornos, cadastro manual e indicadores. Os envios de `/api/lead` passam a ser gravados no Postgres do site (tabelas `crm_*`) antes do aviso por e-mail, que continua saindo e ganhou estado e nova tentativa. O contrato de `/api/lead` com o navegador e o evento Lead não mudaram. As páginas de `/leads` não levam cabeçalho, rodapé nem Pixel do site público. Detalhes, regras e o estado de cada integração em `docs/CRM-LEADS.md`. A etapa do WhatsApp (API oficial pela YCloud, primeiro contato automático, fila "Depende de mim") está em `docs/CRM-WHATSAPP.md`.
+
+## 11. Blog (novembro/2026)
+
+`blog.spolaortecnologia.com.br` é servido por este projeto: `src/proxy.ts` reescreve o subdomínio para as rotas estáticas em `src/app/blog`, com cabeçalho e rodapé próprios e links absolutos para o site. Os artigos ficam no git (`content/blog`), são escritos por uma rotina do Claude na nuvem (seg. a sex., 08:00 e 18:00) e chegam à `main` só pela Action "Blog - publicar", que valida, publica e confere o artigo em produção. Detalhes, regras e travas em `docs/BLOG.md`.

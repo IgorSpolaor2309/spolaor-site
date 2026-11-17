@@ -1,0 +1,66 @@
+{
+  "_comentario": "Serviços que o blog pode recomendar. Os caminhos são páginas reais do site principal (www). O validador recusa artigos que citem um serviço fora desta lista. Não acrescente serviço que a Spolaor não oferece.",
+  "servicos": [
+    {
+      "id": "sites",
+      "nome": "Sites e landing pages",
+      "caminho": "/sites",
+      "resumo": "Sites institucionais, landing pages e redesign para apresentar bem os serviços e facilitar contatos e pedidos de orçamento.",
+      "chamada": "Pedir orçamento de site"
+    },
+    {
+      "id": "lojas",
+      "nome": "Lojas virtuais",
+      "caminho": "/lojas-virtuais",
+      "resumo": "Lojas virtuais com catálogo, compra, pagamento e pedidos organizados, para quem vende pelo Instagram, pelo WhatsApp ou em loja física.",
+      "chamada": "Pedir orçamento de loja"
+    },
+    {
+      "id": "agendamento",
+      "nome": "Agendamento online",
+      "caminho": "/agendamento-online",
+      "resumo": "O cliente escolhe serviço e horário, recebe confirmação e lembretes, e o negócio para de agendar por mensagem.",
+      "chamada": "Quero agendamento online"
+    },
+    {
+      "id": "automacao",
+      "nome": "Automação de processos",
+      "caminho": "/automacao",
+      "resumo": "Menos tarefa manual e atendimentos acompanhados até o fim: orçamentos com retorno, dados preenchidos uma vez só.",
+      "chamada": "Pedir diagnóstico do processo"
+    },
+    {
+      "id": "atendimento",
+      "nome": "Atendimento com IA no WhatsApp",
+      "caminho": "/atendimento-ia",
+      "resumo": "Um agente de IA no WhatsApp da empresa para responder interessados, tirar dúvidas e passar a negociação para a equipe.",
+      "chamada": "Conhecer o atendimento com IA"
+    },
+    {
+      "id": "sistemas",
+      "nome": "CRM e sistemas sob medida",
+      "caminho": "/sistemas",
+      "resumo": "Sistemas web, CRM, portais, áreas de clientes, painéis, integrações e APIs feitos para o jeito que a empresa trabalha.",
+      "chamada": "Conversar sobre um sistema"
+    },
+    {
+      "id": "consultoria",
+      "nome": "Consultoria em tecnologia",
+      "caminho": "/consultoria",
+      "resumo": "Para quem sente o problema operacional ou digital mas não sabe que tecnologia precisa: diagnóstico, mapa de oportunidades e plano priorizado.",
+      "chamada": "Conhecer a consultoria"
+    },
+    {
+      "id": "diagnostico-site",
+      "nome": "Diagnóstico de site",
+      "caminho": "/diagnostico-site",
+      "resumo": "Análise de como o site funciona, do que dificulta o contato e de quais melhorias merecem prioridade. O diagnóstico é gratuito; as melhorias são contratadas à parte.",
+      "chamada": "Solicitar diagnóstico do site"
+    }
+  ],
+  "contato": {
+    "nome": "Contato",
+    "caminho": "/contato",
+    "chamada": "Falar com a Spolaor"
+  }
+}
