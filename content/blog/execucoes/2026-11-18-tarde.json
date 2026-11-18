@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-18-tarde",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "dono-do-dominio-do-site-registro-br",
   "inicio": "2026-11-18T18:09:21-03:00",
@@ -175,6 +175,10 @@
     "observacoes": "Subagente revisor conferiu as afirmações contra o texto extraído das fontes: nenhuma divergência grave; não se apoia nos arts. 10-14 revogados da Res. 2008/008. Corrigido: exemplos de categorias (.com.br, .adv.br, .med.br) retirados por falta de fonte aberta; ressalva sobre Provedor de Serviços (contatos só visualizam); assinatura descrita como gov.br ou ICP-Brasil; procurador incluído entre quem assina; 'aceitar ordens' reformulado; delimitação .com/.net reescrita; ajustes de português; trecho da fonte de pagamento marcado com [...]. Antes da revisão foi retirada uma frase própria que atribuía uma prática à Spolaor (domínio em nome do cliente) sem base em servicos.json/posicionamento."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-18T21:16:44.949Z",
+    "url": "https://blog.spolaortecnologia.com.br/dono-do-dominio-do-site-registro-br",
+    "commit": "48fc1d4a639aaf3ac45291ef359852d0fe86a05f",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
