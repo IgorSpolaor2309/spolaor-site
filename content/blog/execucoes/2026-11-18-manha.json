@@ -1,0 +1,155 @@
+{
+  "turno": "2026-11-18-manha",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "gemini-perfil-da-empresa-no-google",
+  "inicio": "2026-11-18T08:06:56-03:00",
+  "fim": "2026-11-18T08:11:41-03:00",
+  "motivo": "Item da pauta (gemini-perfil-empresa) que dependia de confirmar disponibilidade e preço no Brasil. A página de ajuda oficial do Google e a página de países do Gemini foram abertas e lidas: o recurso vale onde o web app do Gemini funciona, e o Brasil está na lista; nenhuma página oficial menciona plano pago nem preço, e o artigo diz isso de forma explícita, sem afirmar gratuidade. O texto acrescenta o que as notícias não destacam: os requisitos que deixam empresas de fora (um único perfil verificado, conta pessoal, Histórico ativado, só web app). O serviço principal (consultoria/diagnóstico de site) é diferente do artigo anterior (atendimento).",
+  "temas": [
+    {
+      "tema": "Gemini ligado ao Perfil da Empresa no Google: o que faz, requisitos e cuidados",
+      "notas": "utilidade 4, servico 3, busca 4, original 5",
+      "decisao": "escolhido",
+      "motivo": "Fontes oficiais (ajuda do Google, blog do Google Brasil, Central de Privacidade) abertas e lidas; recurso recente com o que fazer; serviço diferente do artigo anterior."
+    },
+    {
+      "tema": "Quando vale sair do pedido pelo WhatsApp para uma loja virtual",
+      "notas": "utilidade 4, servico 5, busca 4, original 2",
+      "decisao": "descartado",
+      "motivo": "Resultados de busca são quase todos de blogs de fornecedores de plataforma; sem fonte independente para sustentar critérios; fica na pauta."
+    },
+    {
+      "tema": "Nova página de ajuda do Google sobre ofertas/descontos no Perfil da Empresa (nov/2026)",
+      "notas": "utilidade 3, servico 2, busca 2, original 2",
+      "decisao": "descartado",
+      "motivo": "Só apareceu em site de terceiros; página oficial não localizada nesta execução."
+    },
+    {
+      "tema": "Checkout do Instagram para vendedores no Brasil em 2026",
+      "notas": "utilidade 3, servico 4, busca 3, original 2",
+      "decisao": "descartado",
+      "motivo": "Fontes de terceiros se contradizem (checkout retirado x ampliado) e nenhuma fonte oficial da Meta foi encontrada."
+    }
+  ],
+  "pesquisas": [
+    "Google Perfil da Empresa novidades novembro 2026 pequenas empresas",
+    "Instagram loja checkout Brasil 2026 mudança vendedores Meta",
+    "quando vale sair do pedido pelo WhatsApp para loja virtual pequena empresa",
+    "support.google.com conectar Perfil da Empresa ao app Gemini requisitos",
+    "blog.google pt-br \"Novas ferramentas do Gemini para pequenos negócios\" página inicial negócios",
+    "Gemini Apps Google Business Profile connected app help (support.google.com)"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://support.google.com/business/answer/17142585?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração de texto (python); também versões en e Android da mesma página",
+      "observacao": "Página de ajuda oficial: recursos, requisitos, disponibilidade, conexão, notebook da empresa, desconexão."
+    },
+    {
+      "url": "https://blog.google/intl/pt-br/produtos/economize-tempo-e-impulsione-seu-negocio-com-as-novas-ferramentas-do-gemini/",
+      "lida": true,
+      "como": "curl + extração de texto (python)",
+      "observacao": "Blog do Google Brasil, 2/7/2026: integração disponível globalmente; menção a ofertas do Workspace e do Gemini."
+    },
+    {
+      "url": "https://blog.google/intl/pt-br/produtos/novas-ferramentas-do-gemini-para-pequenos-negocios/",
+      "lida": true,
+      "como": "curl + extração de texto (python)",
+      "observacao": "Blog do Google Brasil, 20/10/2026: página inicial de negócios e novos apps conectados, liberação nos próximos dias."
+    },
+    {
+      "url": "https://support.google.com/gemini/answer/13575153?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração de texto (python)",
+      "observacao": "Lista de países do web app Gemini; Brasil incluído."
+    },
+    {
+      "url": "https://support.google.com/gemini/answer/13594961?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração de texto (python)",
+      "observacao": "Central de Privacidade do Gemini: revisores humanos e aviso sobre informações confidenciais."
+    },
+    {
+      "url": "https://support.google.com/gemini/table/17434654?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração de texto (python)",
+      "observacao": "Tabela de disponibilidade de Apps Conectados; usada só para conferência (conta pessoal, 18+, países do web app); não citada."
+    }
+  ],
+  "fontesNaoAbertas": [
+    {
+      "url": "https://almcorp.com/pt/news/google-business-profile-gemini-app-integration/",
+      "motivo": "site de terceiros; substituído pelas páginas oficiais; não usado"
+    },
+    {
+      "url": "https://economicnewsbrasil.com.br/2026/11/02/gemini-para-pequenos-negocios-novas-funcoes/",
+      "motivo": "site de terceiros; substituído pelo post oficial de 20/10/2026; não usado"
+    }
+  ],
+  "afirmacoes": [
+    {
+      "afirmacao": "Requisitos: um único perfil verificado, 18+, conta Google pessoal (não trabalho/escola)",
+      "fonte": "https://support.google.com/business/answer/17142585?hl=pt-BR",
+      "trecho": "Ser proprietário ou administrador de apenas um Perfil da Empresa verificado no Google. [...] Você precisa ter 18 anos ou mais. Fazer login no web app do Gemini com uma Conta do Google pessoal associada ao seu Perfil da Empresa no Google."
+    },
+    {
+      "afirmacao": "Histórico do Gemini precisa estar ativado",
+      "fonte": "https://support.google.com/business/answer/17142585?hl=pt-BR",
+      "trecho": "Ativar o Histórico. O Gemini não consegue se conectar ao Perfil da Empresa no Google quando essa configuração está desativada."
+    },
+    {
+      "afirmacao": "Disponível onde o web app funciona; só em gemini.google.com; indisponível para quem tem mais de um perfil",
+      "fonte": "https://support.google.com/business/answer/17142585?hl=pt-BR",
+      "trecho": "Disponível em todos os lugares onde o web app do Gemini pode ser usado. Não estão disponíveis para proprietários ou administradores que têm acesso a mais de um Perfil da Empresa verificado. Estão disponíveis apenas no web app do Gemini em gemini.google.com."
+    },
+    {
+      "afirmacao": "Brasil está na lista de países do web app",
+      "fonte": "https://support.google.com/gemini/answer/13575153?hl=pt-BR",
+      "trecho": "No momento, o web app Gemini está disponível em mais de 40 idiomas e em mais de 230 países e territórios. [...] Brasil"
+    },
+    {
+      "afirmacao": "Gemini pode atualizar horário (inclusive especial), cardápios, mídia, atributos, contato e links de ação",
+      "fonte": "https://support.google.com/business/answer/17142585?hl=pt-BR",
+      "trecho": "Horário de funcionamento: modifique os horários semanais regulares ou defina horários de funcionamento especiais para feriados e eventos. Cardápios: para empresas do setor alimentício, crie, atualize ou exclua cardápios"
+    },
+    {
+      "afirmacao": "Avaliações e postagens: ver, resumir, criar/excluir respostas; criar, programar, publicar ou excluir postagens",
+      "fonte": "https://support.google.com/business/answer/17142585?hl=pt-BR",
+      "trecho": "Respostas às avaliações: crie ou exclua respostas ao feedback dos clientes. Postagens no perfil: crie, programe, publique ou exclua postagens de atualização, oferta ou evento."
+    },
+    {
+      "afirmacao": "Métricas: impressões, cliques no site, rotas, reservas e palavras-chave",
+      "fonte": "https://support.google.com/business/answer/17142585?hl=pt-BR",
+      "trecho": "Métricas de performance: analise impressões, cliques para acessar o site, solicitações de rotas e reservas. Palavras-chave de pesquisa: analise as palavras-chave específicas que os clientes usam para encontrar sua empresa."
+    },
+    {
+      "afirmacao": "Dica @Google Business Profile e desconexão em Apps Conectados",
+      "fonte": "https://support.google.com/business/answer/17142585?hl=pt-BR",
+      "trecho": "se o Gemini não usar o app Perfil da Empresa no Google, adicione @Google Business Profile ao comando. [...] você pode desconectar o app Perfil da Empresa no Google a qualquer momento nas configurações de Apps Conectados."
+    },
+    {
+      "afirmacao": "Integração disponível globalmente (julho/2026) e menção a ofertas",
+      "fonte": "https://blog.google/intl/pt-br/produtos/economize-tempo-e-impulsione-seu-negocio-com-as-novas-ferramentas-do-gemini/",
+      "trecho": "A integração com o Perfil da Empresa no Google e os Cadernos de Negócios já está disponível globalmente. [...] fique atento às ofertas especiais do Workspace e do Gemini que chegarão em breve."
+    },
+    {
+      "afirmacao": "Novidades de outubro (página inicial de negócios, apps conectados) chegando nos próximos dias",
+      "fonte": "https://blog.google/intl/pt-br/produtos/novas-ferramentas-do-gemini-para-pequenos-negocios/",
+      "trecho": "A página inicial de negócios, as habilidades de marketing e finanças, e os novos aplicativos conectados estão começando a ser implementados globalmente nos próximos dias para todos os usuários do aplicativo Gemini."
+    },
+    {
+      "afirmacao": "Revisores humanos e aviso de não inserir informações confidenciais",
+      "fonte": "https://support.google.com/gemini/answer/13594961?hl=pt-BR",
+      "trecho": "Revisores humanos (incluindo aqueles treinados por nossos provedores de serviços) analisam alguns dos dados coletados para essas finalidades. Não insira informações confidenciais que você não quer que sejam revisadas"
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Subagente revisor conferiu as afirmações contra o texto extraído das fontes: nenhum erro factual grave. Corrigido: anúncio de outubro estava misturado com a disponibilidade da conexão do perfil (agora separado; julho = já disponível globalmente); dica @Google Business Profile recolocada no contexto da ajuda; 'só no navegador' trocado por 'web app em gemini.google.com', atribuído à ajuda; generalização 'descrevem muitas pequenas empresas' suavizada; citação da Central de Privacidade posta entre aspas; 'desde 2026' virou 'desde julho de 2026'; página de países incluída na lista de fontes do texto; redação de fotos por URL; trecho da fonte de privacidade com [...]; acrescentada a menção oficial a 'ofertas especiais' na seção de preço. Afirmação removida/não feita: gratuidade do recurso (não confirmada)."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}
