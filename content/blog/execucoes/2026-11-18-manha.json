@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-18-manha",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "gemini-perfil-da-empresa-no-google",
   "inicio": "2026-11-18T08:06:56-03:00",
@@ -150,6 +150,10 @@
     "observacoes": "Subagente revisor conferiu as afirmações contra o texto extraído das fontes: nenhum erro factual grave. Corrigido: anúncio de outubro estava misturado com a disponibilidade da conexão do perfil (agora separado; julho = já disponível globalmente); dica @Google Business Profile recolocada no contexto da ajuda; 'só no navegador' trocado por 'web app em gemini.google.com', atribuído à ajuda; generalização 'descrevem muitas pequenas empresas' suavizada; citação da Central de Privacidade posta entre aspas; 'desde 2026' virou 'desde julho de 2026'; página de países incluída na lista de fontes do texto; redação de fotos por URL; trecho da fonte de privacidade com [...]; acrescentada a menção oficial a 'ofertas especiais' na seção de preço. Afirmação removida/não feita: gratuidade do recurso (não confirmada)."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-18T11:12:54.320Z",
+    "url": "https://blog.spolaortecnologia.com.br/gemini-perfil-da-empresa-no-google",
+    "commit": "2e1bc076bf92a7f917fcee4ddc1b056176947575",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
