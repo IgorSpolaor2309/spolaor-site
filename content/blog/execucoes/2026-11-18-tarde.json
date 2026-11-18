@@ -1,0 +1,180 @@
+{
+  "turno": "2026-11-18-tarde",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "dono-do-dominio-do-site-registro-br",
+  "inicio": "2026-11-18T18:09:21-03:00",
+  "fim": "2026-11-18T18:15:45-03:00",
+  "motivo": "Nenhuma novidade desde a manhã corrige ou complementa o artigo sobre Gemini no Perfil da Empresa (busca não trouxe mudança posterior), então não houve atualização. Escolhido item da pauta (dominio-e-hospedagem), dúvida duradoura de contratação de site, com base em fontes oficiais abertas e lidas (ajuda e contrato do Registro.br, resoluções CGI.br 2008/008 e 2017/031). Serviço principal (sites) diferente do artigo anterior (consultoria).",
+  "temas": [
+    {
+      "tema": "Quem é o dono do domínio do site: titular, contatos no Registro.br e o que combinar com o fornecedor",
+      "notas": "utilidade 5, servico 5, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Fontes oficiais abertas e lidas; dúvida real de quem contrata site; serviço diferente do artigo anterior."
+    },
+    {
+      "tema": "Quem é dono do Perfil da Empresa no Google: conferir proprietários e recuperar acesso",
+      "notas": "utilidade 4, servico 3, busca 4, original 3",
+      "decisao": "descartado",
+      "motivo": "Página oficial de ajuda não localizada nesta execução (só guias de terceiros); mesmo serviço e plataforma do artigo da manhã."
+    },
+    {
+      "tema": "Janela gratuita de anúncio que leva ao WhatsApp",
+      "notas": "utilidade 3, servico 4, busca 3, original 1",
+      "decisao": "descartado",
+      "motivo": "Já explicada no artigo whatsapp-api-cobranca-mensagens-de-servico; seria repetição."
+    },
+    {
+      "tema": "Atualizar o artigo da manhã (Gemini no Perfil da Empresa)",
+      "notas": "utilidade 2, servico 3, busca 2, original 1",
+      "decisao": "descartado",
+      "motivo": "Nenhuma novidade posterior encontrada que corrija ou complemente o texto."
+    }
+  ],
+  "pesquisas": [
+    "Gemini Google Business Profile connected app update November 2026",
+    "WhatsApp Business novidades novembro 2026 empresas Brasil",
+    "Perfil da Empresa no Google como adicionar proprietário administrador transferir propriedade ajuda",
+    "developers.facebook.com WhatsApp pricing free entry point conversations click to WhatsApp ads 72 hours",
+    "support.google.com business gerenciar proprietários e administradores do Perfil da Empresa solicitar propriedade",
+    "registro.br ajuda titular do domínio contato administrativo técnico transferir titularidade",
+    "registro.br domínio expirado prazo congelamento liberação processo de liberação renovação",
+    "cgi.br resolução 2008/008 registro de nomes de domínio sob .br texto titular renovação"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://registro.br/ajuda/gerenciamento-de-conta/dados-de-dominio/",
+      "lida": true,
+      "como": "Playwright (página montada por JavaScript) + extração de texto",
+      "observacao": "Contatos do domínio, papéis, recomendação, PF->PJ, pendências."
+    },
+    {
+      "url": "https://registro.br/ajuda/pagamento-de-dominio/",
+      "lida": true,
+      "como": "Playwright + extração de texto",
+      "observacao": "Aviso de cobrança 30 dias antes; congelamento e liberação. Preços vistos, não usados no texto."
+    },
+    {
+      "url": "https://registro.br/ajuda/procedimentos-administrativos/",
+      "lida": true,
+      "como": "Playwright + extração de texto",
+      "observacao": "Transferência de titularidade, de contato do titular, reabilitação, documentação, prazo de 2 dias úteis."
+    },
+    {
+      "url": "https://registro.br/ajuda/registro-de-novos-dominios/provedores-de-servicos/",
+      "lida": true,
+      "como": "Playwright + extração de texto",
+      "observacao": "Provedor de Serviços x hospedagem."
+    },
+    {
+      "url": "https://registro.br/dominio/contrato/",
+      "lida": true,
+      "como": "Playwright + extração de texto",
+      "observacao": "Whois e dados publicados; não pagamento leva a cancelamento."
+    },
+    {
+      "url": "https://registro.br/ajuda/dominio-congelado/",
+      "lida": true,
+      "como": "Playwright + extração de texto",
+      "observacao": "Usada só para conferência; não citada."
+    },
+    {
+      "url": "https://registro.br/ajuda/problemas-para-acessar-a-conta/",
+      "lida": true,
+      "como": "Playwright + extração de texto",
+      "observacao": "Usada só para conferência; não citada."
+    },
+    {
+      "url": "https://cgi.br/resolucoes/documento/2008/CGI.br_Resolucao_2008_008.pdf",
+      "lida": true,
+      "como": "curl+pdftotext",
+      "observacao": "Art. 4º (contatos, comunicações por e-mail). Arts. 10-14 alterados pela 2017/031 e não usados."
+    },
+    {
+      "url": "https://www.cgi.br/resolucoes/documento/2017/CGI.br_Resolucao_2017_031.pdf",
+      "lida": true,
+      "como": "curl+pdftotext",
+      "observacao": "Processos de liberação mensais ou mais frequentes."
+    }
+  ],
+  "fontesNaoAbertas": [
+    {
+      "url": "https://registro.br/dominio/categorias/",
+      "motivo": "não aberta; por isso os exemplos de categorias (.com.br genérico, .adv.br/.med.br) foram retirados do texto"
+    },
+    {
+      "url": "https://www.locaweb.com.br/ajuda/wiki/tudo-sobre-o-dominio-congelado-ou-redemption-registro-de-dominio/",
+      "motivo": "site de terceiros; prazos de expiração/congelamento (14 e 90 dias) não confirmados em fonte oficial e não usados"
+    }
+  ],
+  "afirmacoes": [
+    {
+      "afirmacao": "Há 4 contatos (titular, administrativo, técnico, cobrança) e seus papéis",
+      "fonte": "https://registro.br/ajuda/gerenciamento-de-conta/dados-de-dominio/",
+      "trecho": "O contato do titular é o responsável pela manutenção e atualização dos dados do titular, registros de novos domínios e pela transferência dos contatos dos domínios detidos pela mesmo (*). O contato administrativo do domínio pode alterar as informações dos servidores DNS e também transferir os contatos técnico e de cobrança (*). O contato técnico pode alterar os servidores DNS"
+    },
+    {
+      "afirmacao": "Recomendação: administrativo e cobrança do titular; técnico usualmente do provedor; delegar só o técnico basta",
+      "fonte": "https://registro.br/ajuda/gerenciamento-de-conta/dados-de-dominio/",
+      "trecho": "É recomendável que os contatos administrativo e de cobrança sejam do próprio titular; caso seja utilizado um provedor, é usual que o contato técnico seja desse provedor. Delegar apenas o contato técnico é suficiente para fazer qualquer alteração técnica que se mostre necessária."
+    },
+    {
+      "afirmacao": "Com Provedor de Serviços, alterações só por ele; não é obrigatório",
+      "fonte": "https://registro.br/ajuda/registro-de-novos-dominios/provedores-de-servicos/",
+      "trecho": "Os clientes dos Provedores de Serviços só podem cadastrar novos domínios ou alterar os dados de domínios e titulares existentes através do seu Provedor de Serviços [...] Não. Titulares (entidades) que não possuem Provedor de Serviços podem ser atendidas diretamente pelo Registro.br"
+    },
+    {
+      "afirmacao": "Whois público com dados do titular PJ/PF",
+      "fonte": "https://registro.br/dominio/contrato/",
+      "trecho": "Para domínios de titularidade de pessoa jurídica serão publicados o nome empresarial, número do CNPJ, país, nome do responsável, endereço, telefone, dados do contato titular e do contato técnico."
+    },
+    {
+      "afirmacao": "Quem não é contato pede a um contato atual",
+      "fonte": "https://registro.br/ajuda/gerenciamento-de-conta/dados-de-dominio/",
+      "trecho": "Se você não for contato do domínio, solicite a alteração a um dos atuais responsáveis. É possível verificar quem são os atuais contatos do domínio através do sistema de pesquisa."
+    },
+    {
+      "afirmacao": "Comunicações por e-mail; notificações ao endereço cadastrado são válidas",
+      "fonte": "https://cgi.br/resolucoes/documento/2008/CGI.br_Resolucao_2008_008.pdf",
+      "trecho": "Todas as comunicações feitas pelo CGI.br e pelo NIC.br serão realizadas por correio eletrônico. As notificações comprovadamente enviadas para o endereço eletrônico cadastrado serão consideradas válidas."
+    },
+    {
+      "afirmacao": "Aviso de cobrança no registro e 30 dias antes; sem boleto por correio",
+      "fonte": "https://registro.br/ajuda/pagamento-de-dominio/",
+      "trecho": "Um aviso de cobrança é enviado para os contatos do domínio no ato de registro e 30 dias antes de cada expiração. Não enviamos boletos bancários por correio."
+    },
+    {
+      "afirmacao": "Sem pagamento: congelado e depois liberado para novo registro",
+      "fonte": "https://registro.br/ajuda/pagamento-de-dominio/",
+      "trecho": "O seu domínio será congelado e após um período liberado para novo registro, de acordo com as regras do processo de liberação"
+    },
+    {
+      "afirmacao": "Processos de liberação mensais ou mais frequentes, com candidaturas",
+      "fonte": "https://www.cgi.br/resolucoes/documento/2017/CGI.br_Resolucao_2017_031.pdf",
+      "trecho": "O NIC.br anunciará em https://registro.br a data de início dos processos de liberação de domínios cancelados, realizados de forma mensal ou mais frequente"
+    },
+    {
+      "afirmacao": "Procedimentos de transferência de titularidade e de contato; prazo de análise de 2 dias úteis",
+      "fonte": "https://registro.br/ajuda/procedimentos-administrativos/",
+      "trecho": "O prazo para análise é 2 dias úteis, contados a partir da data de recebimento da documentação. [...] Transferência de Titularidade de Domínio: Indicado quando há necessidade de alterar o CNPJ/CPF que detém a titularidade"
+    },
+    {
+      "afirmacao": "Assinatura gov.br ou ICP-Brasil; documentação do novo titular",
+      "fonte": "https://registro.br/ajuda/procedimentos-administrativos/",
+      "trecho": "A solicitação deverá3 ser gerada no sistema e assinada eletronicamente4, com assinatura gov.br (avançada ou qualificada). [...] é necessário o envio de documentação do novo titular"
+    },
+    {
+      "afirmacao": "PF/profissionais liberais não transferem para PJ, exceto Genéricos",
+      "fonte": "https://registro.br/ajuda/gerenciamento-de-conta/dados-de-dominio/",
+      "trecho": "Não se pode transferir domínios das categorias Profissionais Liberais e/ou Pessoas Físicas para Pessoas Jurídicas e vice-versa. As únicas exceções são os domínios Genéricos"
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Subagente revisor conferiu as afirmações contra o texto extraído das fontes: nenhuma divergência grave; não se apoia nos arts. 10-14 revogados da Res. 2008/008. Corrigido: exemplos de categorias (.com.br, .adv.br, .med.br) retirados por falta de fonte aberta; ressalva sobre Provedor de Serviços (contatos só visualizam); assinatura descrita como gov.br ou ICP-Brasil; procurador incluído entre quem assina; 'aceitar ordens' reformulado; delimitação .com/.net reescrita; ajustes de português; trecho da fonte de pagamento marcado com [...]. Antes da revisão foi retirada uma frase própria que atribuía uma prática à Spolaor (domínio em nome do cliente) sem base em servicos.json/posicionamento."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}

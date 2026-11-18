@@ -4,7 +4,7 @@
     { "id": "site-ou-instagram", "servico": "sites", "pergunta": "Minha empresa precisa de site se já vende pelo Instagram?", "situacao": "ideia", "slug": null },
     { "id": "orcamento-de-site", "servico": "sites", "pergunta": "O que pedir e comparar num orçamento de criação de site", "situacao": "ideia", "slug": null },
     { "id": "landing-page-anuncio", "servico": "sites", "pergunta": "Landing page para anúncio: o que ela precisa ter para o contato acontecer", "situacao": "ideia", "slug": null },
-    { "id": "dominio-e-hospedagem", "servico": "sites", "pergunta": "Domínio, hospedagem e desenvolvimento: o que é de quem e como não ficar preso a um fornecedor", "situacao": "ideia", "slug": null },
+    { "id": "dominio-e-hospedagem", "servico": "sites", "pergunta": "Domínio, hospedagem e desenvolvimento: o que é de quem e como não ficar preso a um fornecedor", "situacao": "usado", "slug": "dono-do-dominio-do-site-registro-br" },
     { "id": "loja-plataforma-ou-propria", "servico": "lojas", "pergunta": "Loja virtual em plataforma pronta ou loja sob medida: como decidir", "situacao": "ideia", "slug": null },
     { "id": "vender-whatsapp-para-loja", "servico": "lojas", "pergunta": "Quando vale sair do pedido pelo WhatsApp para uma loja virtual", "situacao": "ideia", "slug": null },
     { "id": "faltas-horario-marcado", "servico": "agendamento", "pergunta": "Como reduzir faltas e remarcações em negócios com hora marcada", "situacao": "usado", "slug": "como-reduzir-faltas-horario-marcado" },
@@ -22,6 +22,7 @@
     { "id": "pix-boleto-mesmo-documento", "servico": "sistemas", "pergunta": "Boleto e Pix no mesmo documento de cobrança: o que muda para quem emite cobranças (confirmar a norma e a data no site do Banco Central antes de escrever)", "situacao": "usado", "slug": "boleto-e-pix-no-mesmo-documento-cobranca-hibrida" },
     { "id": "conciliacao-recebimentos", "servico": "automacao", "pergunta": "Como conferir quem pagou quando os clientes pagam por Pix, boleto e cartão: organizar a baixa dos recebimentos", "situacao": "ideia", "slug": null },
     { "id": "janela-gratuita-anuncio-whatsapp", "servico": "atendimento", "pergunta": "Anúncio que leva ao WhatsApp: como funciona a janela de 7 dias sem cobrança de mensagens e como organizar o atendimento dentro dela (conferir na página oficial da Meta)", "situacao": "ideia", "slug": null },
-    { "id": "dono-do-perfil-google", "servico": "consultoria", "pergunta": "Quem é dono do Perfil da Empresa no Google da sua empresa: como conferir proprietários e administradores e recuperar o acesso (confirmar o passo a passo na ajuda oficial do Google)", "situacao": "ideia", "slug": null }
+    { "id": "dono-do-perfil-google", "servico": "consultoria", "pergunta": "Quem é dono do Perfil da Empresa no Google da sua empresa: como conferir proprietários e administradores e recuperar o acesso (confirmar o passo a passo na ajuda oficial do Google)", "situacao": "ideia", "slug": null },
+    { "id": "seguranca-conta-dominio", "servico": "sites", "pergunta": "Token e verificação em duas etapas na conta do Registro.br: como proteger o domínio da empresa contra perda de acesso (confirmar na ajuda oficial do Registro.br)", "situacao": "ideia", "slug": null }
   ]
 }
