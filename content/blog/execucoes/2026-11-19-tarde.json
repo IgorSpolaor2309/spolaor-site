@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-19-tarde",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "dono-do-perfil-da-empresa-no-google",
   "inicio": "2026-11-19T18:09:23-03:00",
@@ -152,6 +152,10 @@
     "observacoes": "Revisor independente (subagente) conferiu as afirmações contra o texto extraído das seis páginas e os trechos do cabeçalho: aprovado com correções. Corrigido: teste de perfil reivindicado (só 'É proprietário desta empresa?' + 'Outra pessoa já gerencia' indica dono; 'Reivindicar esta empresa' indica não reivindicado); alerta de golpe reescrito como na fonte (pessoas que se passam pelo Google), sem condenar quem cobra por gestão; 'preferir administrador' marcado como recomendação nossa; 'não pode mais mudar nada' ajustado ao texto da fonte; caminho de solicitação inclui empresa híbrida; 'é comum' virou hipótese; abertura ajustada (todo proprietário tem controle total, principal tem a palavra final); exemplos de representante alinhados à fonte; 'senha única (código por SMS)' trocado por '(OTP)' antes da revisão; serviços do artigo reduzidos a consultoria."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-19T21:14:19.665Z",
+    "url": "https://blog.spolaortecnologia.com.br/dono-do-perfil-da-empresa-no-google",
+    "commit": "c3c088a1a9cfd899f02faafd7b2a4758bae4261f",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
