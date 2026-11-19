@@ -1,0 +1,157 @@
+{
+  "turno": "2026-11-19-tarde",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "dono-do-perfil-da-empresa-no-google",
+  "inicio": "2026-11-19T18:09:23-03:00",
+  "fim": "2026-11-19T18:13:21-03:00",
+  "motivo": "Dúvida real de operação (quem controla a ficha da empresa no Google e como recuperar o acesso), com seis páginas oficiais de ajuda do Google abertas e lidas; serviço principal (consultoria) diferente do artigo da manhã (agendamento). As buscas não trouxeram novidade que corrigisse ou complementasse o artigo da manhã, então não houve atualização dele.",
+  "temas": [
+    {
+      "tema": "Quem é o dono do Perfil da Empresa no Google: conferir proprietários e recuperar o acesso",
+      "notas": "utilidade 5, servico 4, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Item da pauta; fontes oficiais lidas na íntegra; complementa o artigo do domínio sem repeti-lo."
+    },
+    {
+      "tema": "Atualizar o artigo da manhã (botão de agendar no Google)",
+      "notas": "utilidade 3, servico 4, busca 2, original 1",
+      "decisao": "descartado",
+      "motivo": "Nenhuma novidade encontrada depois do turno da manhã que corrija ou complemente o artigo."
+    },
+    {
+      "tema": "Agente de IA da Meta no WhatsApp Business (Business Agent)",
+      "notas": "utilidade 4, servico 4, busca 4, original 2",
+      "decisao": "descartado",
+      "motivo": "Só reportagens nos resultados de busca; disponibilidade e cobrança no Brasil não confirmadas em página oficial aberta nesta execução. Fica como ideia na pauta."
+    },
+    {
+      "tema": "Pix Automático para cobrança recorrente",
+      "notas": "utilidade 4, servico 3, busca 4, original 3",
+      "decisao": "descartado",
+      "motivo": "Páginas do Banco Central não abriram no turno anterior; não tentado de novo para não repetir o serviço de automação sem fonte."
+    }
+  ],
+  "pesquisas": [
+    "WhatsApp Business novidade novembro 2026 empresas Meta",
+    "Perfil da Empresa no Google adicionar proprietário administrador recuperar acesso ajuda",
+    "Google Perfil da Empresa agendamento novidade novembro 2026",
+    "support.google.com business \"solicitar a propriedade\" Perfil da Empresa",
+    "support.google.com business adicionar ou remover proprietários e administradores do Perfil da Empresa transferir propriedade principal"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://support.google.com/business/answer/3403100?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração do texto do HTML",
+      "observacao": "Gerenciar proprietários e administradores do Perfil da Empresa."
+    },
+    {
+      "url": "https://support.google.com/business/answer/3415281?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração do texto do HTML",
+      "observacao": "Transferir a propriedade principal de um Perfil da empresa."
+    },
+    {
+      "url": "https://support.google.com/business/answer/4566671?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração do texto do HTML",
+      "observacao": "Solicitar a propriedade de um Perfil da Empresa."
+    },
+    {
+      "url": "https://support.google.com/business/answer/13763036?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração do texto do HTML",
+      "observacao": "Diretrizes de qualificação e propriedade da empresa."
+    },
+    {
+      "url": "https://support.google.com/business/answer/14509283?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração do texto do HTML",
+      "observacao": "Ajude a proteger seu Perfil da Empresa no Google."
+    },
+    {
+      "url": "https://support.google.com/business/answer/4661508?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração do texto do HTML",
+      "observacao": "Resolver problemas de propriedade e duplicação de perfis."
+    },
+    {
+      "url": "https://support.google.com/business/answer/4669092?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração do texto do HTML",
+      "observacao": "Remover um Perfil da Empresa da sua Conta do Google. Lida; não usada no artigo."
+    },
+    {
+      "url": "https://support.google.com/business/answer/9199701?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração do texto do HTML",
+      "observacao": "Visão geral para agências. Aberta; não usada no artigo."
+    }
+  ],
+  "fontesNaoAbertas": [],
+  "afirmacoes": [
+    {
+      "afirmacao": "Proprietário tem controle total; vários proprietários, um só proprietário principal; administrador não adiciona/remove usuários nem exclui o perfil",
+      "fonte": "https://support.google.com/business/answer/3403100?hl=pt-BR",
+      "trecho": "Cada Perfil da Empresa pode ter vários proprietários, mas apenas um proprietário principal. [...] A única exceção é que eles não podem adicionar ou remover usuários nem excluir o perfil."
+    },
+    {
+      "afirmacao": "Caminho Mais > Configurações do Perfil da Empresa > Pessoas e acesso; lista usuários e convites pendentes",
+      "fonte": "https://support.google.com/business/answer/3403100?hl=pt-BR",
+      "trecho": "Você pode encontrar todos os usuários atuais e os convites pendentes na página \"Pessoas e acesso\"."
+    },
+    {
+      "afirmacao": "Só o proprietário principal transfere a propriedade principal",
+      "fonte": "https://support.google.com/business/answer/3415281?hl=pt-BR",
+      "trecho": "Só o proprietário principal pode transferir a propriedade principal."
+    },
+    {
+      "afirmacao": "Como saber se o perfil já foi reivindicado por outra conta",
+      "fonte": "https://support.google.com/business/answer/14509283?hl=pt-BR",
+      "trecho": "Se você clicar em \"É proprietário desta empresa?\", e aparecer a tela \"Outra pessoa já gerencia este Perfil da Empresa\", seu perfil já foi reivindicado."
+    },
+    {
+      "afirmacao": "Solicitar acesso; dono tem 3 dias; negado: contestar; sem resposta: reivindicar, nem sempre disponível; área de serviço: contato com o suporte",
+      "fonte": "https://support.google.com/business/answer/4566671?hl=pt-BR",
+      "trecho": "O proprietário atual do perfil será notificado por e-mail e terá 3 dias para responder. [...] Dica: a opção de reivindicar um perfil nem sempre está disponível."
+    },
+    {
+      "afirmacao": "Um perfil por negócio; duplicado não aparece; solucionador de contas para login esquecido",
+      "fonte": "https://support.google.com/business/answer/4661508?hl=pt-BR",
+      "trecho": "Cada negócio pode ter apenas um Perfil da Empresa. [...] Se um perfil for identificado como duplicado, ele não vai aparecer na Pesquisa ou no Maps do Google."
+    },
+    {
+      "afirmacao": "Representantes autorizados devem transferir a propriedade imediatamente após a solicitação e incentivar o dono a manter a propriedade",
+      "fonte": "https://support.google.com/business/answer/13763036?hl=pt-BR",
+      "trecho": "Precisam responder às solicitações de acesso de gerenciamento com agilidade e transferir a propriedade do Perfil da Empresa ao proprietário imediatamente após a solicitação."
+    },
+    {
+      "afirmacao": "Propriedade pode ser revogada por muito tempo sem login",
+      "fonte": "https://support.google.com/business/answer/13763036?hl=pt-BR",
+      "trecho": "Você ficou bastante tempo sem fazer login na sua conta."
+    },
+    {
+      "afirmacao": "Transferir exige outro proprietário/administrador; proprietário principal só sai após transferir; espera de 7 dias",
+      "fonte": "https://support.google.com/business/answer/3403100?hl=pt-BR",
+      "trecho": "se você for o proprietário principal, não poderá se remover até transferir a propriedade principal para outra pessoa. [...] é necessário esperar sete dias para gerenciar alguns recursos."
+    },
+    {
+      "afirmacao": "Ações do removido permanecem",
+      "fonte": "https://support.google.com/business/answer/3403100?hl=pt-BR",
+      "trecho": "Essa pessoa não pode mudar as informações comerciais nem realizar tarefas administrativas, mas as respostas a avaliações, postagens, comentários e outras ações dela vão permanecer no Perfil da Empresa."
+    },
+    {
+      "afirmacao": "Limitar acesso, remover ex-funcionários, alias de e-mail, manter acesso próprio, duas etapas; Google não cobra nem pede OTP/PIN",
+      "fonte": "https://support.google.com/business/answer/14509283?hl=pt-BR",
+      "trecho": "O Google não cobra por esse serviço. Dica: o Google nunca solicita uma senha única (OTP) ou um PIN (Número de identificação pessoal)."
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Revisor independente (subagente) conferiu as afirmações contra o texto extraído das seis páginas e os trechos do cabeçalho: aprovado com correções. Corrigido: teste de perfil reivindicado (só 'É proprietário desta empresa?' + 'Outra pessoa já gerencia' indica dono; 'Reivindicar esta empresa' indica não reivindicado); alerta de golpe reescrito como na fonte (pessoas que se passam pelo Google), sem condenar quem cobra por gestão; 'preferir administrador' marcado como recomendação nossa; 'não pode mais mudar nada' ajustado ao texto da fonte; caminho de solicitação inclui empresa híbrida; 'é comum' virou hipótese; abertura ajustada (todo proprietário tem controle total, principal tem a palavra final); exemplos de representante alinhados à fonte; 'senha única (código por SMS)' trocado por '(OTP)' antes da revisão; serviços do artigo reduzidos a consultoria."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}
