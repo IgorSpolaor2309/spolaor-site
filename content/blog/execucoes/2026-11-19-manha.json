@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-19-manha",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "botao-agendar-perfil-da-empresa-google",
   "inicio": "2026-11-19T08:07:04-03:00",
@@ -127,6 +127,10 @@
     "observacoes": "Revisor independente (subagente) conferiu as afirmações contra o texto extraído das três páginas: aprovado com correções. Corrigido: exigência de verificação restrita ao link próprio; cobrança do provedor descrita como no original (orientação de falar com o provedor); tópico 'Saída' atribuído à página certa; 'levam à remoção' -> 'podem levar'; exemplo do WhatsApp marcado como exemplo; item do checklist sobre login reescrito separando exigência do Google (robô) e recomendação nossa (cliente sem criar conta); aviso de que o teste em aba anônima não garante acesso do robô; título da fonte 3 corrigido para 'Diretrizes e políticas de links de empresa'; frase opinativa suavizada; 'link do perfil' -> 'link já cadastrado'."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-19T11:13:04.946Z",
+    "url": "https://blog.spolaortecnologia.com.br/botao-agendar-perfil-da-empresa-google",
+    "commit": "3aeb1951a9eb575d0ceee71b3f4064de1bfb9c22",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
