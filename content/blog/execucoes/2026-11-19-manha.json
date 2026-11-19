@@ -1,0 +1,132 @@
+{
+  "turno": "2026-11-19-manha",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "botao-agendar-perfil-da-empresa-google",
+  "inicio": "2026-11-19T08:07:04-03:00",
+  "fim": "2026-11-19T08:12:06-03:00",
+  "motivo": "Dúvida prática de quem tem horário marcado (como pôr botão de agendar no Google e por que o link é recusado), com três páginas oficiais de ajuda do Google abertas e lidas; serviço principal (agendamento) diferente do artigo anterior (sites/consultoria).",
+  "temas": [
+    {
+      "tema": "Botão de agendar no Perfil da Empresa no Google: link próprio ou provedor e regras de recusa",
+      "notas": "utilidade 5, servico 5, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Fontes oficiais lidas na íntegra; regra pouco conhecida (link de mensagens/rede social não aceito; robô precisa abrir a página) com o que fazer."
+    },
+    {
+      "tema": "Pix Automático para cobrança recorrente: o que a empresa precisa",
+      "notas": "utilidade 4, servico 3, busca 4, original 3",
+      "decisao": "descartado",
+      "motivo": "Páginas do Banco Central não abriram nesta execução (dependem de JavaScript; PDF do regulamento retornou 404). Sem fonte oficial lida, não entra. Fica na pauta."
+    },
+    {
+      "tema": "Fim do teto de R$ 500 do Pix por aproximação",
+      "notas": "utilidade 2, servico 2, busca 3, original 2",
+      "decisao": "descartado",
+      "motivo": "Afeta mais o varejo físico do que os serviços da lista; norma oficial não aberta."
+    },
+    {
+      "tema": "Quando vale sair do pedido pelo WhatsApp para uma loja virtual",
+      "notas": "utilidade 4, servico 5, busca 4, original 2",
+      "decisao": "descartado",
+      "motivo": "Continua sem fonte independente para os critérios."
+    }
+  ],
+  "pesquisas": [
+    "novidade novembro 2026 Pix Automático Banco Central empresas cobrança recorrente",
+    "Google Perfil da Empresa novidade novembro 2026 agendamento reservas",
+    "Pix por aproximação loja virtual checkout Banco Central regras empresas 2026",
+    "Regulamento Pix Automático PDF bcb.gov.br",
+    "support.google.com business link de agendamento Perfil da Empresa adicionar botão reservar",
+    "Perfil da Empresa no Google ajuda links de agendamento adicionar editar remover"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://support.google.com/business/answer/6218037?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração do texto do HTML",
+      "observacao": "Gerenciar seus links de empresas locais. Diz 'até 10 links por categoria', enquanto a página de diretrizes diz 'até 20 links por tipo de transação': número não usado no artigo."
+    },
+    {
+      "url": "https://support.google.com/business/answer/7475773?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração do texto do HTML",
+      "observacao": "Configurar agendamentos usando um provedor."
+    },
+    {
+      "url": "https://support.google.com/business/answer/13769188?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração do texto do HTML (WebFetch só trouxe resumo)",
+      "observacao": "Diretrizes e políticas de links de empresa."
+    }
+  ],
+  "fontesNaoAbertas": [
+    {
+      "url": "https://www.bcb.gov.br/estabilidadefinanceira/pix-automatico",
+      "motivo": "página depende de JavaScript; sem texto. Não usada."
+    },
+    {
+      "url": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/Regulamento_Pix/versoes_futuras/IV_RequisitosMinimosparaExperienciadoUsuario-versao7-1.pdf",
+      "motivo": "404. Não usada."
+    }
+  ],
+  "afirmacoes": [
+    {
+      "afirmacao": "Dá para usar link próprio ou provedor do Reservar com o Google",
+      "fonte": "https://support.google.com/business/answer/7475773?hl=pt-BR",
+      "trecho": "conheça os provedores disponíveis no seu país no Reservar com o Google. Você também pode adicionar seu próprio link ao Perfil da Empresa."
+    },
+    {
+      "afirmacao": "Para adicionar link, a empresa precisa ser verificada e a edição aprovada",
+      "fonte": "https://support.google.com/business/answer/13769188?hl=pt-BR",
+      "trecho": "Para adicionar um link, sua empresa precisa ser verificada. Depois que a empresa for verificada e a edição do link for aprovada, as alterações serão publicadas na Pesquisa Google e no Maps."
+    },
+    {
+      "afirmacao": "Passo a passo: Reserva (Pesquisa) ou Editar perfil (Maps), Adicionar link, URL, Salvar; link preferido",
+      "fonte": "https://support.google.com/business/answer/6218037?hl=pt-BR",
+      "trecho": "Com a Pesquisa Google, selecione Reserva, Entrega de comida ou Retirada e entrega. Com o Google Maps, selecione Editar perfil e o tipo de transação em que você quer incluir um link. Selecione Adicionar link."
+    },
+    {
+      "afirmacao": "Nem toda empresa/país é qualificado para todo link (exemplo do salão)",
+      "fonte": "https://support.google.com/business/answer/13769188?hl=pt-BR",
+      "trecho": "Por exemplo, salões de cabeleireiro podem permitir que os clientes reservem horários, mas não podem oferecer links para pedidos on-line. Dica: alguns países e regiões não estão qualificados para certos links de empresa."
+    },
+    {
+      "afirmacao": "Provedor aparece em até uma semana; pode cobrar; dados de performance não disponíveis para link personalizado",
+      "fonte": "https://support.google.com/business/answer/7475773?hl=pt-BR",
+      "trecho": "quando você faz uma reserva pelo Google, seu provedor pode fazer a cobrança. [...] Os provedores de agendamento vão aparecer no seu Perfil da Empresa em até uma semana. [...] Os dados de performance não estão disponíveis para links personalizados."
+    },
+    {
+      "afirmacao": "Links de terceiros não podem ser excluídos manualmente; provedor deve cancelar em até 5 dias úteis; depois, denunciar",
+      "fonte": "https://support.google.com/business/answer/6218037?hl=pt-BR",
+      "trecho": "Não é possível excluir manualmente provedores de agendamento ou reserva de terceiros [...] Os provedores terceirizados devem processar os pedidos de cancelamento em até 5 dias úteis. Se o provedor terceirizado não remover o link nesse prazo, denuncie uma violação de terceiros."
+    },
+    {
+      "afirmacao": "Link precisa concluir a ação; não valem redes sociais, mensagens, app store, encurtadores; página dedicada por unidade",
+      "fonte": "https://support.google.com/business/answer/13769188?hl=pt-BR",
+      "trecho": "Os links de empresas locais precisam permitir que os clientes concluam a ação designada. [...] não podem ser: Sites de redes sociais Links de mensagens Links da app store Encurtadores de links"
+    },
+    {
+      "afirmacao": "Um link por domínio",
+      "fonte": "https://support.google.com/business/answer/13769188?hl=pt-BR",
+      "trecho": "Você só pode adicionar um link por domínio, e o domínio escolhido já está sendo usado."
+    },
+    {
+      "afirmacao": "Verificação no máximo uma vez por dia, automática e manual; pode remover",
+      "fonte": "https://support.google.com/business/answer/13769188?hl=pt-BR",
+      "trecho": "As verificações serão realizadas no máximo uma vez por dia e podem ser feitas usando ferramentas automatizadas e processos manuais."
+    },
+    {
+      "afirmacao": "Robô precisa acessar sem login/CAPTCHA/bloqueio/cloaking/geobloqueio, status 200 e carregamento completo; erros podem levar à remoção; pode pedir revisão",
+      "fonte": "https://support.google.com/business/answer/13769188?hl=pt-BR",
+      "trecho": "Exija o uso de CAPTCHAs, login ou outras formas de verificação para que nossos rastreadores acessem o conteúdo. [...] O link precisa retornar um código de status \"200 OK\" ou um código de sucesso semelhante."
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Revisor independente (subagente) conferiu as afirmações contra o texto extraído das três páginas: aprovado com correções. Corrigido: exigência de verificação restrita ao link próprio; cobrança do provedor descrita como no original (orientação de falar com o provedor); tópico 'Saída' atribuído à página certa; 'levam à remoção' -> 'podem levar'; exemplo do WhatsApp marcado como exemplo; item do checklist sobre login reescrito separando exigência do Google (robô) e recomendação nossa (cliente sem criar conta); aviso de que o teste em aba anônima não garante acesso do robô; título da fonte 3 corrigido para 'Diretrizes e políticas de links de empresa'; frase opinativa suavizada; 'link do perfil' -> 'link já cadastrado'."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}

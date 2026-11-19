@@ -23,6 +23,8 @@
     { "id": "conciliacao-recebimentos", "servico": "automacao", "pergunta": "Como conferir quem pagou quando os clientes pagam por Pix, boleto e cartão: organizar a baixa dos recebimentos", "situacao": "ideia", "slug": null },
     { "id": "janela-gratuita-anuncio-whatsapp", "servico": "atendimento", "pergunta": "Anúncio que leva ao WhatsApp: como funciona a janela de 7 dias sem cobrança de mensagens e como organizar o atendimento dentro dela (conferir na página oficial da Meta)", "situacao": "ideia", "slug": null },
     { "id": "dono-do-perfil-google", "servico": "consultoria", "pergunta": "Quem é dono do Perfil da Empresa no Google da sua empresa: como conferir proprietários e administradores e recuperar o acesso (confirmar o passo a passo na ajuda oficial do Google)", "situacao": "ideia", "slug": null },
+    { "id": "botao-agendar-google", "servico": "agendamento", "pergunta": "Botão de agendar no Perfil da Empresa no Google: link próprio ou provedor e por que o link é recusado", "situacao": "usado", "slug": "botao-agendar-perfil-da-empresa-google" },
+    { "id": "pix-automatico-recorrencia", "servico": "automacao", "pergunta": "Pix Automático para mensalidades e cobranças recorrentes: o que a empresa precisa pedir ao banco (confirmar no regulamento do Pix, no site do Banco Central, antes de escrever)", "situacao": "ideia", "slug": null },
     { "id": "seguranca-conta-dominio", "servico": "sites", "pergunta": "Token e verificação em duas etapas na conta do Registro.br: como proteger o domínio da empresa contra perda de acesso (confirmar na ajuda oficial do Registro.br)", "situacao": "ideia", "slug": null }
   ]
 }
