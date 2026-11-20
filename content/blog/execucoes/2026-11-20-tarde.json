@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-20-tarde",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "conta-registro-br-token-e-cobranca-falsa",
   "inicio": "2026-11-20T18:09:33-03:00",
@@ -169,6 +169,10 @@
     "observacoes": "Subagente revisor conferiu as 13 afirmações contra o texto extraído e aprovou com correções, todas aplicadas: conferência da linha digitável passou a ser contra o padrão publicado na página (não contra o boleto); descrição dos dados de boleto e Pix completada (linha inteira com X, agência/código cedente, CNPJ e identificador do Pix); chamada final corrigida para conta no nome completo de pessoa física (evitar contradição); explicação da pessoa física atribuída à resposta certa; prazo contado do recebimento e assinatura gov.br como recomendada; condição de senha+e-mail na transferência de contato; novo ID em nome de PF; frase do celular perdido fiel à fonte; chave de acesso descrita como pedida a navegador não reconhecido sem token; período de 1 a 10 anos ligado ao valor; link da página de problemas de acesso no item correspondente; frases sem fonte trocadas; ilustração trocada para não repetir a do artigo de domínio."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-20T21:15:32.212Z",
+    "url": "https://blog.spolaortecnologia.com.br/conta-registro-br-token-e-cobranca-falsa",
+    "commit": "fdd4366c9ed8e21d81d7411de2f82cbf4b5d45a7",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
