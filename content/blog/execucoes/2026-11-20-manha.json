@@ -1,0 +1,175 @@
+{
+  "turno": "2026-11-20-manha",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "pix-automatico-mensalidade-o-que-pedir-ao-banco",
+  "inicio": "2026-11-20T08:07:04-03:00",
+  "fim": "2026-11-20T08:11:44-03:00",
+  "motivo": "Item da pauta (pix-automatico-recorrencia) com fontes oficiais do Banco Central abertas e lidas nesta execução (via API do site do BC e PDFs). Serviço principal automação, diferente dos dois últimos artigos (agendamento e consultoria).",
+  "temas": [
+    {
+      "tema": "Pix Automático para mensalidades: o que pedir ao banco",
+      "notas": "utilidade 5, servico 4, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Fontes oficiais lidas; dúvida prática de quem cobra recorrência; não repete o artigo de cobrança híbrida."
+    },
+    {
+      "tema": "Planilha de clientes ou CRM",
+      "notas": "utilidade 4, servico 5, busca 4, original 2",
+      "decisao": "descartado",
+      "motivo": "Resultados dominados por conteúdo de fornecedores de CRM; pouca contribuição original hoje. Fica na pauta."
+    },
+    {
+      "tema": "Agente de IA da Meta no WhatsApp Business",
+      "notas": "utilidade 4, servico 4, busca 4, original 2",
+      "decisao": "descartado",
+      "motivo": "De novo só reportagens nos resultados; disponibilidade e cobrança no Brasil sem página oficial aberta."
+    },
+    {
+      "tema": "Site ou Instagram",
+      "notas": "utilidade 4, servico 5, busca 4, original 2",
+      "decisao": "descartado",
+      "motivo": "Assunto duradouro sem fonte ou novidade que acrescente hoje; fica para outro turno."
+    }
+  ],
+  "pesquisas": [
+    "Pix Automático novidades novembro 2026 empresas Banco Central",
+    "WhatsApp Business Meta novidade empresas novembro 2026",
+    "quando trocar planilha de clientes por CRM pequena empresa dúvidas",
+    "Pix Automático recebedor requisitos regulamento Resolução BCB jornadas autorização prazo cobrança 2 a 10 dias (extended)",
+    "bcb.gov.br nota Pix Automático conta-salário 2027 resolução setembro 2026"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://www.bcb.gov.br/estabilidadefinanceira/pix-automatico",
+      "lida": true,
+      "como": "curl na API do site do BC (api/paginasite/sitebcb/estabilidadefinanceira/pix-automatico) + extração de texto",
+      "observacao": "A página normal é aplicação JavaScript; o conteúdo vem da API do próprio bcb.gov.br."
+    },
+    {
+      "url": "https://www.bcb.gov.br/estabilidadefinanceira/pix-automatico-pagadores",
+      "lida": true,
+      "como": "curl na API do site do BC",
+      "observacao": ""
+    },
+    {
+      "url": "https://www.bcb.gov.br/estabilidadefinanceira/pix-automatico-recebedores",
+      "lida": true,
+      "como": "curl na API do site do BC",
+      "observacao": ""
+    },
+    {
+      "url": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/pix-automatico-FAQ-participantes.pdf",
+      "lida": true,
+      "como": "curl+pdftotext",
+      "observacao": "FAQ para participantes; PDF criado em maio de 2025."
+    },
+    {
+      "url": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/automatico/guia_pix_automatico.pdf",
+      "lida": true,
+      "como": "curl+pdftotext",
+      "observacao": "Guia de implementação v1.3; PDF de agosto de 2026."
+    },
+    {
+      "url": "https://agenciagov.ebc.com.br/noticias/202610/pix-amplia-funcionalidades-e-reforca-seguranca-com-nova-rodada-de-aperfeicoamentos-regulatorios",
+      "lida": true,
+      "como": "curl+extração de texto",
+      "observacao": "Notícia de 05/10/2026, via Banco Central."
+    }
+  ],
+  "fontesNaoAbertas": [
+    {
+      "url": "https://www.bcb.gov.br/meubc/faqs/p/o-que-e-o-pix-automatico",
+      "motivo": "página JavaScript sem conteúdo no HTML; não usada"
+    }
+  ],
+  "afirmacoes": [
+    {
+      "afirmacao": "O cliente autoriza uma vez; a empresa envia a cobrança nos dias anteriores; o banco do pagador agenda e notifica",
+      "fonte": "https://www.bcb.gov.br/estabilidadefinanceira/pix-automatico",
+      "trecho": "O pagador precisa autorizar uma única vez a operação, sem precisar fazer um novo pagamento a cada nova cobrança."
+    },
+    {
+      "afirmacao": "Recebedor é PJ com CNPJ ativo; instituições devem ter controles antifraude",
+      "fonte": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/pix-automatico-FAQ-participantes.pdf",
+      "trecho": "Pessoa jurídica cujo número de inscrição no CNPJ esteja ativo. Os PSPs recebedores devem estabelecer controles para não disponibilizar o Pix Automático para usuário recebedor suspeito de fraude e má conduta."
+    },
+    {
+      "afirmacao": "Só cobranças periódicas; não vale para pagamento não periódico nem PF",
+      "fonte": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/pix-automatico-FAQ-participantes.pdf",
+      "trecho": "Não se aplica a pagamentos não periódicos a empresas assim como a transferências e pagamentos para pessoas físicas."
+    },
+    {
+      "afirmacao": "Oferta a recebedores é facultativa para a instituição; como pagador é obrigatória (com dispensa possível para pagador PJ)",
+      "fonte": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/pix-automatico-FAQ-participantes.pdf",
+      "trecho": "Faculta-se, porém, a oferta a pagadores pessoa jurídica mediante pedido de dispensa ao BC. Caso atuem como PSPs recebedores, a implementação é facultativa."
+    },
+    {
+      "afirmacao": "Pagador não paga tarifa; recebedor pode pagar, consultar o prestador",
+      "fonte": "https://www.bcb.gov.br/estabilidadefinanceira/pix-automatico",
+      "trecho": "Recebedores Sim, mas o prestador de serviço de pagamento deve ser consultado"
+    },
+    {
+      "afirmacao": "Cobrança acima do valor máximo não é agendada",
+      "fonte": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/pix-automatico-FAQ-participantes.pdf",
+      "trecho": "Quando o valor da cobrança excede o valor máximo (...) o agendamento não irá ocorrer."
+    },
+    {
+      "afirmacao": "Piso para o valor máximo definido pelo recebedor em recorrência variável",
+      "fonte": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/automatico/guia_pix_automatico.pdf",
+      "trecho": "O valor máximo definido pelo usuário pagador pode ser limitado pelo valor mínimo definido a critério do usuário recebedor."
+    },
+    {
+      "afirmacao": "Autorização de valor fixo: cobrança de valor diferente não é agendada",
+      "fonte": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/automatico/guia_pix_automatico.pdf",
+      "trecho": "O valor previsto na instrução de pagamento seja diferente do valor autorizado pelo usuário pagador, nos casos em que a autorização concedida seja para valor fixo"
+    },
+    {
+      "afirmacao": "Cancelamento imediato; recebedor não envia mais cobranças",
+      "fonte": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/pix-automatico-FAQ-participantes.pdf",
+      "trecho": "O cancelamento é imediato, mas caso existam agendamentos pré-existentes com liquidação prevista para o mesmo dia, estes serão mantidos."
+    },
+    {
+      "afirmacao": "Nova tentativa obrigatória 18h-21h no mesmo dia; 7 dias seguintes só se a autorização previr",
+      "fonte": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/pix-automatico-FAQ-participantes.pdf",
+      "trecho": "nova tentativa de liquidação entre 18h e 21h do mesmo dia (...) tentativas nos 7 dias subsequentes, por meio de envio de novas ordens, só serão possíveis se a autorização assim previr."
+    },
+    {
+      "afirmacao": "Cobranças enviadas entre 10 e 2 dias antes",
+      "fonte": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/pix-automatico-FAQ-participantes.pdf",
+      "trecho": "o PSP recebedor deve enviar as instruções de pagamento entre 10 e 2 dias antes da data prevista para a liquidação."
+    },
+    {
+      "afirmacao": "Pedido de autorização fica pendente até 30 dias",
+      "fonte": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/automatico/guia_pix_automatico.pdf",
+      "trecho": "poderão ficar pendentes de resposta por parte do usuário pagador pelo prazo máximo de 30 dias."
+    },
+    {
+      "afirmacao": "Débito automático não migra; recebedor cancela",
+      "fonte": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/pix-automatico-FAQ-participantes.pdf",
+      "trecho": "é responsabilidade do usuário recebedor cancelar o recebimento por débito automático."
+    },
+    {
+      "afirmacao": "Quatro jornadas de autorização; o banco recebedor pode oferecer só algumas",
+      "fonte": "https://www.bcb.gov.br/content/estabilidadefinanceira/pix/pix-automatico-FAQ-participantes.pdf",
+      "trecho": "o PSP que opte por ofertar o Pix Automático na condição de recebedor pode escolher implantar uma ou mais jornadas."
+    },
+    {
+      "afirmacao": "Envio pela infraestrutura do Pix ou do Open Finance conforme a instituição",
+      "fonte": "https://www.bcb.gov.br/estabilidadefinanceira/pix-automatico-recebedores",
+      "trecho": "a adesão ao Pix Automático e o envio das cobranças acontecem pelas infraestruturas do: Pix (...) Open Finance"
+    },
+    {
+      "afirmacao": "Conta-salário a partir de 1º/7/2027",
+      "fonte": "https://agenciagov.ebc.com.br/noticias/202610/pix-amplia-funcionalidades-e-reforca-seguranca-com-nova-rodada-de-aperfeicoamentos-regulatorios",
+      "trecho": "A partir de 1º de julho de 2027, a funcionalidade poderá ser utilizada em contas-salário"
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Subagente revisor conferiu as afirmações contra o texto das fontes e aprovou após correções. Corrigido: frase sem fonte sobre cadastro no BC removida; acrescentada regra da autorização de valor fixo; 'valor mínimo' trocado por 'piso para o valor máximo'; ressalva da dispensa para pagadores PJ; frase inferida sobre conta-salário removida; jornadas parciais atribuídas ao FAQ 3.12; hipótese no exemplo marcada como 'pode'. Sugestão de mencionar MEI não aplicada: não confirmada no texto extraído."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}
