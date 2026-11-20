@@ -1,0 +1,174 @@
+{
+  "turno": "2026-11-20-tarde",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "conta-registro-br-token-e-cobranca-falsa",
+  "inicio": "2026-11-20T18:09:33-03:00",
+  "fim": "2026-11-20T18:14:30-03:00",
+  "motivo": "Turno da manhã (Pix Automático) conferido: nenhuma novidade surgida depois corrige ou complementa o artigo (a afirmação de imprensa sobre 'empresas com mais de seis meses' não aparece nas fontes oficiais e não foi usada). Escolhido o item da pauta seguranca-conta-dominio, com fontes oficiais do Registro.br e do CERT.br abertas e lidas. Ângulo próprio (proteção de acesso e cobranças falsas), diferente do artigo sobre titularidade do domínio, que não trata do token. Serviço principal sites, diferente do artigo anterior (automação).",
+  "temas": [
+    {
+      "tema": "Conta do Registro.br: token, códigos de recuperação e cobranças falsas",
+      "notas": "utilidade 5, servico 4, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Fontes oficiais completas; risco real para o domínio da empresa; não repete o artigo de titularidade."
+    },
+    {
+      "tema": "WhatsApp como chat no Perfil da Empresa no Google",
+      "notas": "utilidade 4, servico 4, busca 4, original 3",
+      "decisao": "descartado",
+      "motivo": "Seria o quarto artigo sobre Perfil da Empresa na semana; novidade do botão de mensagem no Maps só em fonte única não oficial. Fica na pauta."
+    },
+    {
+      "tema": "Atualizar o artigo de Pix Automático da manhã",
+      "notas": "utilidade 3, servico 4, busca 3, original 1",
+      "decisao": "descartado",
+      "motivo": "Nenhuma novidade confirmada em fonte oficial depois da manhã."
+    },
+    {
+      "tema": "Planilha de clientes ou CRM",
+      "notas": "utilidade 4, servico 5, busca 4, original 2",
+      "decisao": "descartado",
+      "motivo": "Sem fonte ou novidade que acrescente hoje."
+    }
+  ],
+  "pesquisas": [
+    "Pix Automático novidade novembro 2026 Banco Central recebedores",
+    "Registro.br verificação em duas etapas conta obrigatória token",
+    "WhatsApp Business Google Perfil da Empresa mudança novembro 2026 pequenas empresas",
+    "registro.br ajuda conta segurança verificação em duas etapas aplicativo autenticador (domínios registro.br, nic.br, cert.br)",
+    "Perfil da Empresa no Google adicionar WhatsApp chat ajuda (support.google.com)"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://registro.br/ajuda/gerenciamento-de-conta/",
+      "lida": true,
+      "como": "Playwright (página montada por JavaScript) + extração de texto",
+      "observacao": "Seções 1 (dados da conta), 2 (chave de acesso) e 3 (token)."
+    },
+    {
+      "url": "https://registro.br/ajuda/problemas-para-acessar-a-conta/",
+      "lida": true,
+      "como": "Playwright + extração de texto",
+      "observacao": "Nova leva de códigos de segurança."
+    },
+    {
+      "url": "https://registro.br/ajuda/procedimentos-administrativos/alteracao-do-email/",
+      "lida": true,
+      "como": "Playwright + extração de texto",
+      "observacao": "Reabilitação de conta, transferência de contato do titular, documentação, prazo."
+    },
+    {
+      "url": "https://registro.br/cobrancas-indevidas",
+      "lida": true,
+      "como": "Playwright + extração de texto",
+      "observacao": "Como reconhecer boleto e Pix verdadeiros."
+    },
+    {
+      "url": "https://cartilha.cert.br/fasciculos/autenticacao/fasciculo-autenticacao.pdf",
+      "lida": true,
+      "como": "curl+pdftotext",
+      "observacao": "Fascículo Autenticação da Cartilha de Segurança para Internet."
+    }
+  ],
+  "fontesNaoAbertas": [
+    {
+      "url": "https://support.google.com/business/answer/15013580?hl=pt-BR",
+      "motivo": "tema descartado; não aberta nem usada"
+    }
+  ],
+  "afirmacoes": [
+    {
+      "afirmacao": "Chave de acesso por e-mail não é fator de autenticação",
+      "fonte": "https://registro.br/ajuda/gerenciamento-de-conta/",
+      "trecho": "Não pois o acesso ao endereço de e-mail permite redefinir a senha, o que os tornam equivalentes como sendo um único fator."
+    },
+    {
+      "afirmacao": "Token é substituto mais seguro e recomendado",
+      "fonte": "https://registro.br/ajuda/gerenciamento-de-conta/",
+      "trecho": "A utilização de token é um substituto de melhor segurança das chaves de acesso, e recomendamos seu uso."
+    },
+    {
+      "afirmacao": "Token opcional, não substitui a senha",
+      "fonte": "https://registro.br/ajuda/gerenciamento-de-conta/",
+      "trecho": "Seu uso é opcional e não substitui a senha do usuário."
+    },
+    {
+      "afirmacao": "Três formas: app (30 s), FIDO2/U2F, códigos de uso único",
+      "fonte": "https://registro.br/ajuda/gerenciamento-de-conta/",
+      "trecho": "sequências numéricas variando a cada 30s (\"Token no aplicativo\"), ou de um dispositivo físico FIDO2/U2F (\"Token físico\"), ou da geração de um conjunto pré-informado de sequências numéricas que só se pode utilizar uma vez"
+    },
+    {
+      "afirmacao": "Ativação em Segurança > Cadastrar Token; Google Authenticator",
+      "fonte": "https://registro.br/ajuda/gerenciamento-de-conta/",
+      "trecho": "clicar em \"Segurança\". Após, clicar em \"Cadastrar Token\" ou \"Cadastrar Novo Token Físico\""
+    },
+    {
+      "afirmacao": "Hora correta, tolerância 30 s",
+      "fonte": "https://registro.br/ajuda/gerenciamento-de-conta/",
+      "trecho": "O sincronismo não precisa ser absoluto, havendo tolerância para erros de até 30 segundos."
+    },
+    {
+      "afirmacao": "Redefinir senha com token exige código de recuperação ou token físico + e-mail; código temporal não serve",
+      "fonte": "https://registro.br/ajuda/gerenciamento-de-conta/",
+      "trecho": "passa a ser necessária a utilização dos códigos de recuperação de acesso ou do Token Físico juntamente com acesso ao e-mail que consta no cadastro para redefinir a senha."
+    },
+    {
+      "afirmacao": "Perdeu o dispositivo: códigos de recuperação e Alterar Token",
+      "fonte": "https://registro.br/ajuda/gerenciamento-de-conta/",
+      "trecho": "será necessário o acesso ao sistema através dos códigos de recuperação de acesso ou do Token físico FIDO2/U2F, caso ativado, e habilitar o novo dispositivo através do QRCODE gerado para seu usuário, clicando em \"Alterar Token\"."
+    },
+    {
+      "afirmacao": "10 códigos; sem nada, procedimento administrativo",
+      "fonte": "https://registro.br/ajuda/gerenciamento-de-conta/",
+      "trecho": "Caso não possua acesso a lista impressa contendo os 10 códigos de recuperação de acesso ou ao Token no aplicativo ou físico , será necessário a recuperação do acesso através de procedimento administrativo."
+    },
+    {
+      "afirmacao": "Nova leva de códigos invalida as anteriores",
+      "fonte": "https://registro.br/ajuda/problemas-para-acessar-a-conta/",
+      "trecho": "Isso invalidará todos os códigos de segurança já emitidos para esse token."
+    },
+    {
+      "afirmacao": "Reabilitação para contas com nome completo de PF, inclusive perda do token; prazo 2 dias úteis",
+      "fonte": "https://registro.br/ajuda/procedimentos-administrativos/alteracao-do-email/",
+      "trecho": "Indicado para contas cadastradas com nome completo da PESSOA FÍSICA [...] Também indicado para casos de perda de acesso através do Token cadastrado. / O prazo para análise é 2 dias úteis, contados a partir da data de recebimento da documentação."
+    },
+    {
+      "afirmacao": "Conta abreviada ou PJ: transferência do contato do titular; novo ID no nome completo de PF",
+      "fonte": "https://registro.br/ajuda/procedimentos-administrativos/alteracao-do-email/",
+      "trecho": "titulares (entidades) administrados por contas cadastradas com nomes abreviados ou em nome de PESSOA JURÍDICA, que não recordam da senha e não tenham acesso ao e-mail de cadastro, deverão solicitar a transferência do contato do titular."
+    },
+    {
+      "afirmacao": "Administração sempre por pessoa física",
+      "fonte": "https://registro.br/ajuda/gerenciamento-de-conta/",
+      "trecho": "Apesar de um domínio poder pertencer a uma pessoa jurídica, a administração sempre será realizada por uma pessoa física."
+    },
+    {
+      "afirmacao": "Golpes com boletos e Pix; emissão no site; sem correio; e-mail @registro.br",
+      "fonte": "https://registro.br/cobrancas-indevidas",
+      "trecho": "O Registro.br não envia cobranças por correio, em nenhuma circunstância. As cobranças por e-mail vem do domínio @registro.br e nunca de qualquer outro domínio."
+    },
+    {
+      "afirmacao": "Linha digitável idêntica, variando só nos X; conferir no app",
+      "fonte": "https://registro.br/cobrancas-indevidas",
+      "trecho": "A linha digitável do boleto emitido pelo Registro.br deve ser exatamente idêntica a linha apresentada acima, com variação apenas das posições identificadas com a letra X."
+    },
+    {
+      "afirmacao": "Sem termos opcional/facultativo/hospedagem/e-mail; 1 a 10 anos",
+      "fonte": "https://registro.br/cobrancas-indevidas",
+      "trecho": "não possuem termos como \"opcional\", \"facultativo\", \"hospedagem\" ou \"e-mail\" em seu conteúdo."
+    },
+    {
+      "afirmacao": "CERT.br: preferir chave física ou app; SMS só sem alternativa; códigos de reserva",
+      "fonte": "https://cartilha.cert.br/fasciculos/autenticacao/fasciculo-autenticacao.pdf",
+      "trecho": "Prefira chave de segurança física ou geradores de códigos de verificação por aplicativo de celular • use SMS apenas se não houver outras opções"
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Subagente revisor conferiu as 13 afirmações contra o texto extraído e aprovou com correções, todas aplicadas: conferência da linha digitável passou a ser contra o padrão publicado na página (não contra o boleto); descrição dos dados de boleto e Pix completada (linha inteira com X, agência/código cedente, CNPJ e identificador do Pix); chamada final corrigida para conta no nome completo de pessoa física (evitar contradição); explicação da pessoa física atribuída à resposta certa; prazo contado do recebimento e assinatura gov.br como recomendada; condição de senha+e-mail na transferência de contato; novo ID em nome de PF; frase do celular perdido fiel à fonte; chave de acesso descrita como pedida a navegador não reconhecido sem token; período de 1 a 10 anos ligado ao valor; link da página de problemas de acesso no item correspondente; frases sem fonte trocadas; ilustração trocada para não repetir a do artigo de domínio."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}
