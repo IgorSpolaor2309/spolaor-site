@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-20-manha",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "pix-automatico-mensalidade-o-que-pedir-ao-banco",
   "inicio": "2026-11-20T08:07:04-03:00",
@@ -170,6 +170,10 @@
     "observacoes": "Subagente revisor conferiu as afirmações contra o texto das fontes e aprovou após correções. Corrigido: frase sem fonte sobre cadastro no BC removida; acrescentada regra da autorização de valor fixo; 'valor mínimo' trocado por 'piso para o valor máximo'; ressalva da dispensa para pagadores PJ; frase inferida sobre conta-salário removida; jornadas parciais atribuídas ao FAQ 3.12; hipótese no exemplo marcada como 'pode'. Sugestão de mencionar MEI não aplicada: não confirmada no texto extraído."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-20T11:12:52.219Z",
+    "url": "https://blog.spolaortecnologia.com.br/pix-automatico-mensalidade-o-que-pedir-ao-banco",
+    "commit": "c2e0969ae474fcd10204e6e6a9ed25e0edf33317",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
