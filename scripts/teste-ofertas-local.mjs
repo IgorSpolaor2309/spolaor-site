@@ -102,10 +102,25 @@ async function contactForm(p) {
   const f = p.locator("#formulario form, #orcamento form, main form").first();
   await f.scrollIntoViewIfNeeded();
   await f.locator("button[aria-pressed]").first().click();
+  await f.locator("#mensagem").fill("TESTE: preciso de um orçamento");
   await f.getByLabel("Seu nome", { exact: true }).fill(NOME);
-  await f.getByLabel("Empresa", { exact: true }).fill("TESTE Spolaor");
+  await f.locator("#empresa").fill("TESTE Spolaor");
   await f.getByLabel("WhatsApp").fill("11900000000");
   await f.getByLabel("E-mail").fill("teste@example.com");
+  await f.locator("button[type=submit]").click();
+}
+// Formulário de pedido (home, /analise, /contato): escolhe o serviço, responde à pergunta, segue para o contato.
+async function pedidoForm(p, servico = "Loja virtual") {
+  const f = p.locator("form[data-formulario=pedido]").first();
+  await f.scrollIntoViewIfNeeded();
+  await f.locator("label", { hasText: servico }).click();
+  await f.locator("textarea").fill("TESTE: vendo roupas pelo Instagram e anoto à mão");
+  await f.getByLabel("Site ou Instagram atual").fill("@teste.loja");
+  await f.getByLabel("Ainda estou começando").check();
+  await f.getByRole("button", { name: "Continuar" }).click();
+  await p.waitForTimeout(400);
+  await f.getByLabel("Seu nome", { exact: true }).fill(NOME);
+  await f.getByLabel("WhatsApp").fill("11900000000");
   await f.locator("button[type=submit]").click();
 }
 async function siteForm(p) {
@@ -209,7 +224,7 @@ for (const [path, fill, interesse, origem] of cases) {
   await ctx.close();
 }
 // 3f) demais formulários seguem enviando (home, /automacao, /sites, /contato, segmentos)
-for (const [path, fill, origem] of [["/", diagFormAny, "home"], ["/automacao", diagFormAny, "automacao"], ["/corretores", diagFormFixed, "corretores"], ["/sites", contactForm, "sites"], ["/contato", contactForm, "contato"]]) {
+for (const [path, fill, origem] of [["/", pedidoForm, "home"], ["/analise", pedidoForm, "pagina-analise"], ["/automacao", diagFormAny, "automacao"], ["/corretores", diagFormFixed, "corretores"], ["/sites", contactForm, "sites"], ["/contato", pedidoForm, "contato"]]) {
   const { ctx, p } = await newPage();
   await p.goto(B + path, { waitUntil: "networkidle" });
   const before = received.length;
@@ -223,15 +238,60 @@ async function diagFormAny(p) {
   await f.locator("label:has(input[type=radio])").first().click();
   await f.locator("div[role=radiogroup]").last().locator("label").first().click();
   await f.getByRole("button", { name: "Continuar" }).click(); await p.waitForTimeout(400);
-  await f.getByLabel("Seu nome", { exact: true }).fill(NOME); await f.getByLabel("Empresa", { exact: true }).fill("TESTE Spolaor"); await f.getByLabel("WhatsApp").fill("11900000000");
+  await f.getByLabel("Seu nome", { exact: true }).fill(NOME); await f.getByLabel("Nome do negócio (opcional)", { exact: true }).fill("TESTE Spolaor"); await f.getByLabel("WhatsApp").fill("11900000000");
   await f.locator("button[type=submit]").click();
 }
 async function diagFormFixed(p) {
   const f = p.locator("#analise form").first(); await f.scrollIntoViewIfNeeded();
   await f.locator("div[role=radiogroup]").last().locator("label").first().click();
   await f.getByRole("button", { name: "Continuar" }).click(); await p.waitForTimeout(400);
-  await f.getByLabel("Seu nome", { exact: true }).fill(NOME); await f.getByLabel("Empresa", { exact: true }).fill("TESTE Spolaor"); await f.getByLabel("WhatsApp").fill("11900000000");
+  await f.getByLabel("Seu nome", { exact: true }).fill(NOME); await f.getByLabel("Nome do negócio (opcional)", { exact: true }).fill("TESTE Spolaor"); await f.getByLabel("WhatsApp").fill("11900000000");
   await f.locator("button[type=submit]").click();
+}
+
+// 3g) pedido geral: sem escolha não avança; a pergunta muda com o serviço e a resposta é obrigatória; e-mail traz
+//      serviço escolhido, pergunta e resposta, Instagram e "ainda está começando"; nada de "Diagnóstico geral".
+{
+  const { ctx, p } = await newPage();
+  await p.goto(B + "/", { waitUntil: "networkidle" });
+  let calls = 0;
+  p.on("request", (r) => r.url().endsWith("/api/lead") && calls++);
+  const f = p.locator("form[data-formulario=pedido]").first();
+  await f.scrollIntoViewIfNeeded();
+  await f.getByRole("button", { name: "Continuar" }).click();
+  await p.waitForTimeout(300);
+  ok((await f.getByText("Escolha o que você precisa.").count()) === 1, "home: sem escolher o serviço não avança");
+  await f.locator("label", { hasText: "Site ou landing page" }).click();
+  const q1 = await f.locator("textarea").evaluate((t) => t.labels[0].textContent);
+  await f.locator("label", { hasText: "Automação" }).click();
+  const q2 = await f.locator("textarea").evaluate((t) => t.labels[0].textContent);
+  ok(q1 !== q2 && /site/i.test(q1) && /sozinho/i.test(q2), `home: pergunta adaptada ao serviço ("${q1}" → "${q2}")`);
+  await f.getByRole("button", { name: "Continuar" }).click();
+  await p.waitForTimeout(300);
+  ok((await f.getByText("Conte em poucas palavras o que você quer resolver.").count()) === 1 && calls === 0, "home: resposta da pergunta é obrigatória (nada enviado)");
+  ok((await f.getByLabel("Ainda não tenho site nem Instagram").count()) === 1 && (await f.getByLabel("Ainda estou começando").count()) === 1, "home: negócio e site/Instagram opcionais, com opção de não ter");
+  await ctx.close();
+}
+{
+  const { ctx, p } = await newPage();
+  await p.goto(B + "/?utm_source=facebook&utm_medium=paid&utm_campaign=teste&campaign_id=111111&adset_id=222222&ad_id=333333", { waitUntil: "networkidle" });
+  const before = received.length;
+  await pedidoForm(p, "Loja virtual");
+  await p.waitForTimeout(1500);
+  const m = received[received.length - 1];
+  ok(received.length === before + 1, "home: pedido enviado");
+  ok(/Interesse: Pedido: Loja virtual/.test(m.text) && /Precisa de: Loja virtual/.test(m.text) && /Pergunta: O que você vende/.test(m.text) && /Resposta: TESTE: vendo roupas/.test(m.text), "e-mail traz serviço escolhido, pergunta e resposta");
+  ok(/Instagram: @teste\.loja/.test(m.text) && !/^Site:/m.test(m.text) && /Empresa: Ainda está começando/.test(m.text) && /Formulário: Pedido/.test(m.text), "e-mail: @ vira Instagram (não site), negócio “ainda está começando”, formulário identificado");
+  ok(!/Diagn[óo]stico geral/.test(m.text + m.subject), `nada de “Diagnóstico geral” no pedido (assunto="${m.subject}")`);
+  await ctx.close();
+}
+{
+  const { ctx, p } = await newPage();
+  await p.goto(B + "/contato?interesse=Automação#formulario", { waitUntil: "networkidle" });
+  await p.waitForTimeout(500);
+  const marcado = await p.locator("form[data-formulario=pedido] input[type=radio]:checked").evaluate((i) => i.value).catch(() => null);
+  ok(marcado === "automacao", `/contato?interesse=Automação chega com Automação marcada (marcado=${marcado})`);
+  await ctx.close();
 }
 
 console.log(out.join("\n"));

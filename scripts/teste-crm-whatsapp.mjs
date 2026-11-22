@@ -344,7 +344,7 @@ try {
   ok(oA.aguardando === "nos" && oA.pendencia === "resposta" && oA.etapa === "em_conversa" && oA.ultima_entrada_em, "resposta do interessado: depende de nós, motivo “resposta”, etapa Em conversa");
   await page.goto(`${B}/leads`);
   const item = await texto(page, `#respostas [data-oportunidade="${a.o.id}"]`);
-  ok(/Marina Albuquerque/.test(item) && /Respondeu e aguarda retorno/.test(item) && /Disse: Oi! Pode ser amanhã às 15h\?/.test(item) && /Lojas virtuais/.test(item) && /esperando/.test(item) && /sem responsável/.test(item), "fila “Depende de mim”: nome, serviço, motivo, última mensagem, tempo de espera e responsável");
+  ok(/Marina Albuquerque/.test(item) && /Respondeu e aguarda retorno/.test(item) && /Disse: Oi! Pode ser amanhã às 15h\?/.test(item) && /Loja virtual|Lojas virtuais/.test(item) && /esperando/.test(item) && /sem responsável/.test(item), "fila “Depende de mim”: nome, serviço, motivo, última mensagem, tempo de espera e responsável");
   // repetição
   await recebida(a.fone, "Oi! Pode ser amanhã às 15h?", { wamid: wamidR1, opcoes: { id: evR1 } });
   await recebida(a.fone, "Oi! Pode ser amanhã às 15h?", { wamid: wamidR1 });
@@ -884,10 +884,16 @@ try {
   secao("Formulários do site e medição preservados");
   const { ctx: ctxPub } = await contexto();
   const pub = await ctxPub.newPage();
-  for (const [caminho, form] of [["/contato", "contato"], ["/analise", "diagnóstico"], ["/diagnostico-site", "diagnóstico de site"]]) {
+  for (const [caminho, form] of [["/contato", "pedido"], ["/analise", "pedido"], ["/corretores", "diagnóstico"], ["/diagnostico-site", "diagnóstico de site"]]) {
     await pub.goto(`${B}${caminho}`);
-    if (caminho === "/analise") {
-      // formulário em dois passos: o texto fica no segundo, junto ao botão de envio
+    if (form === "pedido") {
+      // pedido em dois passos: o texto fica no segundo, junto ao botão de envio
+      const f = pub.locator("form[data-formulario=pedido]").first();
+      await f.locator("label:has(input[type=radio])").first().click();
+      await f.locator("textarea").fill("Quero receber pedidos pelo site");
+      await f.locator('button:has-text("Continuar")').click();
+      await pub.waitForSelector("[data-aviso-retorno]", { timeout: 5000 }).catch(() => {});
+    } else if (form === "diagnóstico") {
       for (const g of await pub.locator('form[aria-label="Solicitar diagnóstico gratuito"] [role="radiogroup"]').all()) await g.locator("label").first().click();
       await pub.click('form[aria-label="Solicitar diagnóstico gratuito"] button:has-text("Continuar")');
       await pub.waitForSelector("[data-aviso-retorno]", { timeout: 5000 }).catch(() => {});
@@ -917,7 +923,7 @@ try {
   secao("Fila: filtro por serviço, atualização automática e celular");
   await page.goto(`${B}/leads?servico=lojas`);
   const soLojas = await page.locator("[data-oportunidade]").evaluateAll((els) => els.map((e) => e.textContent));
-  ok(soLojas.length > 0 && soLojas.every((t) => /Lojas virtuais/.test(t)), `filtro por serviço na fila: só “Lojas virtuais” (${soLojas.length})`);
+  ok(soLojas.length > 0 && soLojas.every((t) => /Loja virtual|Lojas virtuais/.test(t)), `filtro por serviço na fila: só “Lojas virtuais” (${soLojas.length})`);
   await page.goto(`${B}/leads/lista?servico=diagnostico`);
   ok(/Rafaela Moura/.test(await texto(page)) && !/Marina Albuquerque/.test(await texto(page)), "filtro por serviço na lista");
   await page.goto(`${B}/leads/funil?servico=automacao`);

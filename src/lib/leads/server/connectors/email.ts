@@ -1,3 +1,4 @@
+import { FORMULARIOS, PEDIDOS } from "../../schema";
 import type { LeadConnector, LeadRecord } from "../types";
 
 // Entrega cada lead por e-mail, a partir do servidor, usando a API HTTP do Resend.
@@ -14,18 +15,23 @@ const oneLine = (s: string) => s.replace(/[\r\n]+/g, " ").trim();
 
 const rows: [string, (l: LeadRecord) => string | undefined][] = [
   ["Interesse", (l) => l.interesse],
+  ["Precisa de", (l) => (l.pedido ? PEDIDOS[l.pedido].rotulo : undefined)],
+  ["Pergunta", (l) => l.pergunta],
+  ["Resposta", (l) => (l.pergunta ? l.mensagem : undefined)],
   ["Nome", (l) => l.nome],
-  ["Empresa", (l) => l.empresa],
+  ["Empresa", (l) => l.empresa || (l.semEmpresa ? "Ainda está começando" : undefined)],
   ["WhatsApp", (l) => l.whatsapp],
   ["E-mail", (l) => l.email],
-  ["Site", (l) => l.site],
+  ["Site", (l) => l.site || (l.semSite ? "Ainda não tem site nem Instagram" : undefined)],
+  ["Instagram", (l) => (l.instagram ? `@${l.instagram}` : undefined)],
   ["Segmento", (l) => l.segmento],
   ["Principal problema", (l) => l.problema],
   ["Serviços de interesse", (l) => l.servicos?.join(", ")],
   ["Melhorias", (l) => l.melhorias?.join(", ")],
   ["Urgência/prazo", (l) => l.urgencia],
-  ["Mensagem", (l) => l.mensagem],
+  ["Mensagem", (l) => (l.pergunta ? undefined : l.mensagem)],
   ["Origem do lead", (l) => l.origem],
+  ["Formulário", (l) => (l.formulario ? FORMULARIOS[l.formulario] : undefined)],
   ["Tipo", (l) => l.tipo],
   ["Página do envio", (l) => l.pagina],
   ["Primeira página da visita", (l) => l.entrada],

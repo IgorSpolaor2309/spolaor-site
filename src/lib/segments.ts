@@ -87,6 +87,8 @@ export function pageCta(pathname: string): { href: string; target: string | null
   if (pathname === "/sites") return { href: "#orcamento", target: "orcamento", label: "Pedir orçamento" };
   if (pathname === "/sites/pacote") return { href: "/sites/pacote/checkout", target: null, label: "Quero meu site" };
   if (pathname === "/automacao") return { href: "#analise", target: "analise", label: "Diagnóstico do processo" };
+  // Na home o formulário é o pedido geral (o que a pessoa precisa), não só o diagnóstico.
+  if (pathname === "/") return { href: "#analise", target: "analise", label: "Fazer meu pedido" };
   if (PAGES_WITH_FORM.includes(pathname)) return { href: "#analise", target: "analise", label: "Analisar minha empresa" };
   return { href: "/analise#analise", target: null, label: "Analisar minha empresa" };
 }

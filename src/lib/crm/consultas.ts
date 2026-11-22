@@ -73,6 +73,7 @@ function mapOp(r: Row): Oportunidade {
       site: s("c_site"),
     },
     falha: r.falha === true,
+    falhaMotivo: s("falha_msg") ?? s("falha_aviso"),
     pendencia: s("pendencia"),
     ultimaEntradaEm: d("ultima_entrada_em"),
     avisoVersao: s("aviso_versao"),
@@ -89,6 +90,12 @@ const base = (sql: Db) => sql`
     u.nome as responsavel_nome,
     (exists (select 1 from crm_envios e where e.oportunidade_id = o.id and e.aviso_status = 'falhou')
       or exists (select 1 from crm_mensagens m where m.oportunidade_id = o.id and m.status in ('falhou', 'incerta'))) as falha,
+    (select case when m.status = 'incerta' then 'Resultado incerto: o provedor não confirmou se a mensagem saiu'
+        else concat_ws(': ', case m.canal when 'email' then 'E-mail não enviado' when 'whatsapp' then 'WhatsApp não enviado' else 'Mensagem não enviada' end, nullif(m.erro, '')) end
+      from crm_mensagens m where m.oportunidade_id = o.id and m.status in ('falhou', 'incerta')
+      order by coalesce(m.tentado_em, m.criado_em) desc limit 1) as falha_msg,
+    (select concat_ws(': ', 'Aviso interno por e-mail não enviado', nullif(e.aviso_erro, '')) from crm_envios e
+      where e.oportunidade_id = o.id and e.aviso_status = 'falhou' order by e.recebido_em desc limit 1) as falha_aviso,
     um.corpo as um_corpo, um.direcao as um_direcao, um.em as um_em, um.tipo as um_tipo, um.automatica as um_automatica,
     t.status as t_status, t.resultado as t_resultado
   from crm_oportunidades o

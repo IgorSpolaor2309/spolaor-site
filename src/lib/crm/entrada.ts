@@ -88,9 +88,9 @@ export async function registrarEnvio(lead: LeadRecord, avisoLigado: boolean): Pr
       select e.oportunidade_id, o.contato_id, o.teste, o.validacao from crm_envios e join crm_oportunidades o on o.id = e.oportunidade_id where e.id = ${lead.id}`;
     if (ja) return { oportunidadeId: ja.oportunidade_id, contatoId: ja.contato_id, gravado: false, novaOportunidade: false, teste: ja.teste, validacao: ja.validacao, tarefaId: null };
 
-    const contato = await acharOuCriarContato(tx, { nome: lead.nome, empresa: lead.empresa, whatsapp: lead.whatsapp, email: lead.email, site: lead.site });
+    const contato = await acharOuCriarContato(tx, { nome: lead.nome, empresa: lead.empresa, whatsapp: lead.whatsapp, email: lead.email, site: lead.site, instagram: lead.instagram });
     const servico = lead.interesse ?? null;
-    const categoria = categoriaDoEnvio(lead.origem, lead.servicos);
+    const categoria = categoriaDoEnvio(lead.origem, lead.servicos, lead.pedido);
     // Validação também conta como teste: nunca entra nos indicadores.
     const teste = validacao || /^\s*teste\b/i.test(lead.nome);
 
@@ -108,9 +108,11 @@ export async function registrarEnvio(lead: LeadRecord, avisoLigado: boolean): Pr
           update crm_tarefas set status = 'cancelada', resultado = 'Validação anterior encerrada.', atualizado_em = now()
           where status = 'pendente' and oportunidade_id in (select id from crm_oportunidades where contato_id = ${contato.id} and validacao)`;
       }
+      // "Mesmo serviço" = mesma categoria. Antes era o rótulo da página (servico), e o mesmo pedido enviado pela home e
+      // por /analise ("Diagnóstico geral (home)" × "Diagnóstico geral") abria duas oportunidades para a mesma pessoa.
       const [aberta] = await tx<{ id: string; etapa: string }[]>`
         select id, etapa from crm_oportunidades
-        where contato_id = ${contato.id} and servico is not distinct from ${servico} and etapa in ${tx(ETAPAS_ABERTAS)}
+        where contato_id = ${contato.id} and coalesce(categoria, 'a-classificar') = ${categoria} and etapa in ${tx(ETAPAS_ABERTAS)}
         order by recebido_em desc limit 1 for update`;
       if (aberta) {
         oportunidadeId = aberta.id;
@@ -129,7 +131,7 @@ export async function registrarEnvio(lead: LeadRecord, avisoLigado: boolean): Pr
           oportunidadeId: aberta.id,
           tipo: "novo_envio",
           texto: lead.mensagem || lead.problema || null,
-          dados: { envio: lead.id, pagina: lead.pagina ?? null, origem: lead.origem },
+          dados: { envio: lead.id, pagina: lead.pagina ?? null, origem: lead.origem, formulario: lead.formulario ?? null, pedido: lead.pedido ?? null },
           em: lead.createdAt,
         });
       }
@@ -139,6 +141,11 @@ export async function registrarEnvio(lead: LeadRecord, avisoLigado: boolean): Pr
       novaOportunidade = true;
       const dados = Object.fromEntries(
         Object.entries({
+          formulario: lead.formulario,
+          pedido: lead.pedido,
+          pergunta: lead.pergunta,
+          semEmpresa: lead.semEmpresa || undefined,
+          instagram: lead.instagram,
           segmento: lead.segmento,
           problema: lead.problema,
           urgencia: lead.urgencia,

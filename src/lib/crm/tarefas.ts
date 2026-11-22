@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { servicoParaMensagem } from "./pedido";
 import { iaConfig } from "@/lib/ia/config";
 import { efeitosDoEnvioAceito } from "./conversa";
 import { db } from "./db";
@@ -126,11 +127,12 @@ async function executar(id: string): Promise<string> {
   const [o] = await sql<
     {
       id: string; etapa: string; teste: boolean; validacao: boolean; assumida_em: Date | null; recebido_em: Date; categoria: string | null; servico: string | null; aviso_versao: string | null;
+      dados: Record<string, unknown> | null; origem: string | null; canal: string; registro: string;
       contato_id: string; nome: string; empresa: string | null; whatsapp: string | null; email: string | null; wa_bloqueado_em: Date | null;
       respondeu: boolean; recepcao_recente: boolean; em_conversa: boolean; idade_horas: number;
     }[]
   >`
-    select o.id, o.etapa, o.teste, o.validacao, o.assumida_em, o.recebido_em, o.categoria, o.servico, o.aviso_versao,
+    select o.id, o.etapa, o.teste, o.validacao, o.assumida_em, o.recebido_em, o.categoria, o.servico, o.aviso_versao, o.dados, o.origem, o.canal, o.registro,
       c.id as contato_id, c.nome, c.empresa, c.whatsapp, c.email, c.wa_bloqueado_em,
       extract(epoch from (now() - o.recebido_em)) / 3600.0 as idade_horas,
       exists (select 1 from crm_mensagens m where m.contato_id = c.id and m.direcao = 'entrada' and coalesce(m.ocorrida_em, m.criado_em) >= o.recebido_em) as respondeu,
@@ -225,13 +227,16 @@ async function executar(id: string): Promise<string> {
   return encerrar(id, o.id, { status: "falhou", resultado: m?.erro ?? "O provedor recusou a mensagem." });
 }
 
-async function primeiroContatoEmail(id: string, o: { id: string; nome: string; empresa: string | null; servico: string | null; email: string | null }) {
+async function primeiroContatoEmail(
+  id: string,
+  o: { id: string; nome: string; empresa: string | null; servico: string | null; email: string | null; dados: Record<string, unknown> | null; origem: string | null; canal: string; registro: string },
+) {
   const sql = await db();
   const cfg = emailCliente();
   if (!cfg.pronto) return encerrar(id, o.id, { status: "falhou", resultado: `E-mail ao interessado não configurado (${cfg.falta.join(", ")}).` });
   if (!o.email) return encerrar(id, o.id, { status: "falhou", resultado: "O contato não informou e-mail." });
   const modelo = (await modelos()).find((m) => m.id === "email-formulario")!;
-  const v = { nome: o.nome, empresa: o.empresa, servico: o.servico };
+  const v = { nome: o.nome, empresa: o.empresa, servico: servicoParaMensagem(o) };
   const mid = await enfileirarEmail(sql, { oportunidadeId: o.id, assunto: preencher(modelo.assunto ?? "", v), corpo: preencher(modelo.corpo, v), chave: `primeiro-contato:${o.id}`, automatica: true });
   if (!mid) return encerrar(id, o.id, { status: "cancelada", resultado: "A primeira mensagem desta oportunidade já tinha sido criada." });
   await sql`update crm_tarefas set mensagem_id = ${mid}, canal = 'email' where id = ${id}`;

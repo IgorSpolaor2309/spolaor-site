@@ -14,8 +14,9 @@ const urgencies = ["Quero resolver logo", "Nos próximos 30 dias", "Nos próximo
 type Errors = Partial<Record<keyof LeadPayload, string>>;
 
 /**
- * Pedido direto de projeto (tipo "projeto"), sem passar pelo diagnóstico. Usado em /contato e,
- * com as opções de site, como pedido de orçamento em /sites.
+ * Pedido de orçamento das páginas de serviço (tipo "projeto", formulário "orcamento"): /sites, /lojas-virtuais,
+ * /agendamento-online e /atendimento-ia. O serviço é o da página; a pergunta da mensagem é a da página e é obrigatória.
+ * Nome do negócio e site/Instagram são opcionais, com "ainda estou começando" e "ainda não tenho".
  */
 export function ContactForm({
   origem = "contato",
@@ -41,7 +42,10 @@ export function ContactForm({
   const [errors, setErrors] = useState<Errors>({});
   const [data, setData] = useState<LeadPayload>({
     tipo: "projeto",
+    formulario: "orcamento",
     nome: "",
+    semEmpresa: false,
+    semSite: false,
     empresa: "",
     whatsapp: "",
     email: "",
@@ -104,7 +108,6 @@ export function ContactForm({
 
   const fields = [
     ["nome", "Seu nome", "text", "name"],
-    ["empresa", "Empresa", "text", "organization"],
     ["whatsapp", "WhatsApp", "tel", "tel"],
     ["email", "E-mail", "email", "email"],
   ] as const;
@@ -135,6 +138,69 @@ export function ContactForm({
         </div>
       </div>
 
+      <div>
+        <label htmlFor="mensagem" className="mb-2 block text-sm font-medium">
+          {messageLabel}
+        </label>
+        <textarea
+          id="mensagem"
+          rows={4}
+          required
+          maxLength={4000}
+          className="field resize-none"
+          value={data.mensagem}
+          onChange={(e) => set("mensagem", e.target.value)}
+          aria-invalid={!!errors.mensagem}
+          aria-describedby={errors.mensagem ? "mensagem-err" : undefined}
+        />
+        {errors.mensagem && (
+          <p id="mensagem-err" className="mt-1.5 text-sm text-ember-soft">
+            {errors.mensagem}
+          </p>
+        )}
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label htmlFor="empresa" className="mb-2 block text-sm font-medium">
+            Nome do negócio <span className="font-normal text-dim">(opcional)</span>
+          </label>
+          <input
+            id="empresa"
+            type="text"
+            autoComplete="organization"
+            className="field disabled:opacity-60"
+            placeholder={data.semEmpresa ? "Ainda estou começando" : undefined}
+            disabled={data.semEmpresa}
+            value={data.empresa}
+            onChange={(e) => set("empresa", e.target.value)}
+          />
+          <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-muted">
+            <input type="checkbox" className="h-4 w-4 accent-signal" checked={!!data.semEmpresa} onChange={(e) => setData((d) => ({ ...d, semEmpresa: e.target.checked, empresa: e.target.checked ? "" : d.empresa }))} />
+            Ainda estou começando
+          </label>
+        </div>
+        <div>
+          <label htmlFor="site-c" className="mb-2 block text-sm font-medium">
+            Site ou Instagram atual <span className="font-normal text-dim">(se tiver)</span>
+          </label>
+          <input
+            id="site-c"
+            type="text"
+            inputMode="url"
+            className="field disabled:opacity-60"
+            placeholder={data.semSite ? "Ainda não tenho" : "suaempresa.com.br ou @seuperfil"}
+            disabled={data.semSite}
+            value={data.site}
+            onChange={(e) => set("site", e.target.value)}
+          />
+          <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-muted">
+            <input type="checkbox" className="h-4 w-4 accent-signal" checked={!!data.semSite} onChange={(e) => setData((d) => ({ ...d, semSite: e.target.checked, site: e.target.checked ? "" : d.site }))} />
+            Ainda não tenho site nem Instagram
+          </label>
+        </div>
+      </div>
+
       <div className="grid gap-5 sm:grid-cols-2">
         {fields.map(([k, label, type, ac]) => (
           <div key={k}>
@@ -159,20 +225,6 @@ export function ContactForm({
             )}
           </div>
         ))}
-      </div>
-
-      <div>
-        <label htmlFor="site-c" className="mb-2 block text-sm font-medium">
-          Site atual <span className="font-normal text-dim">(se tiver)</span>
-        </label>
-        <input id="site-c" type="text" inputMode="url" className="field" placeholder="suaempresa.com.br" value={data.site} onChange={(e) => set("site", e.target.value)} />
-      </div>
-
-      <div>
-        <label htmlFor="mensagem" className="mb-2 block text-sm font-medium">
-          {messageLabel}
-        </label>
-        <textarea id="mensagem" rows={4} className="field resize-none" value={data.mensagem} onChange={(e) => set("mensagem", e.target.value)} />
       </div>
 
       <div>

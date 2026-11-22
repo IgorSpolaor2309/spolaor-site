@@ -294,7 +294,7 @@ try {
   secao("Fluxo de atendimento (navegador, com sessão)");
   await page.goto(`${B}/leads`);
   const novosTxt = await page.locator("#manual").evaluate((el) => el.textContent ?? "");
-  ok(/Marina Albuquerque/.test(novosTxt) && /Rogério Tavares/.test(novosTxt) && /Bianca Furtado/.test(novosTxt) && /Novo contato sem primeiro atendimento/.test(novosTxt), "fila: com a automação desligada, os contatos dos formulários aparecem em “Depende de mim” como novos sem primeiro atendimento");
+  ok(/Marina Albuquerque/.test(novosTxt) && /Rogério Tavares/.test(novosTxt) && /Bianca Furtado/.test(novosTxt) && /Novo pedido/.test(novosTxt), "fila: com a automação desligada, os contatos dos formulários aparecem em “Depende de mim” como “Novo pedido” (sem primeiro atendimento)");
   await page.goto(`${B}/leads/lista`);
   ok(/Anúncio na Meta/.test(await page.locator("#conteudo").innerText()), "lista mostra a fonte declarada na URL (Anúncio na Meta)");
   await page.goto(`${B}/leads`);
@@ -565,6 +565,98 @@ try {
   await m.goto(`${B}/leads`);
   ok(await m.locator('nav[aria-label="Seções do CRM"] >> visible=true').first().isVisible(), "navegação fixa no rodapé visível no celular");
   await ctxM.close();
+
+  /* ───────────────────────────── pedido, ficha e fila ───────────────────────────── */
+  secao("Pedido: contexto antes das ações (formulário → ficha → fila)");
+  // Automação de primeiro contato desligada nesta seção (o padrão em produção), para ver a situação “Novo pedido”.
+  await sql`insert into crm_config (chave, valor) values ('automacao:primeiro-contato', ${sql.json({ canal: "desligado" })}) on conflict (chave) do update set valor = excluded.valor`;
+  const dado = async (pg, rotulo) => (await pg.locator(`#pedido [data-dado="${rotulo}"]`).first().innerText().catch(() => "")).replace(/\s+/g, " ");
+  const UTM_AD = { utm_source: "facebook", utm_medium: "paid", utm_campaign: "Teste pedido", utm_content: "video_v2", campaign_id: "120200000000000011", adset_id: "120200000000000012", ad_id: "120200000000000013" };
+
+  // validação do pedido geral
+  const semResp = await post({ tipo: "analise", formulario: "pedido", pedido: "loja", origem: "home", pagina: "/", nome: "Paula Teixeira", empresa: "", whatsapp: "(74) 99100-2001", email: "", mensagem: "  " });
+  const semPedido = await post({ tipo: "analise", formulario: "pedido", origem: "home", pagina: "/", nome: "Paula Teixeira", empresa: "", whatsapp: "(74) 99100-2001", email: "", mensagem: "Quero vender online" });
+  const pedidoInvalido = await post({ tipo: "analise", formulario: "pedido", pedido: "foguete", origem: "home", pagina: "/", nome: "Paula Teixeira", empresa: "", whatsapp: "(74) 99100-2001", email: "", mensagem: "Quero vender online" });
+  ok(semResp.status === 422 && !!semResp.body.errors?.mensagem && semPedido.status === 422 && !!semPedido.body.errors?.pedido && pedidoInvalido.status === 422, "pedido geral: resposta da pergunta e serviço são obrigatórios; serviço fora da lista é recusado (422)");
+
+  // pedido completo pela home, vindo de anúncio: sem negócio (começando), com Instagram, sem e-mail
+  const rp = await post({ tipo: "analise", formulario: "pedido", pedido: "loja", origem: "home", pagina: "/", nome: "Paula Teixeira", empresa: "", semEmpresa: true, whatsapp: "(74) 99100-2001", email: "", site: "@Paula.Doces", semSite: false, mensagem: "Vendo doces pelo Instagram e anoto as encomendas no caderno.", referrer: "https://instagram.com/", utm: UTM_AD });
+  ok(rp.status === 200 && !!rp.body.id, `pedido geral aceito sem nome do negócio e sem e-mail (${rp.status})`);
+  const [op] = await sql`select o.*, c.instagram, c.site as c_site, c.empresa as c_empresa from crm_envios e join crm_oportunidades o on o.id = e.oportunidade_id join crm_contatos c on c.id = o.contato_id where e.id = ${rp.body.id}`;
+  ok(op?.categoria === "lojas" && op.servico === "Pedido: Loja virtual" && op.dados.pedido === "loja" && op.dados.pergunta === "O que você vende e como quer receber os pedidos?" && op.dados.formulario === "pedido", `serviço vem da resposta: categoria=${op?.categoria}, pergunta gravada com a resposta`);
+  ok(op?.instagram === "paula.doces" && op.c_site === null && op.c_empresa === null && op.dados.semEmpresa === true, "@ do Instagram vai para o Instagram do contato (não vira site); negócio vazio fica “começando”");
+  await page.goto(`${B}/leads/o/${op.id}`);
+  ok(/Loja virtual/.test(await dado(page, "Serviço solicitado")) && /Resposta do visitante/.test(await dado(page, "Serviço solicitado")), "ficha: serviço solicitado é a resposta do visitante, dita como tal");
+  ok(/Lojas virtuais/.test(await dado(page, "Classificação interna")) && /Pela resposta do visitante/.test(await dado(page, "Classificação interna")), "ficha: classificação interna separada, com o motivo");
+  const objetivo = await page.locator("#pedido").innerText();
+  ok(objetivo.includes("O que você vende e como quer receber os pedidos?") && objetivo.includes("Vendo doces pelo Instagram e anoto as encomendas no caderno."), "ficha: pergunta mostrada e resposta original, sem resumo");
+  ok(/Ainda está começando/.test(await dado(page, "Negócio (informado)")) && /@paula\.doces/.test(await dado(page, "Instagram (informado)")) && /Paula Teixeira/.test(await dado(page, "Nome (informado)")), "ficha: nome, negócio (começando) e Instagram informados");
+  ok(/^Página do envio \/ /.test(await dado(page, "Página do envio") + " ") && /Pedido: o que você precisa/.test(await dado(page, "Formulário")), "ficha: página e formulário de entrada");
+  ok(/campanha 120200000000000011 · conjunto 120200000000000012 · anúncio 120200000000000013/.test(await dado(page, "Identificadores do anúncio")) && /Teste pedido/.test(await dado(page, "Campanha")) && /video_v2/.test(await dado(page, "Anúncio (utm_content)")) && /Anúncio na Meta/.test(await dado(page, "Fonte")), "ficha: origem com campanha e identificadores do anúncio");
+  ok(/Recebido em \d{2}\/\d{2}\/\d{4} às \d{2}:\d{2}/.test(await page.locator("#pedido").innerText()), "ficha: data completa do pedido");
+  const ordem = await page.evaluate(() => {
+    const pedido = document.querySelector("#pedido");
+    const falar = [...document.querySelectorAll("h2, h3, p, span")].find((e) => /^Falar com /.test(e.textContent?.trim() ?? ""));
+    return pedido && falar ? pedido.getBoundingClientRect().top < falar.getBoundingClientRect().top : false;
+  });
+  ok(ordem, "ficha (computador): o pedido vem antes das ações de atendimento");
+
+  // registro antigo, como os do Aldair: diagnóstico da home sem mensagem, sem site, sem serviço escolhido
+  const ANTIGO = { tipo: "analise", origem: "home", pagina: "/", nome: "Contato Antigo", empresa: "Negócio Antigo", whatsapp: "(74) 99100-3003", email: "antigo@validacao.local", segmento: "Clínica ou consultório", problema: "Contatos espalhados entre WhatsApp, planilha e e-mail", mensagem: "", referrer: "https://instagram.com/", utm: UTM_AD };
+  const ra = await post(ANTIGO);
+  // 70 s depois (mesma visita), pela /analise, com outro segmento: antes abria uma segunda oportunidade
+  const rb = await post({ ...ANTIGO, origem: "pagina-analise", pagina: "/analise", entrada: "/", segmento: "Corretor de imóveis" });
+  const [oa] = await sql`select o.* from crm_envios e join crm_oportunidades o on o.id = e.oportunidade_id where e.id = ${ra.body.id}`;
+  const [ob] = await sql`select oportunidade_id from crm_envios where id = ${rb.body.id}`;
+  ok(ra.status === 200 && rb.status === 200 && oa.categoria === "a-classificar" && oa.servico === "Diagnóstico geral (home)", "envio no formato antigo continua aceito; rótulo da página gravado como antes");
+  ok(ob.oportunidade_id === oa.id && (await sql`select count(*)::int as n from crm_envios where oportunidade_id = ${oa.id}`)[0].n === 2, "mesmo pedido pela home e pela /analise: segundo envio entra na MESMA oportunidade (antes abria outra)");
+  await page.goto(`${B}/leads/o/${oa.id}`);
+  ok(/Não informado/.test(await dado(page, "Serviço solicitado")) && /não perguntava qual serviço/.test(await dado(page, "Serviço solicitado")), "registro antigo: serviço solicitado “Não informado”, com o motivo");
+  ok(/Serviço não identificado/.test(await dado(page, "Classificação interna")) && /Rótulo antigo da página: “Diagnóstico geral \(home\)” \(valor fixo, não foi escolha do visitante\)/.test(await dado(page, "Classificação interna")), "registro antigo: “Serviço não identificado”, e “Diagnóstico geral” explicado como valor fixo da página");
+  const txtAntigo = await page.locator("#pedido").innerText();
+  ok(txtAntigo.includes("O que mais pesa hoje? (escolha da lista)") && txtAntigo.includes("Contatos espalhados entre WhatsApp, planilha e e-mail"), "registro antigo: objetivo = a escolha da lista, dita como escolha");
+  ok(/Não informado/.test(await dado(page, "Conte mais, se quiser (opcional)")) && /Não informado/.test(await dado(page, "Site ou Instagram (informado)")) && /versão anterior/.test(await dado(page, "Formulário")), "registro antigo: mensagem e site ausentes aparecem como “Não informado”; formulário antigo identificado");
+  ok((await page.locator("#pedido [data-dado]").evaluateAll((els) => els.filter((e) => e.textContent.trim() === "" ).length)) === 0, "registro antigo: nenhum campo vazio sem rótulo na ficha");
+  ok((await page.content()).includes("/analise") && (await page.locator("li", { hasText: "/analise" }).count()) > 0, "ficha lista os dois envios, cada um com a página");
+  ok(!(await page.locator("#pedido").innerText()).includes("Diagnóstico geral (home)  ") && !(await page.locator("header").first().innerText()).includes("Diagnóstico geral"), "cabeçalho da ficha não apresenta “Diagnóstico geral” como pedido");
+
+  // dois pedidos diferentes da mesma pessoa em poucos minutos: oportunidades separadas, com aviso de proximidade
+  const rc = await post({ tipo: "analise", formulario: "pedido", pedido: "site", origem: "home", pagina: "/", nome: "Paula Teixeira", empresa: "", whatsapp: "(74) 99100-2001", email: "", mensagem: "Também quero um site simples." });
+  const [oc] = await sql`select oportunidade_id from crm_envios where id = ${rc.body.id}`;
+  ok(oc.oportunidade_id !== op.id, "mesma pessoa, outro serviço escolhido: oportunidade separada (nada é unido sozinho)");
+  await page.goto(`${B}/leads/o/${oc.oportunidade_id}`);
+  ok((await page.locator("[data-pedido-vizinho]").count()) === 1 && /não une registros sozinho/.test(await page.locator("[data-pedido-vizinho]").innerText()), "ficha avisa que há outro pedido da mesma pessoa a menos de 30 minutos");
+
+  // fila: serviço, prévia útil e situação (novo pedido, aguardando atendimento, falha de envio com o motivo)
+  await page.goto(`${B}/leads`);
+  const itemNovo = page.locator(`[data-oportunidade="${op.id}"]`).first();
+  ok((await itemNovo.locator('[data-estado="novo"]').innerText()) === "Novo pedido" && /Loja virtual/.test(await itemNovo.locator("[data-fila-servico]").innerText()) && /Vendo doces pelo Instagram/.test(await itemNovo.locator("[data-fila-previa]").innerText()), "fila: “Novo pedido”, serviço pedido e prévia com as palavras da pessoa");
+  const itemAntigo = page.locator(`[data-oportunidade="${oa.id}"]`).first();
+  ok(/Serviço não identificado/.test(await itemAntigo.locator("[data-fila-servico]").innerText()) && /Escolheu “Contatos espalhados/.test(await itemAntigo.locator("[data-fila-previa]").innerText()), "fila: registro antigo mostra “Serviço não identificado” e a escolha da lista como prévia");
+  await sql`update crm_envios set aviso_status = 'falhou', aviso_erro = 'Provedor de e-mail recusou o envio (HTTP 500)' where id = ${ra.body.id}`;
+  await sql`update crm_oportunidades set aguardando = 'nos', pendencia = 'resposta', etapa = 'em_conversa', primeiro_contato_em = now() where id = ${oc.oportunidade_id}`;
+  await page.goto(`${B}/leads`);
+  const itemFalha = page.locator(`[data-oportunidade="${oa.id}"]`).first();
+  ok((await itemFalha.locator('[data-estado="falha"]').innerText()) === "Falha de envio" && /Aviso interno por e-mail não enviado: Provedor de e-mail recusou o envio \(HTTP 500\)/.test(await itemFalha.locator("[data-falha-motivo]").innerText()), "fila: “Falha de envio” com o motivo visível");
+  ok((await page.locator(`[data-oportunidade="${oc.oportunidade_id}"] [data-estado="aguardando"]`).first().innerText()) === "Aguardando atendimento", "fila: “Aguardando atendimento” separado de novo pedido e de falha");
+  await page.goto(`${B}/leads/lista`);
+  ok(/Pedido: Vendo doces pelo Instagram/.test(await page.locator("#conteudo").innerText()) && (await page.locator('[data-estado="falha"]').count()) >= 1, "lista: prévia do pedido e situação também na lista");
+  await sql`update crm_envios set aviso_status = 'enviado', aviso_erro = null where id = ${ra.body.id}`;
+
+  // celular: o pedido vem logo no começo da ficha, antes de "Falar com"
+  {
+    const { ctx: ctxP } = await contexto({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    await ctxP.addCookies([{ name: "spolaor_crm", value: cookie.value, domain: "localhost", path: "/", httpOnly: true, sameSite: "Lax" }]);
+    const mp = await ctxP.newPage();
+    await mp.goto(`${B}/leads/o/${op.id}`);
+    const pos = await mp.evaluate(() => {
+      const pedido = document.querySelector("#pedido");
+      const falar = [...document.querySelectorAll("h2, h3, p, span")].find((e) => /^Falar com /.test(e.textContent?.trim() ?? ""));
+      return { pedido: pedido?.getBoundingClientRect().top ?? -1, falar: falar?.getBoundingClientRect().top ?? -1, largura: document.documentElement.scrollWidth };
+    });
+    ok(pos.pedido > 0 && pos.pedido < pos.falar && pos.largura <= 391, `ficha no celular: pedido (${Math.round(pos.pedido)} px) antes de “Falar com” (${Math.round(pos.falar)} px), sem rolagem lateral`);
+    await ctxP.close();
+  }
 
   // sair encerra a sessão
   await page.click('button:has-text("Sair")');

@@ -45,6 +45,7 @@ Dois registros são o mesmo contato só quando o **WhatsApp** (dígitos, com DDI
 
 - Mesma pessoa, **outro serviço** → nova oportunidade no mesmo contato.
 - Mesma pessoa, **mesmo serviço com oportunidade aberta** → o envio entra no histórico dessa oportunidade e ela volta para a fila de quem aguarda retorno. Não cria oportunidade nova.
+- "Mesmo serviço" = mesma **categoria** (desde novembro/2026). Antes era o rótulo da página (`servico`), e o mesmo pedido enviado pela home e pela `/analise` ("Diagnóstico geral (home)" × "Diagnóstico geral") abria duas oportunidades. Registros já gravados não são unidos.
 - Envios simultâneos da mesma pessoa não duplicam o contato (trava por chave dentro da transação).
 
 ## 3. Entrada dos formulários e evento Lead
@@ -117,9 +118,30 @@ Nenhuma é obrigatória além das que o site já tem em produção (`DATABASE_UR
 
 `scripts/teste-crm-whatsapp.mjs` cobre o WhatsApp com provedor e fila simulados (veja `docs/CRM-WHATSAPP.md`).
 
-`scripts/previa-crm.mjs` gera capturas das telas em 390 px e 1440 px.
+`scripts/previa-crm.mjs` gera capturas das telas em 390 px e 1440 px. `scripts/previa-pedidos.mjs` captura o caminho do pedido (formulário → ficha → fila) com dados fictícios.
 
-## 10. Próximas entregas (dependem de decisão ou credencial)
+## 10. Pedido: o que a pessoa pediu, antes das ações (novembro/2026)
+
+Motivo: duas oportunidades reais chegaram do anúncio geral de serviços pelo formulário de diagnóstico da home e da `/analise`. A ficha mostrava "Diagnóstico geral" e as ações de contato, mas não dizia o serviço, a empresa, a mensagem nem se havia site. "Diagnóstico geral" era o rótulo fixo da página (`INTERESSES`), não escolha do visitante, e o formulário não perguntava o serviço.
+
+**Formulários** (`src/lib/leads/schema.ts`):
+
+| Formulário (`formulario`) | Onde | Perguntas |
+|---|---|---|
+| `pedido` | home, `/analise`, `/contato` | O que você precisa (site, loja virtual, agendamento online, automação, "ainda não sei"); pergunta curta adaptada ao serviço (`PEDIDOS`), resposta obrigatória; nome do negócio (opcional, "ainda estou começando"); site ou Instagram (opcional, "ainda não tenho"); nome, WhatsApp, e-mail opcional. `?servico=site` ou o antigo `?interesse=Automação` já marcam a opção. |
+| `orcamento` | `/sites`, `/lojas-virtuais`, `/agendamento-online`, `/atendimento-ia` | O serviço é o da página; a mensagem (pergunta da página) passa a ser obrigatória; negócio e site/Instagram opcionais como acima. |
+| `diagnostico` | landings de segmento e `/automacao` | Como antes (segmento e principal problema), com nome do negócio opcional e campo "site ou Instagram". |
+| `diagnostico-site` | `/diagnostico-site` | Como antes. |
+
+O servidor grava a pergunta que a pessoa viu (`pergunta`) junto com a resposta (`mensagem`), o serviço escolhido (`pedido`), o formulário e, quando o campo traz `@usuario` ou link do Instagram, o Instagram do contato (não vira site). Envios sem `formulario` (página antiga aberta no navegador) seguem as regras anteriores.
+
+**Classificação:** a categoria vem do serviço escolhido; depois, de uma única opção de serviço marcada; depois, da página de serviço. "Ainda não sei", várias opções e o antigo diagnóstico geral ficam **"Serviço não identificado"** (`a-classificar`, rótulo novo). O CRM não deduz serviço de texto livre.
+
+**Ficha:** o painel "Pedido" vem antes de "Falar com" (no celular também): serviço solicitado (só o que a pessoa disse, com a base) separado da classificação interna (com o motivo e, nos registros antigos, o rótulo fixo da página explicado); pergunta e resposta, ou a escolha da lista nos registros antigos; nome, negócio e links como informados; página, formulário, data completa e origem com campanha e identificadores do anúncio. Ausente = "Não informado". Outro pedido da mesma pessoa a menos de 30 minutos gera um aviso; nada é unido sozinho.
+
+**Fila e lista:** cada item mostra o serviço, uma prévia com as palavras da pessoa (ou a escolha da lista) e a situação: **Novo pedido**, **Aguardando atendimento** ou **Falha de envio**, com o motivo da falha (mensagem recusada ou incerta, aviso interno recusado, ou o resultado da tarefa de primeiro contato).
+
+## 11. Próximas entregas (dependem de decisão ou credencial)
 
 1. **Recebimento de e-mail.** Caminho mais simples: encaminhador na caixa comercial (cPanel) para um endereço de recebimento do Resend, que avisa o site por webhook. Alternativa: leitura IMAP periódica. Precisa da escolha e do acesso.
 2. **Leitura de campanhas da Meta.** Token `ads_read` de um usuário de sistema do Gerenciador de Negócios; lê gasto por campanha, conjunto e anúncio. Só leitura.
