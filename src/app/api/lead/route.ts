@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AVISO_RETORNO, INTERESSES, LIMITS, isOrigem, normalizeUrl, origemFromPath, validateLead, type LeadPayload } from "@/lib/leads/schema";
+import { AVISO_RETORNO, INTERESSES, LIMITS, PEDIDOS, isFormulario, isOrigem, isPedido, lerPresenca, normalizeUrl, origemFromPath, validateLead, type LeadPayload } from "@/lib/leads/schema";
 import { NoLeadDestinationError, processLead } from "@/lib/leads/server/pipeline";
 import type { LeadRecord } from "@/lib/leads/server/types";
 
@@ -21,12 +21,21 @@ export async function POST(req: Request) {
 
   const pagina = str(body.pagina, LIMITS.url);
   const origem = isOrigem(body.origem) ? body.origem : origemFromPath(pagina);
+  const formulario = isFormulario(body.formulario) ? body.formulario : undefined;
+  // Serviço escolhido pela pessoa: só no formulário de pedido e só entre as opções existentes.
+  const pedido = formulario === "pedido" && isPedido(body.pedido) ? body.pedido : undefined;
   const lead: LeadPayload = {
     tipo: body.tipo === "projeto" ? "projeto" : "analise",
+    formulario,
+    pedido,
+    // A pergunta respondida é a do formulário vigente para o serviço escolhido; o navegador não manda o texto.
+    pergunta: pedido ? PEDIDOS[pedido].pergunta : undefined,
+    semEmpresa: body.semEmpresa === true,
     // Origem só aceita os valores conhecidos; senão é deduzida da página do envio.
     origem: origem ?? "desconhecida",
-    // O interesse é definido aqui, pela origem; o navegador não escolhe esse valor.
-    interesse: origem ? INTERESSES[origem] : undefined,
+    // Interesse (rótulo interno do envio): o serviço que a pessoa escolheu; sem escolha, o da página do formulário.
+    // O navegador não escreve esse texto.
+    interesse: pedido ? `Pedido: ${PEDIDOS[pedido].rotulo}` : origem ? INTERESSES[origem] : undefined,
     pagina,
     entrada: str(body.entrada, LIMITS.url),
     segmento: str(body.segmento, LIMITS.curto),
@@ -53,9 +62,16 @@ export async function POST(req: Request) {
   const errors = validateLead(lead);
   if (Object.keys(errors).length) return NextResponse.json({ ok: false, errors }, { status: 422 });
 
+  // "Site ou Instagram": um @usuário ou link do Instagram vira o Instagram do contato; um endereço vira o site; texto que
+  // não é nenhum dos dois fica como foi digitado. No diagnóstico de site o endereço já foi validado como site.
+  const presenca: ReturnType<typeof lerPresenca> = lead.origem === "diagnostico-site" && lead.site ? { site: normalizeUrl(lead.site) } : lerPresenca(lead.site);
   const record: LeadRecord = {
     ...lead,
-    site: lead.site ? normalizeUrl(lead.site) : undefined,
+    site: presenca.site ?? presenca.texto,
+    instagram: presenca.instagram,
+    // Quem marcou "ainda não tenho site nem Instagram" e mesmo assim digitou algo: vale o que foi digitado.
+    semSite: lead.semSite && !lead.site?.trim() ? true : undefined,
+    semEmpresa: lead.semEmpresa && !lead.empresa.trim() ? true : undefined,
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
     userAgent: req.headers.get("user-agent")?.slice(0, 300) ?? undefined,

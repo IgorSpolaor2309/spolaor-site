@@ -1,6 +1,7 @@
 import { Reveal } from "@/components/ui/reveal";
 import { SectionLabel } from "@/components/ui/section-label";
 import { AnalysisForm } from "@/components/forms/analysis-form";
+import { PedidoForm } from "@/components/forms/pedido-form";
 import type { LeadOrigem } from "@/lib/leads/schema";
 import { leadsAvailable } from "@/lib/leads/server/pipeline";
 
@@ -48,6 +49,7 @@ export function AnalysisBlock({
   sectionId = "analise",
   siteRequired = false,
   note = "Se fizer sentido seguir, preparamos depois uma proposta com escopo, prazo e investimento para o seu caso.",
+  formulario = "diagnostico",
 }: {
   index?: string;
   label?: string;
@@ -63,6 +65,8 @@ export function AnalysisBlock({
   sectionId?: string;
   siteRequired?: boolean;
   note?: React.ReactNode;
+  /** diagnostico: segmento e principal problema (landings de segmento, /automacao); pedido: o que a pessoa precisa (home, /analise) */
+  formulario?: "diagnostico" | "pedido";
 }) {
   const H = headingLevel;
   return (
@@ -82,7 +86,11 @@ export function AnalysisBlock({
         {/* O alvo dos CTAs (sectionId) é o bloco do formulário, sem transform, para o clique mostrar o formulário. */}
         <div id={sectionId} className="lg:col-span-6 lg:col-start-7 lg:pt-10">
           <Reveal delay={0.12}>
-            <AnalysisForm origem={origem} problemas={problemas} submitLabel={submitLabel} available={leadsAvailable()} siteRequired={siteRequired} />
+            {formulario === "pedido" ? (
+              <PedidoForm origem={origem} submitLabel={submitLabel} available={leadsAvailable()} />
+            ) : (
+              <AnalysisForm origem={origem} problemas={problemas} submitLabel={submitLabel} available={leadsAvailable()} siteRequired={siteRequired} />
+            )}
           </Reveal>
         </div>
       </div>

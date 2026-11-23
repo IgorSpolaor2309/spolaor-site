@@ -19,9 +19,10 @@ import {
 } from "@/app/leads/actions";
 import { ContatoRapido } from "@/components/crm/contato-rapido";
 import { Enviar } from "@/components/crm/enviar";
-import { Aviso, btnPrimary, btnQuiet, btnSecondary, Campo, EtapaMarca, input, Painel, Titulo } from "@/components/crm/ui";
+import { Aviso, btnPrimary, btnQuiet, btnSecondary, Campo, Dado, EtapaMarca, input, Painel, Titulo } from "@/components/crm/ui";
 import { exigirUsuario } from "@/lib/crm/auth";
 import { ficha, usuarios } from "@/lib/crm/consultas";
+import { classificacaoInterna, formularioDeEntrada, informadoPelaPessoa, NAO_INFORMADO, origemDoPedido, respostas, servicoParaMensagem, servicoSolicitado } from "@/lib/crm/pedido";
 import { emailCliente, modelos, preencher } from "@/lib/crm/mensagens";
 import { frases, modeloPrimeiroContato, parametrosDoModelo, textoDoModelo, waEnvio } from "@/lib/crm/whatsapp/config";
 import { modeloAprovado } from "@/lib/crm/whatsapp/ycloud";
@@ -33,6 +34,7 @@ import {
   CATEGORIAS,
   ETAPAS,
   ETAPA_ROTULO,
+  fmtDataCompleta,
   fmtDataHora,
   fmtMoeda,
   fmtRelativo,
@@ -77,8 +79,6 @@ const MSG: Record<string, { tom: "ok" | "alerta" | "info"; texto: string }> = {
   "contato-duplicado": { tom: "alerta", texto: "Contato não alterado: esse WhatsApp ou e-mail já pertence a outro contato cadastrado. Os registros não são unidos automaticamente." },
 };
 
-const DADOS_ROTULO: Record<string, string> = { segmento: "Segmento", problema: "Principal problema", urgencia: "Urgência/prazo", melhorias: "Melhorias", servicos: "Serviços marcados", site: "Site", semSite: "Sem site" };
-
 export default async function FichaPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const usuario = await exigirUsuario();
   const [{ id }, sp] = await Promise.all([params, searchParams]);
@@ -91,14 +91,14 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
   const atr = atribuicao(o);
   const msg = typeof sp.msg === "string" ? MSG[sp.msg] : undefined;
   const email = emailCliente();
-  const vars = { nome: c.nome, empresa: c.empresa, servico: o.servico, meuNome: usuario.nome };
+  // {{servico}} nas mensagens: só o que a pessoa pediu (nunca o rótulo interno da página).
+  const vars = { nome: c.nome, empresa: c.empresa, servico: servicoParaMensagem(o), meuNome: usuario.nome };
   const prontos = mods.map((m) => ({ id: m.id, titulo: m.titulo, canal: m.canal, assunto: m.assunto ? preencher(m.assunto, vars) : undefined, corpo: preencher(m.corpo, vars) }));
   // Para quem veio do formulário, o primeiro modelo de cada canal é o de primeiro contato; para os demais, o de recepção.
   const ordem = o.canal === "formulario" ? ["whatsapp-formulario", "email-formulario"] : ["whatsapp-recepcao", "email-recepcao"];
   prontos.sort((a, b) => Number(ordem.includes(b.id)) - Number(ordem.includes(a.id)));
   const atrasado = o.proximaAcaoEm ? new Date(o.proximaAcaoEm).getTime() < agora : false;
   const aberta = o.etapa !== "ganho" && o.etapa !== "perdido";
-  const dados = Object.entries(o.dados).filter(([, v]) => v !== null && v !== "" && v !== false);
   const utm = Object.entries(o.utm);
   const autoPendente = (!!o.tarefa && ["pendente", "processando"].includes(o.tarefa.status)) || mensagens.some((m) => m.automatica && (m.status === "pendente" || m.status === "enviando"));
   // WhatsApp pelo CRM: só com as credenciais e o número definidos. A janela de 24 h conta da última mensagem da pessoa.
@@ -116,6 +116,16 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
     }
   }
   const soltas = mensagens.filter((m) => m.oportunidadeId === null && m.direcao === "entrada").length;
+  // O envio que criou a oportunidade (o mais antigo) guarda o pedido como chegou.
+  const original = envios.length ? envios[envios.length - 1].payload : null;
+  const pedidoSolicitado = servicoSolicitado(o);
+  const classe = classificacaoInterna(o);
+  const resp = respostas(o, original);
+  const pessoa = informadoPelaPessoa(o, original);
+  const origemPedido = origemDoPedido(o);
+  // Outro pedido da mesma pessoa chegado perto deste: pode ser o mesmo pedido enviado duas vezes. O CRM não une.
+  const paginaLegivel = (p: string | null) => (p === "/" ? "/ (página inicial)" : p);
+  const vizinhas = outras.filter((x) => Math.abs(new Date(x.recebidoEm).getTime() - new Date(o.recebidoEm).getTime()) <= 30 * 60_000);
 
   return (
     <>
@@ -132,10 +142,7 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
           </h1>
           <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.9rem] text-muted">
             <EtapaMarca etapa={o.etapa} />
-            <span>
-              {CATEGORIA_ROTULO[o.categoria]}
-              {o.servico && o.servico !== CATEGORIA_ROTULO[o.categoria] ? ` · ${o.servico}` : ""}
-            </span>
+            <span data-servico-solicitado>{pedidoSolicitado.informado ? pedidoSolicitado.texto : CATEGORIA_ROTULO[o.categoria]}</span>
             <span>
               chegou {fmtRelativo(o.recebidoEm, agora)} ({fmtDataHora(o.recebidoEm)})
             </span>
@@ -176,12 +183,55 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
           "contents" e os painéis são ordenados por order-N). Computador: conteúdo à esquerda, dados à direita. */}
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
         <div className="contents min-w-0 lg:grid lg:gap-5">
-          {o.mensagem && (
-            <Painel className="order-1 lg:order-none">
-              <Titulo nota={CANAL_ROTULO[o.canal]}>Mensagem original</Titulo>
-              <p className="whitespace-pre-wrap px-4 py-4 text-[0.95rem] leading-relaxed sm:px-5">{o.mensagem}</p>
-            </Painel>
-          )}
+          {/* Contexto antes das ações: o que a pessoa pediu, com as palavras dela, quem é, por onde e quando chegou. */}
+          <Painel className="order-1 lg:order-none" id="pedido">
+            <Titulo nota={`Recebido em ${fmtDataCompleta(o.recebidoEm)}`}>Pedido</Titulo>
+            <div className="grid gap-5 px-4 py-4 sm:px-5" data-pedido>
+              <dl className="grid gap-3 sm:grid-cols-2">
+                <Dado rotulo="Serviço solicitado" valor={pedidoSolicitado.texto} ausente={!pedidoSolicitado.informado} nota={pedidoSolicitado.base} forte />
+                <Dado
+                  rotulo="Classificação interna"
+                  valor={classe.texto}
+                  nota={`${classe.base}.${classe.rotuloPagina ? ` Rótulo antigo da página: “${classe.rotuloPagina}” (valor fixo, não foi escolha do visitante).` : ""}`}
+                />
+              </dl>
+              <div>
+                <p className="text-[0.78rem] font-semibold text-dim">{resp.objetivo.rotulo}</p>
+                <p className={`mt-1 whitespace-pre-wrap break-words text-[1rem] leading-relaxed ${resp.objetivo.ausente ? "text-dim" : ""}`} data-objetivo>
+                  {resp.objetivo.valor}
+                </p>
+              </div>
+              {resp.outras.length > 0 && (
+                <dl className="grid gap-3 sm:grid-cols-2">
+                  {resp.outras.map((l) => (
+                    <Dado key={l.rotulo} rotulo={l.rotulo} valor={l.valor} ausente={l.ausente} />
+                  ))}
+                </dl>
+              )}
+              <dl className="grid gap-3 border-t border-line pt-4 sm:grid-cols-2">
+                {pessoa.map((l) => (
+                  <Dado key={l.rotulo} rotulo={`${l.rotulo} (informado)`} valor={l.valor} ausente={l.ausente} link={l.link} />
+                ))}
+                <Dado rotulo="Página do envio" valor={paginaLegivel(o.pagina) ?? NAO_INFORMADO} ausente={!o.pagina} nota={o.entrada ? `Primeira página da visita: ${paginaLegivel(o.entrada)}` : undefined} />
+                <Dado rotulo="Formulário" valor={formularioDeEntrada(o)} />
+                {origemPedido.map((l) => (
+                  <Dado key={l.rotulo} rotulo={l.rotulo} valor={l.valor} ausente={l.ausente} nota={l.nota} />
+                ))}
+              </dl>
+              {envios.length > 1 && (
+                <p className="rounded-[10px] border border-line bg-ink-850 px-3.5 py-2.5 text-[0.86rem] leading-snug text-muted" data-varios-envios>
+                  A pessoa enviou o formulário {envios.length} vezes nesta oportunidade. Acima está o primeiro envio; as respostas de cada envio estão em
+                  “Envios do formulário”.
+                </p>
+              )}
+              {vizinhas.length > 0 && (
+                <p className="rounded-[10px] border border-line bg-ink-850 px-3.5 py-2.5 text-[0.86rem] leading-snug text-muted" data-pedido-vizinho>
+                  A mesma pessoa tem {vizinhas.length === 1 ? "outro pedido" : `${vizinhas.length} outros pedidos`} recebido{vizinhas.length === 1 ? "" : "s"} com menos de 30 minutos de diferença
+                  ({vizinhas.map((x) => `${fmtDataHora(x.recebidoEm)}, ${x.pagina ?? x.origem ?? "sem página"}`).join("; ")}). Pode ser o mesmo pedido enviado duas vezes; o CRM não une registros sozinho.
+                </p>
+              )}
+            </div>
+          </Painel>
 
           <Painel className="order-2 lg:order-none">
             <Titulo>Falar com {c.nome.split(/\s+/)[0]}</Titulo>
@@ -507,12 +557,6 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
                   </dd>
                 </div>
               )}
-              {dados.map(([k, v]) => (
-                <div key={k}>
-                  <dt className="text-[0.78rem] font-semibold text-dim">{DADOS_ROTULO[k] ?? k}</dt>
-                  <dd className="break-words">{Array.isArray(v) ? v.join(", ") : v === true ? "Sim" : String(v)}</dd>
-                </div>
-              ))}
             </dl>
           </Painel>
 
@@ -522,7 +566,25 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
               <ul className="px-4 py-2 sm:px-5">
                 {envios.map((e) => (
                   <li key={e.id} className="border-b border-line py-3 text-[0.88rem] last:border-b-0">
-                    <p>{fmtDataHora(e.recebidoEm)}</p>
+                    <p>
+                      {fmtDataHora(e.recebidoEm)}
+                      {typeof e.payload.pagina === "string" ? <span className="text-dim"> · {e.payload.pagina}</span> : null}
+                    </p>
+                    {/* Envios anexados depois do primeiro: o que a pessoa escreveu em cada um, sem resumo. */}
+                    {envios.length > 1 &&
+                      (() => {
+                        const r = respostas({ ...o, dados: {}, mensagem: null }, e.payload);
+                        return (
+                          <dl className="mt-1 grid gap-0.5 text-[0.84rem] leading-snug">
+                            {[r.objetivo, ...r.outras].map((l) => (
+                              <div key={l.rotulo} className="whitespace-pre-wrap break-words">
+                                <dt className="inline text-dim">{l.rotulo.endsWith("?") ? `${l.rotulo} ` : `${l.rotulo}: `}</dt>
+                                <dd className={`inline ${l.ausente ? "text-dim" : ""}`}>{l.valor}</dd>
+                              </div>
+                            ))}
+                          </dl>
+                        );
+                      })()}
                     <p className={`mt-0.5 text-[0.82rem] ${e.avisoStatus === "falhou" ? "font-semibold text-ember" : "text-dim"}`}>
                       Aviso por e-mail:{" "}
                       {e.avisoStatus === "enviado"

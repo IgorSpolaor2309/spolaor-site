@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import Link from "next/link";
-import { ContactForm } from "@/components/forms/contact-form";
+import { PedidoForm } from "@/components/forms/pedido-form";
 import { leadsAvailable } from "@/lib/leads/server/pipeline";
 import { SectionLabel } from "@/components/ui/section-label";
 import { mailtoLink, site, whatsappLink } from "@/lib/site";
@@ -9,7 +8,7 @@ import { mailtoLink, site, whatsappLink } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Contato",
   description:
-    "Conte o que sua empresa precisa: um site ou landing page, ou automação de processos. Peça o orçamento direto ou comece pelo diagnóstico do processo.",
+    "Conte o que sua empresa precisa: site ou landing page, loja virtual, agendamento online ou automação. Se ainda não souber qual solução serve, ajudamos a identificar.",
   alternates: { canonical: "/contato" },
 };
 
@@ -42,8 +41,8 @@ export default function ContatoPage() {
             Conte o que sua empresa <span className="serif-accent text-signal">precisa.</span>
           </h1>
           <p className="fade-up mt-7 max-w-md text-lg leading-relaxed text-muted" style={{ animationDelay: "0.16s" }}>
-            Um site que apresente bem seus serviços, a automação de um processo que hoje depende de alguém lembrar, ou os dois.
-            Escreva do seu jeito; cada projeto recebe um orçamento próprio.
+            Site, loja virtual, agendamento online ou a automação de um processo que hoje depende de alguém lembrar. Escolha o
+            que precisa e escreva do seu jeito; se ainda não souber, ajudamos a identificar.
           </p>
           <div className="fade-up mt-10 grid gap-3" style={{ animationDelay: "0.24s" }}>
             {paths.map((p) => (
@@ -83,14 +82,9 @@ export default function ContatoPage() {
         {/* Alvo dos botões que trazem a pessoa para falar de um projeto (/contato#formulario). */}
         <div id="formulario" className="lg:col-span-7">
           <div className="fade-up" style={{ animationDelay: "0.2s" }}>
-            <Suspense fallback={<div className="h-[720px] rounded-[16px] border border-line bg-ink-900" />}>
-              <ContactForm
-                interestsLabel="Seu interesse"
-                messageLabel="O que sua empresa precisa"
-                formLabel="Conte o que sua empresa precisa"
-                available={leadsAvailable()}
-              />
-            </Suspense>
+            {/* Pedido geral: a pessoa escolhe o serviço (ou "ainda não sei") e responde à pergunta daquele serviço.
+                Links com ?servico=site ou ?interesse=Automação já chegam com a opção marcada. */}
+            <PedidoForm origem="contato" tipo="projeto" available={leadsAvailable()} />
           </div>
         </div>
       </div>

@@ -61,6 +61,7 @@ export function SiteDiagnosisForm({ available = true }: { /** false enquanto nã
   const [errors, setErrors] = useState<Errors>({});
   const [data, setData] = useState<LeadPayload>({
     tipo: "analise",
+    formulario: "diagnostico-site",
     origem: "diagnostico-site",
     problema: "",
     nome: "",

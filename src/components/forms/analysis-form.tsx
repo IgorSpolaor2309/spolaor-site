@@ -62,6 +62,7 @@ export function AnalysisForm({
   const [errors, setErrors] = useState<Errors>({});
   const [data, setData] = useState<LeadPayload>({
     tipo: "analise",
+    formulario: "diagnostico",
     origem,
     segmento: fixedSegment ?? "",
     problema: "",
@@ -182,7 +183,7 @@ export function AnalysisForm({
 
               <div>
                 <label htmlFor={id("site")} className="mb-2 block text-sm font-medium">
-                  {siteRequired ? "Endereço do site que vamos analisar" : "Site"}{" "}
+                  {siteRequired ? "Endereço do site que vamos analisar" : "Site ou Instagram"}{" "}
                   {!siteRequired && <span className="font-normal text-dim">(se tiver)</span>}
                 </label>
                 <input
@@ -190,7 +191,7 @@ export function AnalysisForm({
                   type="text"
                   inputMode="url"
                   autoComplete="url"
-                  placeholder="suaempresa.com.br"
+                  placeholder={siteRequired ? "suaempresa.com.br" : "suaempresa.com.br ou @seuperfil"}
                   className="field"
                   value={data.site}
                   onChange={(e) => set("site", e.target.value)}
@@ -213,7 +214,7 @@ export function AnalysisForm({
                 {(
                   [
                     ["nome", "Seu nome", "text", "name", "Como podemos te chamar"],
-                    ["empresa", "Empresa", "text", "organization", "Nome da empresa ou o seu"],
+                    ["empresa", "Nome do negócio (opcional)", "text", "organization", "Se ainda está começando, deixe em branco"],
                     ["whatsapp", "WhatsApp", "tel", "tel", "(00) 00000-0000"],
                     ["email", "E-mail (opcional)", "email", "email", "voce@empresa.com.br"],
                   ] as const
@@ -265,7 +266,7 @@ export function AnalysisForm({
               <p className="mx-auto mt-3 max-w-sm text-muted">Vamos olhar o que você contou e chamar você no WhatsApp informado.</p>
               {whatsappLink() && (
                 <div className="mt-8">
-                  <ButtonLink href={whatsappLink(`Olá! Acabei de pedir o diagnóstico para ${data.empresa}.`)!} variant="secondary" target="_blank" rel="noopener">
+                  <ButtonLink href={whatsappLink(data.empresa.trim() ? `Olá! Acabei de pedir o diagnóstico para ${data.empresa.trim()}.` : "Olá! Acabei de pedir o diagnóstico pelo site.")!} variant="secondary" target="_blank" rel="noopener">
                     Adiantar a conversa no WhatsApp
                   </ButtonLink>
                 </div>

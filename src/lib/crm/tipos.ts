@@ -46,11 +46,11 @@ export const CATEGORIA_ROTULO: Record<Categoria, string> = {
   diagnostico: "Diagnóstico de site",
   sistemas: "Sistemas sob medida",
   consultoria: "Consultoria",
-  "a-classificar": "A classificar",
+  "a-classificar": "Serviço não identificado",
 };
 export const isCategoria = (v: unknown): v is Categoria => typeof v === "string" && (CATEGORIAS as readonly string[]).includes(v);
 
-const POR_ORIGEM: Record<string, Categoria> = {
+export const POR_ORIGEM: Record<string, Categoria> = {
   sites: "sites",
   "lojas-virtuais": "lojas",
   "agendamento-online": "agendamento",
@@ -58,7 +58,7 @@ const POR_ORIGEM: Record<string, Categoria> = {
   "atendimento-ia": "atendimento-ia",
   "diagnostico-site": "diagnostico",
 };
-const POR_ESCOLHA: [RegExp, Categoria][] = [
+export const POR_ESCOLHA: [RegExp, Categoria][] = [
   [/^site ou landing/i, "sites"],
   [/^automa[cç][aã]o/i, "automacao"],
   [/^loja/i, "lojas"],
@@ -67,12 +67,23 @@ const POR_ESCOLHA: [RegExp, Categoria][] = [
   [/^consultoria/i, "consultoria"],
 ];
 
+/** Serviço escolhido no formulário de pedido (src/lib/leads/schema.ts, PEDIDOS) → categoria. "nao-sei" não classifica. */
+export const CATEGORIA_DO_PEDIDO: Record<string, Categoria> = {
+  site: "sites",
+  loja: "lojas",
+  agendamento: "agendamento",
+  automacao: "automacao",
+  "nao-sei": "a-classificar",
+};
+
 /**
- * Categoria de um envio de formulário. A escolha explícita da pessoa vale primeiro (uma única opção marcada que
- * corresponda a um serviço); depois, a página do formulário. Várias opções, "Outro" ou diagnóstico geral ficam
- * "a classificar": quem atende decide, o sistema não adivinha.
+ * Categoria de um envio de formulário. A escolha explícita da pessoa vale primeiro (o serviço escolhido no formulário
+ * de pedido, ou uma única opção marcada que corresponda a um serviço); depois, a página do formulário, quando ela é a
+ * página de um serviço. Várias opções, "Outro", "ainda não sei" ou o antigo diagnóstico geral ficam "serviço não
+ * identificado" (a-classificar): quem atende decide, o sistema não adivinha.
  */
-export function categoriaDoEnvio(origem: string, escolhas: string[] | undefined): Categoria {
+export function categoriaDoEnvio(origem: string, escolhas: string[] | undefined, pedido?: string): Categoria {
+  if (pedido && CATEGORIA_DO_PEDIDO[pedido]) return CATEGORIA_DO_PEDIDO[pedido];
   const marcadas = (escolhas ?? []).filter(Boolean);
   if (marcadas.length === 1) {
     const achou = POR_ESCOLHA.find(([re]) => re.test(marcadas[0].trim()));
@@ -156,6 +167,8 @@ export type Oportunidade = {
   contato: Contato;
   /** Há aviso por e-mail ou mensagem do sistema com falha pendente de ação. */
   falha: boolean;
+  /** Motivo legível da falha mais recente (mensagem recusada/incerta ou aviso por e-mail recusado), quando há. */
+  falhaMotivo: string | null;
   /** Motivo de depender de nós (veja PENDENCIA_ROTULO); null quando não depende. */
   pendencia: string | null;
   /** Desde quando o interessado espera (última mensagem dele ainda sem resposta nossa). */
@@ -302,7 +315,12 @@ export const fmtDataHora = (iso: string | null | undefined) =>
   iso
     ? new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(iso)).replace(",", " às")
     : "";
-export const fmtMoeda = (v: number | null | undefined) =>
+/** "22/11/2026 às 10:30" (Brasília), para a data do pedido. */
+export const fmtDataCompleta = (iso: string | null | undefined) =>
+  iso
+    ? new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(iso)).replace(",", " às")
+    : "";
+export const fmtMoeda =(v: number | null | undefined) =>
   v === null || v === undefined ? "" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
 /** "há 3 h", "há 2 dias", "em 4 h". `agora` vem do servidor para o texto não mudar na hidratação. */
