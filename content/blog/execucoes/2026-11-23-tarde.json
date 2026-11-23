@@ -1,0 +1,210 @@
+{
+  "turno": "2026-11-23-tarde",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "agente-de-ia-da-meta-no-whatsapp-business",
+  "inicio": "2026-11-23T18:09:25-03:00",
+  "fim": "2026-11-23T18:15:28-03:00",
+  "motivo": "Não houve novidade que corrigisse ou complementasse o artigo da manhã (lojas virtuais); por isso, artigo novo de outro serviço (atendimento com IA). Item da pauta 'agente-de-ia-meta-whatsapp-business', agora sustentado pela central de ajuda oficial do WhatsApp (disponibilidade, funções, o que é desativado, privacidade) e pelos anúncios oficiais da Meta (lançamento em 03/06/2026 e planos Meta One em R$ de 15/09/2026). Ângulo próprio: o que muda no app ao ligar e quando ele não basta.",
+  "temas": [
+    {
+      "tema": "Agente de IA da Meta no WhatsApp Business: o que faz, o que muda no app e quanto custa",
+      "notas": "utilidade 5, servico 5, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Pergunta frequente de quem atende pelo WhatsApp; fontes oficiais abertas e lidas; serviço diferente do artigo da manhã."
+    },
+    {
+      "tema": "Atualizar o artigo da manhã (vender pelo WhatsApp ou loja virtual)",
+      "notas": "utilidade 2, servico 4, busca 2, original 1",
+      "decisao": "descartado",
+      "motivo": "Nenhuma novidade surgida depois da manhã corrige ou complementa o artigo."
+    },
+    {
+      "tema": "Quando a planilha de clientes deixa de dar conta e um CRM faz sentido",
+      "notas": "utilidade 4, servico 4, busca 4, original 3",
+      "decisao": "adiado",
+      "motivo": "Resultados só de blogs de fornecedores de CRM; sem fonte primária."
+    },
+    {
+      "tema": "Ofertas de terceiros no Perfil da Empresa no Google",
+      "notas": "utilidade 3, servico 3, busca 3, original 3",
+      "decisao": "adiado",
+      "motivo": "Página oficial de ajuda não aberta nesta execução; relação fraca com os serviços."
+    },
+    {
+      "tema": "Informações obrigatórias na venda on-line (Decreto 7.962)",
+      "notas": "utilidade 4, servico 4, busca 3, original 2",
+      "decisao": "adiado",
+      "motivo": "Muito próximo do artigo publicado de manhã."
+    }
+  ],
+  "pesquisas": [
+    "WhatsApp Business Meta novidade empresas novembro 2026",
+    "Perfil da Empresa no Google novidade novembro 2026 pequenas empresas",
+    "planilha ou CRM pequena empresa quando mudar dúvida",
+    "faq.whatsapp.com Business AI WhatsApp Business app agente IA configurar disponível Brasil",
+    "Meta Business Agent assinatura paga preço Brasil WhatsApp Business",
+    "Meta One planos Brasil Essencial R$ 59 Business Agent site oficial meta.com"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://faq.whatsapp.com/1153795669452207/?cms_platform=web&locale=pt_BR",
+      "lida": true,
+      "como": "Playwright (página renderizada) + innerText",
+      "observacao": "Como configurar; disponibilidade e opções de resposta."
+    },
+    {
+      "url": "https://faq.whatsapp.com/291930066973116/?cms_platform=web&locale=pt_BR",
+      "lida": true,
+      "como": "Playwright (página renderizada) + innerText",
+      "observacao": "Sobre o uso; funções, privacidade, recursos afetados, aparelhos."
+    },
+    {
+      "url": "https://faq.whatsapp.com/1868464300583929/?cms_platform=web&locale=pt_BR",
+      "lida": true,
+      "como": "Playwright (página renderizada) + innerText",
+      "observacao": "Como ensinar; conhecimento e pedido de dados."
+    },
+    {
+      "url": "https://faq.whatsapp.com/1057159496566780/?cms_platform=web&locale=pt_BR",
+      "lida": true,
+      "como": "Playwright (página renderizada) + innerText",
+      "observacao": "Lista de transferências da IA."
+    },
+    {
+      "url": "https://faq.whatsapp.com/1060682242241308/?cms_platform=web&locale=pt_BR",
+      "lida": true,
+      "como": "Playwright (página renderizada) + innerText",
+      "observacao": "Saudação e ausência desativadas."
+    },
+    {
+      "url": "https://faq.whatsapp.com/1326310392254030/?cms_platform=web&locale=pt_BR",
+      "lida": true,
+      "como": "Playwright (página renderizada) + innerText",
+      "observacao": "Pausar ou apagar só no app para celular."
+    },
+    {
+      "url": "https://about.fb.com/br/news/2026/06/conversations-2026-apresentamos-o-meta-business-agent/",
+      "lida": true,
+      "como": "curl + extração de texto",
+      "observacao": "Anúncio de 03/06/2026."
+    },
+    {
+      "url": "https://about.fb.com/br/news/2026/09/apresentando-o-meta-one-um-servico-de-assinatura-com-mais-recursos-e-ia-para-criar-se-conectar-e-se-destacar/",
+      "lida": true,
+      "como": "Playwright + innerText",
+      "observacao": "Anúncio do Meta One, 15/09/2026, preços em R$."
+    },
+    {
+      "url": "https://whatsappbusiness.com/pt-br/blog/introducing-meta-business-agent-ai/",
+      "lida": true,
+      "como": "curl + extração de texto",
+      "observacao": "Versão do anúncio no blog do WhatsApp para Empresas; não citada (mesmo conteúdo da newsroom)."
+    },
+    {
+      "url": "https://faq.whatsapp.com/810657551906035/?cms_platform=web&locale=pt_BR",
+      "lida": true,
+      "como": "Playwright",
+      "observacao": "Página só indica que o recurso não está no app para web; não usada."
+    }
+  ],
+  "fontesNaoAbertas": [
+    {
+      "url": "https://whatsappbusiness.com/pt-br/products/meta-one/",
+      "motivo": "Endereço deduzido; página sem conteúdo útil. Não usada."
+    },
+    {
+      "url": "https://exame.com/inteligencia-artificial/meta-business-agent-whatsapp-como-funciona-ativar-precos/",
+      "motivo": "Só vista no resultado de busca; não aberta e não usada (informações de elegibilidade no Brasil ficaram fora do texto)."
+    }
+  ],
+  "afirmacoes": [
+    {
+      "afirmacao": "Lançado em 03/06/2026 na Conversations, em Londres; mais de um milhão de empresas no WhatsApp e Messenger",
+      "fonte": "https://about.fb.com/br/news/2026/06/conversations-2026-apresentamos-o-meta-business-agent/",
+      "trecho": "Mais de um milhão de empresas já estão usando um Meta Business Agent no WhatsApp e no Messenger para responder aos clientes 24 horas por dia."
+    },
+    {
+      "afirmacao": "Disponível só para empresas selecionadas em alguns países; idioma pelo número",
+      "fonte": "https://faq.whatsapp.com/1153795669452207/?cms_platform=web&locale=pt_BR",
+      "trecho": "No momento, esse recurso está disponível somente para empresas selecionadas em alguns países."
+    },
+    {
+      "afirmacao": "Lista de espera não garante acesso nem tem data",
+      "fonte": "https://faq.whatsapp.com/1153795669452207/?cms_platform=web&locale=pt_BR",
+      "trecho": "Estar na lista de espera não garante o acesso, e não há uma data definida para quando o acesso será concedido."
+    },
+    {
+      "afirmacao": "Quatro opções de onde o agente responde",
+      "fonte": "https://faq.whatsapp.com/1153795669452207/?cms_platform=web&locale=pt_BR",
+      "trecho": "Pausada para novas conversas, mas aprendendo: o Meta Business Agent não responderá automaticamente a novas conversas. Enquanto estiver pausada, a IA continuará coletando dados de novas conversas"
+    },
+    {
+      "afirmacao": "Em conversa em andamento, só responde após 7 dias de inatividade",
+      "fonte": "https://faq.whatsapp.com/1153795669452207/?cms_platform=web&locale=pt_BR",
+      "trecho": "o Meta Business Agent só responderá às mensagens do cliente se a conversa ficar inativa por sete dias"
+    },
+    {
+      "afirmacao": "O que responde e de onde tira as informações",
+      "fonte": "https://faq.whatsapp.com/291930066973116/?cms_platform=web&locale=pt_BR",
+      "trecho": "Responder dúvidas sobre descontos, pagamentos e frete."
+    },
+    {
+      "afirmacao": "Resposta manual faz a IA parar na conversa",
+      "fonte": "https://faq.whatsapp.com/291930066973116/?cms_platform=web&locale=pt_BR",
+      "trecho": "Se você responder às mensagens de um cliente manualmente, a IA deixará de gerar respostas."
+    },
+    {
+      "afirmacao": "Mensagens coletadas pela Meta mesmo silenciado; apagar encerra; aviso ao cliente",
+      "fonte": "https://faq.whatsapp.com/291930066973116/?cms_platform=web&locale=pt_BR",
+      "trecho": "serão coletadas pela Meta para melhorar a qualidade dessa tecnologia, mesmo se você silenciar o Meta Business Agent"
+    },
+    {
+      "afirmacao": "Listas de transmissão, temporárias, saudação e ausência afetadas; aparelhos desconectados, sem reconexão de Windows, tablets Android e WearOS",
+      "fonte": "https://faq.whatsapp.com/291930066973116/?cms_platform=web&locale=pt_BR",
+      "trecho": "exceto o WhatsApp para Windows, o WhatsApp para tablets Android e o WhatsApp para WearOS"
+    },
+    {
+      "afirmacao": "Saudação e ausência desligadas; voltar exige apagar o agente",
+      "fonte": "https://faq.whatsapp.com/1060682242241308/?cms_platform=web&locale=pt_BR",
+      "trecho": "Para usar as mensagens de saudação ou de ausência, será necessário apagar o Meta Business Agent."
+    },
+    {
+      "afirmacao": "Aprende com respostas manuais; conhecimento não gerenciável no WhatsApp Web; pede dados se configurado",
+      "fonte": "https://faq.whatsapp.com/1868464300583929/?cms_platform=web&locale=pt_BR",
+      "trecho": "Não é possível acessar o conhecimento da IA no WhatsApp Web."
+    },
+    {
+      "afirmacao": "Pausar ou apagar só no app de celular",
+      "fonte": "https://faq.whatsapp.com/1326310392254030/?cms_platform=web&locale=pt_BR",
+      "trecho": "Não é possível pausar ou apagar o Meta Business Agent no WhatsApp Web."
+    },
+    {
+      "afirmacao": "Lista de Transferências da IA; sai após resposta ou 24 h",
+      "fonte": "https://faq.whatsapp.com/1057159496566780/?cms_platform=web&locale=pt_BR",
+      "trecho": "24 horas após eu responder: responder manualmente a um cliente removerá a conversa da lista de transferências da IA após 24 horas."
+    },
+    {
+      "afirmacao": "Uso gratuito e assinatura paga prevista",
+      "fonte": "https://about.fb.com/br/news/2026/06/conversations-2026-apresentamos-o-meta-business-agent/",
+      "trecho": "O uso do Business Agent é gratuito. Nos próximos meses, as empresas poderão acessar o agente por meio das nossas ofertas de assinatura paga"
+    },
+    {
+      "afirmacao": "Planos Meta One: Essencial R$ 59, Avançado R$ 199, Expert R$ 599, Máximo R$ 1.999; variação por região/conta",
+      "fonte": "https://about.fb.com/br/news/2026/09/apresentando-o-meta-one-um-servico-de-assinatura-com-mais-recursos-e-ia-para-criar-se-conectar-e-se-destacar/",
+      "trecho": "Expert (a partir de R$ 599/mês) e Máximo (a partir de R$ 1.999/mês): Escale e otimize."
+    },
+    {
+      "afirmacao": "Plataforma do Business Agent conecta sistemas como Shopify e Zendesk",
+      "fonte": "https://about.fb.com/br/news/2026/06/conversations-2026-apresentamos-o-meta-business-agent/",
+      "trecho": "Ela permite que as empresas se conectem a um conjunto crescente de centenas de sistemas, como Shopify e Zendesk"
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Revisor independente (subagente) conferiu as afirmações contra o texto extraído das 8 fontes: todas as factuais conferem e os trechos são literais. Corrigido: afirmação de que o app não conecta sistemas próprios virou constatação do que as páginas mostram; limitações sobre equipe e regras de transferência viraram hipótese com ressalva (plano Avançado dá acesso à equipe); checklist distingue o que é desligado do que 'pode ser afetado'; abertura passou a dizer que a coleta vale para conversas com o agente ativado, mesmo silenciado; aviso de que 'pausado, mas aprendendo' continua coletando; preços como 'versão brasileira do anúncio' e 'por mês' no Expert/Máximo; 'custo de entrada baixo' trocado pelo dado da fonte; 'o caminho costuma ser' virou recomendação; opções do checklist alinhadas à central de ajuda; ajustes de regência."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}
