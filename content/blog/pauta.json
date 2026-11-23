@@ -6,7 +6,7 @@
     { "id": "landing-page-anuncio", "servico": "sites", "pergunta": "Landing page para anúncio: o que ela precisa ter para o contato acontecer", "situacao": "ideia", "slug": null },
     { "id": "dominio-e-hospedagem", "servico": "sites", "pergunta": "Domínio, hospedagem e desenvolvimento: o que é de quem e como não ficar preso a um fornecedor", "situacao": "usado", "slug": "dono-do-dominio-do-site-registro-br" },
     { "id": "loja-plataforma-ou-propria", "servico": "lojas", "pergunta": "Loja virtual em plataforma pronta ou loja sob medida: como decidir", "situacao": "ideia", "slug": null },
-    { "id": "vender-whatsapp-para-loja", "servico": "lojas", "pergunta": "Quando vale sair do pedido pelo WhatsApp para uma loja virtual", "situacao": "ideia", "slug": null },
+    { "id": "vender-whatsapp-para-loja", "servico": "lojas", "pergunta": "Quando vale sair do pedido pelo WhatsApp para uma loja virtual", "situacao": "usado", "slug": "vender-pelo-whatsapp-ou-loja-virtual-quando-mudar" },
     { "id": "faltas-horario-marcado", "servico": "agendamento", "pergunta": "Como reduzir faltas e remarcações em negócios com hora marcada", "situacao": "usado", "slug": "como-reduzir-faltas-horario-marcado" },
     { "id": "agenda-por-mensagem", "servico": "agendamento", "pergunta": "Agendar por mensagem custa caro: quando migrar para agendamento online", "situacao": "ideia", "slug": null },
     { "id": "o-que-automatizar-primeiro", "servico": "automacao", "pergunta": "O que automatizar primeiro numa empresa pequena", "situacao": "ideia", "slug": null },
@@ -28,6 +28,7 @@
     { "id": "seguranca-conta-dominio", "servico": "sites", "pergunta": "Token e verificação em duas etapas na conta do Registro.br: como proteger o domínio da empresa contra perda de acesso (confirmar na ajuda oficial do Registro.br)", "situacao": "usado", "slug": "conta-registro-br-token-e-cobranca-falsa" },
     { "id": "agente-ia-meta-whatsapp-business", "servico": "atendimento", "pergunta": "Agente de IA da Meta no app WhatsApp Business: o que ele faz, o que custa e quando um atendimento com IA próprio faz mais sentido (confirmar disponibilidade e cobrança no Brasil em página oficial da Meta)", "situacao": "ideia", "slug": null },
     { "id": "pix-automatico-cancelamentos", "servico": "automacao", "pergunta": "Cliente cancelou o Pix Automático: como acompanhar cancelamentos e pagamentos recusados sem conferir o app do banco todo dia", "situacao": "ideia", "slug": null },
-    { "id": "whatsapp-chat-perfil-google", "servico": "atendimento", "pergunta": "WhatsApp como opção de chat no Perfil da Empresa no Google: como configurar e organizar quem responde (conferir disponibilidade na ajuda oficial do Google)", "situacao": "ideia", "slug": null }
+    { "id": "whatsapp-chat-perfil-google", "servico": "atendimento", "pergunta": "WhatsApp como opção de chat no Perfil da Empresa no Google: como configurar e organizar quem responde (conferir disponibilidade na ajuda oficial do Google)", "situacao": "ideia", "slug": null },
+    { "id": "informacoes-obrigatorias-venda-online", "servico": "lojas", "pergunta": "Política de troca, arrependimento e dados obrigatórios na loja virtual: o que precisa estar visível antes de vender (conferir no Decreto 7.962/2013 e no CDC)", "situacao": "ideia", "slug": null }
   ]
 }

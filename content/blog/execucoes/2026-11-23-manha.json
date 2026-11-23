@@ -1,0 +1,138 @@
+{
+  "turno": "2026-11-23-manha",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "vender-pelo-whatsapp-ou-loja-virtual-quando-mudar",
+  "inicio": "2026-11-23T08:06:57-03:00",
+  "fim": "2026-11-23T08:12:04-03:00",
+  "motivo": "Lojas virtuais ainda não tinha artigo; o anterior foi de sites/consultoria. Dúvida duradoura de contratação (item 'vender-whatsapp-para-loja' da pauta), sustentada por pesquisa Sebrae de 2026, blog oficial do WhatsApp e texto legal (Decreto 7.962/2013 e CDC art. 49), com ângulo próprio: as regras de comércio eletrônico já pesam sobre quem vende por mensagem.",
+  "temas": [
+    {
+      "tema": "Quando sair do pedido pelo WhatsApp para uma loja virtual",
+      "notas": "utilidade 5, servico 5, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Serviço sem artigo, fontes primárias abertas, ângulo legal pouco tratado."
+    },
+    {
+      "tema": "CRM ou planilha de clientes",
+      "notas": "utilidade 4, servico 4, busca 4, original 3",
+      "decisao": "adiado",
+      "motivo": "Sem fonte primária forte nesta execução."
+    },
+    {
+      "tema": "Janela de 72 h sem cobrança em conversas vindas de anúncio no WhatsApp",
+      "notas": "utilidade 4, servico 4, busca 3, original 3",
+      "decisao": "adiado",
+      "motivo": "WhatsApp API foi tema recente; página oficial de preços da Meta não foi aberta nesta execução."
+    },
+    {
+      "tema": "Orçamentos sem retorno: como organizar o acompanhamento",
+      "notas": "utilidade 4, servico 4, busca 3, original 3",
+      "decisao": "adiado",
+      "motivo": "Menor oportunidade de busca hoje."
+    }
+  ],
+  "pesquisas": [
+    "WhatsApp Business novidade novembro 2026 empresas Brasil",
+    "Meta WhatsApp click-to-WhatsApp ads free entry point 72 hours conversation pricing developers",
+    "loja virtual dúvida vender pelo WhatsApp ou loja virtual pequena empresa 2026",
+    "faq.whatsapp.com catálogo WhatsApp Business como criar carrinho produtos",
+    "Código de Defesa do Consumidor comércio eletrônico Decreto 7.962 informações obrigatórias site direito de arrependimento planalto"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://agenciasebrae.com.br/dados/whatsapp-se-consolida-nas-vendas-on-line-enquanto-facebook-e-lojas-proprias-perdem-folego/",
+      "lida": true,
+      "como": "curl + extração de texto (e WebFetch)",
+      "observacao": "Matéria de 16/04/2026 sobre a Pulso 12ª edição."
+    },
+    {
+      "url": "https://blog.whatsapp.com/introducing-catalogs-for-small-businesses?lang=pt",
+      "lida": true,
+      "como": "curl + extração de texto",
+      "observacao": "Post de 7/11/2019."
+    },
+    {
+      "url": "https://blog.whatsapp.com/making-it-easier-to-shop-on-whatsapp-with-carts?lang=pt",
+      "lida": true,
+      "como": "curl + extração de texto",
+      "observacao": "Post de 8/12/2020."
+    },
+    {
+      "url": "https://www2.camara.leg.br/legin/fed/decret/2013/decreto-7962-15-marco-2013-775557-publicacaooriginal-139266-pe.html",
+      "lida": true,
+      "como": "curl + extração de texto",
+      "observacao": "Página 'norma' da Câmara indica 'Não consta revogação expressa'."
+    },
+    {
+      "url": "https://www2.camara.leg.br/legin/fed/lei/1990/lei-8078-11-setembro-1990-365086-normaatualizada-pl.html",
+      "lida": true,
+      "como": "curl + extração de texto",
+      "observacao": "Texto atualizado; art. 49 lido."
+    }
+  ],
+  "fontesNaoAbertas": [
+    {
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/decreto/d7962.htm",
+      "motivo": "Servidor respondeu vazio (curl 52); usado o texto da Câmara."
+    },
+    {
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm",
+      "motivo": "Servidor respondeu vazio (curl 52); usado o texto da Câmara."
+    }
+  ],
+  "afirmacoes": [
+    {
+      "afirmacao": "Pulso 12ª edição ouviu mais de 8,2 mil empreendedores de todo o país em fev-mar 2026",
+      "fonte": "https://agenciasebrae.com.br/dados/whatsapp-se-consolida-nas-vendas-on-line-enquanto-facebook-e-lojas-proprias-perdem-folego/",
+      "trecho": "A 12ª edição da Pulso ouviu mais de 8,2 mil empreendedores de todo o país no período de fevereiro e março de 2026"
+    },
+    {
+      "afirmacao": "82% de MEI e MPE apontam o WhatsApp como principal canal de comunicação e vendas",
+      "fonte": "https://agenciasebrae.com.br/dados/whatsapp-se-consolida-nas-vendas-on-line-enquanto-facebook-e-lojas-proprias-perdem-folego/",
+      "trecho": "O índice cresceu um ponto percentual em comparação a 2024 e agora alcança 82% dos microempreendedores individuais (MEI) e das micro e pequenas empresas."
+    },
+    {
+      "afirmacao": "Lojas virtuais próprias: 14% em 2021, 10% em 2026",
+      "fonte": "https://agenciasebrae.com.br/dados/whatsapp-se-consolida-nas-vendas-on-line-enquanto-facebook-e-lojas-proprias-perdem-folego/",
+      "trecho": "As lojas virtuais próprias também tiveram redução – de 14%, em 2021, para 10%, em 2026."
+    },
+    {
+      "afirmacao": "Catálogo tem fotos, preço, descrição e código por item",
+      "fonte": "https://blog.whatsapp.com/introducing-catalogs-for-small-businesses?lang=pt",
+      "trecho": "Para cada item no catálogo, as empresas podem adicionar fotos, preço, descrição e código do produto, além de outras informações."
+    },
+    {
+      "afirmacao": "Carrinho: cliente seleciona itens e envia pedido por mensagem",
+      "fonte": "https://blog.whatsapp.com/making-it-easier-to-shop-on-whatsapp-with-carts?lang=pt",
+      "trecho": "Com o carrinho, as pessoas podem explorar o catálogo, selecionar diversos itens e enviar o pedido por mensagem para a empresa."
+    },
+    {
+      "afirmacao": "Decreto 7.962 art. 2º vale para sites ou demais meios eletrônicos e lista informações obrigatórias",
+      "fonte": "https://www2.camara.leg.br/legin/fed/decret/2013/decreto-7962-15-marco-2013-775557-publicacaooriginal-139266-pe.html",
+      "trecho": "Art. 2º Os sítios eletrônicos ou demais meios eletrônicos utilizados para oferta ou conclusão de contrato de consumo devem disponibilizar, em local de destaque e de fácil visualização"
+    },
+    {
+      "afirmacao": "Fornecedor deve confirmar aceitação da oferta e manter atendimento eletrônico eficaz",
+      "fonte": "https://www2.camara.leg.br/legin/fed/decret/2013/decreto-7962-15-marco-2013-775557-publicacaooriginal-139266-pe.html",
+      "trecho": "III - confirmar imediatamente o recebimento da aceitação da oferta"
+    },
+    {
+      "afirmacao": "Fornecedor deve informar como exercer o arrependimento",
+      "fonte": "https://www2.camara.leg.br/legin/fed/decret/2013/decreto-7962-15-marco-2013-775557-publicacaooriginal-139266-pe.html",
+      "trecho": "Art. 5º O fornecedor deve informar, de forma clara e ostensiva, os meios adequados e eficazes para o exercício do direito de arrependimento pelo consumidor."
+    },
+    {
+      "afirmacao": "Arrependimento em 7 dias fora do estabelecimento, devolução imediata atualizada",
+      "fonte": "https://www2.camara.leg.br/legin/fed/lei/1990/lei-8078-11-setembro-1990-365086-normaatualizada-pl.html",
+      "trecho": "Art. 49. O consumidor pode desistir do contrato, no prazo de 7 dias a contar de sua assinatura ou do ato de recebimento do produto ou serviço"
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Revisor independente (subagente) conferiu as 7 afirmações contra o texto das fontes: todas conferem e os trechos são literais. Correções aplicadas: troca deixou de ser apresentada como exigência legal; abertura da seção legal suavizada (decreto 'não fala só em sites'), mantendo a aplicação ao WhatsApp como recomendação; retirada frase que sugeria vendas novas; 'costuma' trocado por 'pode'; datas dos posts do WhatsApp (2019, 2020) nos títulos das fontes; chamada para lojas restrita ao resumo do serviço. Também removida antes da revisão a afirmação sem fonte de que 'muita gente decide a compra à noite'."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}
