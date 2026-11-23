@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-23-tarde",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "agente-de-ia-da-meta-no-whatsapp-business",
   "inicio": "2026-11-23T18:09:25-03:00",
@@ -205,6 +205,10 @@
     "observacoes": "Revisor independente (subagente) conferiu as afirmações contra o texto extraído das 8 fontes: todas as factuais conferem e os trechos são literais. Corrigido: afirmação de que o app não conecta sistemas próprios virou constatação do que as páginas mostram; limitações sobre equipe e regras de transferência viraram hipótese com ressalva (plano Avançado dá acesso à equipe); checklist distingue o que é desligado do que 'pode ser afetado'; abertura passou a dizer que a coleta vale para conversas com o agente ativado, mesmo silenciado; aviso de que 'pausado, mas aprendendo' continua coletando; preços como 'versão brasileira do anúncio' e 'por mês' no Expert/Máximo; 'custo de entrada baixo' trocado pelo dado da fonte; 'o caminho costuma ser' virou recomendação; opções do checklist alinhadas à central de ajuda; ajustes de regência."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-23T21:16:30.316Z",
+    "url": "https://blog.spolaortecnologia.com.br/agente-de-ia-da-meta-no-whatsapp-business",
+    "commit": "d797126e57d93ae7f0ca18c10aa548e828c15524",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
