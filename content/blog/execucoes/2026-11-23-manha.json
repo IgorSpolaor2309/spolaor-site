@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-23-manha",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "vender-pelo-whatsapp-ou-loja-virtual-quando-mudar",
   "inicio": "2026-11-23T08:06:57-03:00",
@@ -133,6 +133,10 @@
     "observacoes": "Revisor independente (subagente) conferiu as 7 afirmações contra o texto das fontes: todas conferem e os trechos são literais. Correções aplicadas: troca deixou de ser apresentada como exigência legal; abertura da seção legal suavizada (decreto 'não fala só em sites'), mantendo a aplicação ao WhatsApp como recomendação; retirada frase que sugeria vendas novas; 'costuma' trocado por 'pode'; datas dos posts do WhatsApp (2019, 2020) nos títulos das fontes; chamada para lojas restrita ao resumo do serviço. Também removida antes da revisão a afirmação sem fonte de que 'muita gente decide a compra à noite'."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-23T11:13:08.955Z",
+    "url": "https://blog.spolaortecnologia.com.br/vender-pelo-whatsapp-ou-loja-virtual-quando-mudar",
+    "commit": "06f8da7073b5ff5205759391f004334342983bfc",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
