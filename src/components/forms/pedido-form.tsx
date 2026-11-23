@@ -207,14 +207,14 @@ export function PedidoForm({
                     id={id("empresa")}
                     type="text"
                     autoComplete="organization"
-                    placeholder={data.semEmpresa ? "Ainda estou começando" : "Como seus clientes conhecem você"}
+                    placeholder={data.semEmpresa ? "Ainda estou começando" : "Ex.: Doces da Ana"}
                     className="field disabled:opacity-60"
                     value={data.empresa}
                     disabled={data.semEmpresa}
                     onChange={(e) => set("empresa", e.target.value)}
                   />
-                  <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-muted">
-                    <input type="checkbox" className="h-4 w-4 accent-signal" checked={!!data.semEmpresa} onChange={(e) => setData((d) => ({ ...d, semEmpresa: e.target.checked, empresa: e.target.checked ? "" : d.empresa }))} />
+                  <label className="mt-2 flex cursor-pointer items-start gap-2 text-sm leading-snug text-muted">
+                    <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-signal" checked={!!data.semEmpresa} onChange={(e) => setData((d) => ({ ...d, semEmpresa: e.target.checked, empresa: e.target.checked ? "" : d.empresa }))} />
                     Ainda estou começando
                   </label>
                 </div>
@@ -227,14 +227,14 @@ export function PedidoForm({
                     type="text"
                     inputMode="url"
                     autoComplete="url"
-                    placeholder={data.semSite ? "Ainda não tenho" : "suaempresa.com.br ou @seuperfil"}
+                    placeholder={data.semSite ? "Ainda não tenho" : "site.com.br ou @perfil"}
                     className="field disabled:opacity-60"
                     value={data.site}
                     disabled={data.semSite}
                     onChange={(e) => set("site", e.target.value)}
                   />
-                  <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-muted">
-                    <input type="checkbox" className="h-4 w-4 accent-signal" checked={!!data.semSite} onChange={(e) => setData((d) => ({ ...d, semSite: e.target.checked, site: e.target.checked ? "" : d.site }))} />
+                  <label className="mt-2 flex cursor-pointer items-start gap-2 text-sm leading-snug text-muted">
+                    <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-signal" checked={!!data.semSite} onChange={(e) => setData((d) => ({ ...d, semSite: e.target.checked, site: e.target.checked ? "" : d.site }))} />
                     Ainda não tenho site nem Instagram
                   </label>
                 </div>
@@ -248,7 +248,16 @@ export function PedidoForm({
 
           {step === 2 && (
             <motion.fieldset key="s2" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.35 }} className="grid gap-5">
-              <legend className="mb-1 text-lg font-medium">Com quem falamos sobre o pedido?</legend>
+              <legend className="mb-4 text-lg font-medium">Com quem falamos sobre o pedido?</legend>
+              {escolhido && (
+                <p className="-mt-1 flex flex-wrap items-baseline gap-x-2 rounded-xl border border-line bg-fg/[0.03] px-3.5 py-2.5 text-sm leading-snug" data-resumo-pedido>
+                  <span className="text-dim">Seu pedido:</span>
+                  <span className="font-medium">{escolhido.rotulo}</span>
+                  <button type="button" onClick={() => setStep(1)} className="ml-auto font-medium text-signal underline-offset-4 hover:underline">
+                    Alterar
+                  </button>
+                </p>
+              )}
               <div className="grid gap-5 sm:grid-cols-2">
                 {(
                   [
@@ -301,7 +310,16 @@ export function PedidoForm({
                 </svg>
               </span>
               <p className="mt-6 text-2xl font-medium tracking-tight">Pedido recebido, {data.nome.split(" ")[0]}.</p>
-              <p className="mx-auto mt-3 max-w-sm text-muted">Vamos ler o que você contou e chamar você no WhatsApp informado.</p>
+              <p className="mx-auto mt-3 max-w-sm text-muted">
+                {escolhido && data.pedido !== "nao-sei" ? (
+                  <>
+                    Seu pedido de <strong className="font-medium text-fg">{escolhido.rotulo.toLowerCase()}</strong> chegou.{" "}
+                  </>
+                ) : (
+                  "Seu pedido chegou. "
+                )}
+                Vamos ler o que você contou e chamar você no WhatsApp informado.
+              </p>
               {whatsappLink() && (
                 <div className="mt-8">
                   <ButtonLink href={whatsappLink(`Olá! Acabei de enviar um pedido pelo site: ${escolhido?.rotulo ?? ""}.`)!} variant="secondary" target="_blank" rel="noopener">

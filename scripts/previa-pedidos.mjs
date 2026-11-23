@@ -45,9 +45,27 @@ async function contexto(largura) {
   await ctx.route(/connect\.facebook\.net|facebook\.com|googletagmanager|google-analytics/, (r) => (r.request().url().includes("fbevents.js") ? r.fulfill({ contentType: "application/javascript", body: FAKE_FB }) : r.abort()));
   return ctx;
 }
+// Cabeçalho do site, barra fixa do celular e navegação fixa do CRM ficam fora das fotos de elemento e de página
+// inteira (o Playwright as repete por cima do conteúdo). Na tela, continuam como estão.
+const SEM_FIXOS = `header.fixed, [data-cta-bar], nav[aria-label="Seções do CRM"].fixed, nav[aria-label="Seções do CRM"][class*="fixed"] { visibility: hidden !important; }`;
 const foto = async (alvo, nome) => {
+  const pg = typeof alvo.page === "function" ? alvo.page() : alvo;
+  const tag = await pg.addStyleTag({ content: SEM_FIXOS });
   await alvo.screenshot({ path: `${pasta}/${nome}.png`, animations: "disabled" });
+  await tag.evaluate((el) => el.remove());
   notas.push(nome);
+};
+const inteira = async (pg, nome) => {
+  const tag = await pg.addStyleTag({ content: SEM_FIXOS });
+  await pg.screenshot({ path: `${pasta}/${nome}.png`, fullPage: true });
+  await tag.evaluate((el) => el.remove());
+  notas.push(nome);
+};
+// Espera o bloco aparecer (animação de entrada ao rolar) antes da foto.
+const visivel = async (pg, sel) => {
+  await pg.locator(sel).first().scrollIntoViewIfNeeded();
+  await pg.waitForFunction((s) => { const el = document.querySelector(s); return !!el && getComputedStyle(el.closest("[style]") ?? el).opacity === "1"; }, sel, { timeout: 5000 }).catch(() => {});
+  await espera(900);
 };
 
 /* 1) formulário da home, vindo do anúncio geral (UTMs e ids de anúncio fictícios) */
@@ -57,12 +75,19 @@ for (const largura of [390, 1440]) {
   const ctx = await contexto(largura);
   const p = await ctx.newPage();
   await p.goto(`${B}/?${UTM}`, { waitUntil: "networkidle" });
-  const bloco = p.locator("#analise");
-  await bloco.scrollIntoViewIfNeeded();
-  await p.evaluate(() => document.querySelector("section[aria-labelledby=analysis-title]")?.scrollIntoView());
-  await espera(900);
+  // Rola o bloco inteiro pela tela para disparar as animações de entrada (texto e formulário).
+  await visivel(p, "section[aria-labelledby=analysis-title]");
+  await visivel(p, "form[data-formulario=pedido]");
   await foto(p.locator("section[aria-labelledby=analysis-title]"), `1-home-bloco-${largura}`);
   const f = p.locator("form[data-formulario=pedido]");
+  // Validação do passo 1: sem escolher o serviço; depois, escolhido mas sem responder à pergunta.
+  await f.getByRole("button", { name: "Continuar" }).click();
+  await espera(400);
+  await foto(f, `2a-validacao-sem-servico-${largura}`);
+  await f.locator("label", { hasText: "Loja virtual" }).click();
+  await f.getByRole("button", { name: "Continuar" }).click();
+  await espera(400);
+  await foto(f, `2b-validacao-sem-resposta-${largura}`);
   await f.locator("label", { hasText: "Loja virtual" }).click();
   await f.locator("textarea").fill("Vendo doces pelo Instagram e anoto as encomendas no caderno. Quero receber os pedidos já organizados.");
   await f.getByLabel("Site ou Instagram atual").fill("@doces.exemplo");
@@ -71,6 +96,12 @@ for (const largura of [390, 1440]) {
   await foto(f, `2-home-passo1-loja-${largura}`);
   await f.getByRole("button", { name: "Continuar" }).click();
   await espera(600);
+  // Validação do passo 2: envio sem nome e com WhatsApp incompleto (nada chega à API).
+  await f.getByLabel("WhatsApp").fill("(11) 9000");
+  await f.locator("button[type=submit]").click();
+  await espera(400);
+  await foto(f, `3a-validacao-contato-${largura}`);
+  await f.getByLabel("WhatsApp").fill("");
   await f.getByLabel("Seu nome", { exact: true }).fill(largura === 390 ? "Paula Exemplo" : "Paula Exemplo (desktop)");
   await f.getByLabel("WhatsApp").fill(largura === 390 ? "(11) 90000-0101" : "(11) 90000-0102");
   await foto(f, `3-home-passo2-contato-${largura}`);
@@ -96,6 +127,9 @@ for (const largura of [390, 1440]) {
   await p.goto(`${B}/lojas-virtuais#formulario`, { waitUntil: "networkidle" });
   await espera(600);
   await foto(p.locator("#formulario form"), "6-lojas-orcamento-390");
+  await p.locator("#formulario form button[type=submit]").click();
+  await espera(500);
+  await foto(p.locator("#formulario form"), "6a-lojas-validacao-390");
   await ctx.close();
 }
 
@@ -135,8 +169,7 @@ const [{ oportunidade_id: idNovo }] = await sql`select oportunidade_id from crm_
 for (const [nome, url] of [["7-fila", "/leads"], ["8-ficha-pedido-novo", `/leads/o/${idNovo}`], ["9-ficha-registro-antigo", `/leads/o/${idAntigo}`], ["10-lista", "/leads/lista"]]) {
   await d.goto(`${B}${url}`);
   await espera(500);
-  await d.screenshot({ path: `${pasta}/${nome}-1440.png`, fullPage: true });
-  notas.push(`${nome}-1440`);
+  await inteira(d, `${nome}-1440`);
 }
 const ctxM = await contexto(390);
 await ctxM.addCookies([{ ...cookie }]);
@@ -145,8 +178,8 @@ for (const [nome, url] of [["7-fila", "/leads"], ["8-ficha-pedido-novo", `/leads
   await m.goto(`${B}${url}`);
   await espera(500);
   await m.screenshot({ path: `${pasta}/${nome}-390.png`, fullPage: false });
-  await m.screenshot({ path: `${pasta}/${nome}-390-inteira.png`, fullPage: true });
   notas.push(`${nome}-390`);
+  await inteira(m, `${nome}-390-inteira`);
 }
 writeFileSync(`${pasta}/capturas.txt`, notas.join("\n") + "\n");
 await browser.close();

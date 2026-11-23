@@ -75,7 +75,10 @@ export function ContactForm({
     const errs = validateLead(data);
     if (Object.keys(errs).length) {
       setErrors(errs);
-      document.getElementById(Object.keys(errs)[0])?.focus();
+      // Foco no primeiro campo com erro na ordem em que aparecem na tela (a mensagem vem antes do contato).
+      const ordem = ["mensagem", "empresa", "nome", "whatsapp", "email"] as const;
+      const primeiro = ordem.find((k) => errs[k]) ?? Object.keys(errs)[0];
+      document.getElementById(primeiro)?.focus();
       return;
     }
     setStatus("sending");
@@ -175,8 +178,8 @@ export function ContactForm({
             value={data.empresa}
             onChange={(e) => set("empresa", e.target.value)}
           />
-          <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-muted">
-            <input type="checkbox" className="h-4 w-4 accent-signal" checked={!!data.semEmpresa} onChange={(e) => setData((d) => ({ ...d, semEmpresa: e.target.checked, empresa: e.target.checked ? "" : d.empresa }))} />
+          <label className="mt-2 flex cursor-pointer items-start gap-2 text-sm leading-snug text-muted">
+            <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-signal" checked={!!data.semEmpresa} onChange={(e) => setData((d) => ({ ...d, semEmpresa: e.target.checked, empresa: e.target.checked ? "" : d.empresa }))} />
             Ainda estou começando
           </label>
         </div>
@@ -189,13 +192,13 @@ export function ContactForm({
             type="text"
             inputMode="url"
             className="field disabled:opacity-60"
-            placeholder={data.semSite ? "Ainda não tenho" : "suaempresa.com.br ou @seuperfil"}
+            placeholder={data.semSite ? "Ainda não tenho" : "site.com.br ou @perfil"}
             disabled={data.semSite}
             value={data.site}
             onChange={(e) => set("site", e.target.value)}
           />
-          <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-muted">
-            <input type="checkbox" className="h-4 w-4 accent-signal" checked={!!data.semSite} onChange={(e) => setData((d) => ({ ...d, semSite: e.target.checked, site: e.target.checked ? "" : d.site }))} />
+          <label className="mt-2 flex cursor-pointer items-start gap-2 text-sm leading-snug text-muted">
+            <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-signal" checked={!!data.semSite} onChange={(e) => setData((d) => ({ ...d, semSite: e.target.checked, site: e.target.checked ? "" : d.site }))} />
             Ainda não tenho site nem Instagram
           </label>
         </div>

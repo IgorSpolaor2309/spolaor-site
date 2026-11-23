@@ -124,6 +124,7 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
   const pessoa = informadoPelaPessoa(o, original);
   const origemPedido = origemDoPedido(o);
   // Outro pedido da mesma pessoa chegado perto deste: pode ser o mesmo pedido enviado duas vezes. O CRM não une.
+  const paginaLegivel = (p: string | null) => (p === "/" ? "/ (página inicial)" : p);
   const vizinhas = outras.filter((x) => Math.abs(new Date(x.recebidoEm).getTime() - new Date(o.recebidoEm).getTime()) <= 30 * 60_000);
 
   return (
@@ -211,12 +212,18 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
                 {pessoa.map((l) => (
                   <Dado key={l.rotulo} rotulo={`${l.rotulo} (informado)`} valor={l.valor} ausente={l.ausente} link={l.link} />
                 ))}
-                <Dado rotulo="Página do envio" valor={o.pagina ?? NAO_INFORMADO} ausente={!o.pagina} nota={o.entrada ? `Primeira página da visita: ${o.entrada}` : undefined} />
+                <Dado rotulo="Página do envio" valor={paginaLegivel(o.pagina) ?? NAO_INFORMADO} ausente={!o.pagina} nota={o.entrada ? `Primeira página da visita: ${paginaLegivel(o.entrada)}` : undefined} />
                 <Dado rotulo="Formulário" valor={formularioDeEntrada(o)} />
                 {origemPedido.map((l) => (
                   <Dado key={l.rotulo} rotulo={l.rotulo} valor={l.valor} ausente={l.ausente} nota={l.nota} />
                 ))}
               </dl>
+              {envios.length > 1 && (
+                <p className="rounded-[10px] border border-line bg-ink-850 px-3.5 py-2.5 text-[0.86rem] leading-snug text-muted" data-varios-envios>
+                  A pessoa enviou o formulário {envios.length} vezes nesta oportunidade. Acima está o primeiro envio; as respostas de cada envio estão em
+                  “Envios do formulário”.
+                </p>
+              )}
               {vizinhas.length > 0 && (
                 <p className="rounded-[10px] border border-line bg-ink-850 px-3.5 py-2.5 text-[0.86rem] leading-snug text-muted" data-pedido-vizinho>
                   A mesma pessoa tem {vizinhas.length === 1 ? "outro pedido" : `${vizinhas.length} outros pedidos`} recebido{vizinhas.length === 1 ? "" : "s"} com menos de 30 minutos de diferença
@@ -568,10 +575,14 @@ export default async function FichaPage({ params, searchParams }: { params: Prom
                       (() => {
                         const r = respostas({ ...o, dados: {}, mensagem: null }, e.payload);
                         return (
-                          <p className="mt-0.5 whitespace-pre-wrap break-words text-[0.84rem] leading-snug">
-                            <span className="text-dim">{r.objetivo.rotulo}: </span>
-                            {r.objetivo.valor}
-                          </p>
+                          <dl className="mt-1 grid gap-0.5 text-[0.84rem] leading-snug">
+                            {[r.objetivo, ...r.outras].map((l) => (
+                              <div key={l.rotulo} className="whitespace-pre-wrap break-words">
+                                <dt className="inline text-dim">{l.rotulo.endsWith("?") ? `${l.rotulo} ` : `${l.rotulo}: `}</dt>
+                                <dd className={`inline ${l.ausente ? "text-dim" : ""}`}>{l.valor}</dd>
+                              </div>
+                            ))}
+                          </dl>
                         );
                       })()}
                     <p className={`mt-0.5 text-[0.82rem] ${e.avisoStatus === "falhou" ? "font-semibold text-ember" : "text-dim"}`}>
