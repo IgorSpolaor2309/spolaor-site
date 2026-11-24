@@ -1,0 +1,124 @@
+{
+  "turno": "2026-11-24-manha",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "cliente-desistiu-da-compra-online-direito-de-arrependimento",
+  "inicio": "2026-11-24T08:06:49-03:00",
+  "fim": "2026-11-24T08:10:44-03:00",
+  "motivo": "Semana de promoções de fim de ano: dúvida operacional real de quem vende on-line (o que fazer quando o cliente desiste). Ângulo novo em relação ao artigo de 23/11 (que tratou de quando ter loja e das informações do art. 2º do Decreto 7.962): aqui o foco é o processo da loja no arrependimento (art. 5º e 4º do decreto, art. 49 e 51 do CDC) e a clareza do preço (Decreto 5.903). Serviço diferente do artigo anterior (atendimento). Todas as fontes são textos legais oficiais do Planalto, abertos e lidos.",
+  "temas": [
+    {
+      "tema": "Cliente desistiu da compra on-line: o que a loja precisa fazer no direito de arrependimento",
+      "notas": "utilidade 5, servico 4, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Pergunta frequente na época de promoções; sustentada integralmente por legislação oficial lida; processo ligado a lojas e automação."
+    },
+    {
+      "tema": "Informações obrigatórias na venda on-line (Decreto 7.962, art. 2º)",
+      "notas": "utilidade 4, servico 4, busca 3, original 2",
+      "decisao": "descartado",
+      "motivo": "Já coberto em boa parte pelo artigo de 23/11 (vender pelo WhatsApp ou loja virtual)."
+    },
+    {
+      "tema": "Novo decreto do SAC (citado em notícia como Decreto 13.135/2026) e anúncios rastreáveis (Portaria Conjunta Senacon nº 3/2026)",
+      "notas": "utilidade 3, servico 2, busca 3, original 3",
+      "decisao": "descartado",
+      "motivo": "Só visto em resultado de busca; norma oficial não aberta nesta execução e aplicação às pequenas empresas incerta."
+    },
+    {
+      "tema": "Quando a planilha de clientes deixa de dar conta e um CRM faz sentido",
+      "notas": "utilidade 4, servico 4, busca 4, original 3",
+      "decisao": "adiado",
+      "motivo": "Sem fonte primária; menos oportuno que o tema escolhido."
+    }
+  ],
+  "pesquisas": [
+    "novembro 2026 mudança Google Perfil da Empresa WhatsApp Business Pix nova regra pequenas empresas",
+    "Black Friday 2026 Procon loja virtual informações obrigatórias Decreto 7.962 direito de arrependimento"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/decreto/d7962.htm",
+      "lida": true,
+      "como": "curl + extração de texto (python3); WebFetch só devolveu resumo",
+      "observacao": "Texto integral lido (arts. 1º a 9º)."
+    },
+    {
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm",
+      "lida": true,
+      "como": "curl + extração de texto (python3)",
+      "observacao": "Lidos arts. 1º, 49, 51 e 56."
+    },
+    {
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/decreto/d5903.htm",
+      "lida": true,
+      "como": "curl + extração de texto (python3)",
+      "observacao": "Lidos arts. 2º a 10."
+    }
+  ],
+  "fontesNaoAbertas": [],
+  "afirmacoes": [
+    {
+      "afirmacao": "Desistência em 7 dias da assinatura ou do recebimento, em contratação fora do estabelecimento",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm",
+      "trecho": "Art. 49. O consumidor pode desistir do contrato, no prazo de 7 dias a contar de sua assinatura ou do ato de recebimento do produto ou serviço, sempre que a contratação de fornecimento de produtos e serviços ocorrer fora do estabelecimento comercial"
+    },
+    {
+      "afirmacao": "Valores pagos devolvidos de imediato, com correção",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm",
+      "trecho": "os valores eventualmente pagos, a qualquer título, durante o prazo de reflexão, serão devolvidos, de imediato, monetariamente atualizados."
+    },
+    {
+      "afirmacao": "Política própria não pode retirar o reembolso",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm",
+      "trecho": "II - subtraiam ao consumidor a opção de reembolso da quantia já paga, nos casos previstos neste código;"
+    },
+    {
+      "afirmacao": "Loja deve informar de forma clara e ostensiva como desistir e aceitar pela mesma ferramenta",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/decreto/d7962.htm",
+      "trecho": "Art. 5º O fornecedor deve informar, de forma clara e ostensiva, os meios adequados e eficazes para o exercício do direito de arrependimento pelo consumidor. § 1º O consumidor poderá exercer seu direito de arrependimento pela mesma ferramenta utilizada para a contratação"
+    },
+    {
+      "afirmacao": "Rescisão dos contratos acessórios sem ônus",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/decreto/d7962.htm",
+      "trecho": "§ 2º O exercício do direito de arrependimento implica a rescisão dos contratos acessórios, sem qualquer ônus para o consumidor."
+    },
+    {
+      "afirmacao": "Comunicar a administradora do cartão para não lançar ou estornar",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/decreto/d7962.htm",
+      "trecho": "§ 3º O exercício do direito de arrependimento será comunicado imediatamente pelo fornecedor à instituição financeira ou à administradora do cartão de crédito ou similar"
+    },
+    {
+      "afirmacao": "Confirmação imediata do recebimento da desistência",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/decreto/d7962.htm",
+      "trecho": "§ 4º O fornecedor deve enviar ao consumidor confirmação imediata do recebimento da manifestação de arrependimento."
+    },
+    {
+      "afirmacao": "Resposta às demandas do atendimento eletrônico em até cinco dias",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/decreto/d7962.htm",
+      "trecho": "Parágrafo único. A manifestação do fornecedor às demandas previstas no inciso V do caput será encaminhada em até cinco dias ao consumidor."
+    },
+    {
+      "afirmacao": "Despesas adicionais (entrega, seguros) discriminadas no preço",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/decreto/d7962.htm",
+      "trecho": "IV - discriminação, no preço, de quaisquer despesas adicionais ou acessórias, tais como as de entrega ou seguros;"
+    },
+    {
+      "afirmacao": "Arts. 2º, 3º e 9º do Decreto 5.903 valem no comércio eletrônico",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/decreto/d7962.htm",
+      "trecho": "O disposto nos arts. 2º , 3º e 9º deste Decreto aplica-se às contratações no comércio eletrônico."
+    },
+    {
+      "afirmacao": "Preço com total à vista; preço só em parcelas é infração",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/decreto/d5903.htm",
+      "trecho": "Art. 3º O preço de produto ou serviço deverá ser informado discriminando-se o total à vista. ... IV - informar preços apenas em parcelas, obrigando o consumidor ao cálculo do total;"
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Subagente revisor conferiu as afirmações contra o texto extraído das três normas: todas conferem e as aspas e trechos são literais. Corrigido: frete na devolução apresentado como leitura mais comum (a lei não cita frete); extensão do Decreto 5.903 limitada aos arts. 2º, 3º e 9º; prazo descrito como 'para produto entregue, contados do recebimento'; 'confirmar que recebeu o pedido' virou 'que a recebeu'; afirmações causais sem fonte viraram hipótese; acrescentada a confirmação imediata do art. 4º, VI; 'ligada no rodapé' virou 'com link no rodapé'. Antes da revisão, retirada a frase sem fonte sobre estorno em plataformas de pagamento e acrescentado o art. 51, II do CDC."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}

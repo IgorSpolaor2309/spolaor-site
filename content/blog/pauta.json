@@ -30,6 +30,8 @@
     { "id": "pix-automatico-cancelamentos", "servico": "automacao", "pergunta": "Cliente cancelou o Pix Automático: como acompanhar cancelamentos e pagamentos recusados sem conferir o app do banco todo dia", "situacao": "ideia", "slug": null },
     { "id": "whatsapp-chat-perfil-google", "servico": "atendimento", "pergunta": "WhatsApp como opção de chat no Perfil da Empresa no Google: como configurar e organizar quem responde (conferir disponibilidade na ajuda oficial do Google)", "situacao": "ideia", "slug": null },
     { "id": "informacoes-obrigatorias-venda-online", "servico": "lojas", "pergunta": "Política de troca, arrependimento e dados obrigatórios na loja virtual: o que precisa estar visível antes de vender (conferir no Decreto 7.962/2013 e no CDC)", "situacao": "ideia", "slug": null },
-    { "id": "ofertas-terceiros-perfil-google", "servico": "consultoria", "pergunta": "Ofertas no Perfil da Empresa no Google: de onde vêm, como remover ofertas de terceiros sem contrato (conferir na ajuda oficial do Google)", "situacao": "ideia", "slug": null }
+    { "id": "ofertas-terceiros-perfil-google", "servico": "consultoria", "pergunta": "Ofertas no Perfil da Empresa no Google: de onde vêm, como remover ofertas de terceiros sem contrato (conferir na ajuda oficial do Google)", "situacao": "ideia", "slug": null },
+    { "id": "arrependimento-processo-loja", "servico": "lojas", "pergunta": "Cliente desistiu da compra on-line: o que a loja precisa fazer no direito de arrependimento", "situacao": "usado", "slug": "cliente-desistiu-da-compra-online-direito-de-arrependimento" },
+    { "id": "novo-decreto-sac-pequenas-empresas", "servico": "atendimento", "pergunta": "Novo decreto do SAC em 2026: a quem se aplica e o que muda para empresas que atendem pelo WhatsApp (confirmar número, vigência e alcance no texto oficial do Planalto antes de escrever)", "situacao": "ideia", "slug": null }
   ]
 }
