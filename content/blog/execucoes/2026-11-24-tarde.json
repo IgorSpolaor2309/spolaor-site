@@ -1,0 +1,144 @@
+{
+  "turno": "2026-11-24-tarde",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "novo-decreto-do-sac-vale-para-minha-empresa",
+  "inicio": "2026-11-24T18:09:22-03:00",
+  "fim": "2026-11-24T18:13:30-03:00",
+  "motivo": "Novidade surgida na pesquisa do dia e descartada de manhã por não ter sido aberta: o novo decreto do SAC (13.135/2026), em vigor desde o início de novembro, circula como regra para todo atendimento pelo WhatsApp. O texto oficial, aberto e lido no Planalto, restringe o alcance a fornecedores regulados pelo Executivo federal e a serviços financeiros sob o Banco Central. Não corrige nem complementa o artigo da manhã (direito de arrependimento): é outro assunto (atendimento), por isso artigo novo, com serviço principal diferente (atendimento/consultoria em vez de lojas).",
+  "temas": [
+    {
+      "tema": "Novo decreto do SAC: a quem se aplica e o que vale para quem atende pelo WhatsApp",
+      "notas": "utilidade 5, servico 5, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Norma oficial aberta e lida na íntegra; ângulo de alcance (quem está ou não sujeito) e checklist de boas práticas para atendimento com IA."
+    },
+    {
+      "tema": "Atualizar o artigo da manhã (direito de arrependimento)",
+      "notas": "utilidade 3, servico 3, busca 2, original 1",
+      "decisao": "descartado",
+      "motivo": "Nenhuma novidade encontrada que corrija ou complemente o artigo da manhã; o novo decreto do SAC é outro assunto e só ganha um link cruzado."
+    },
+    {
+      "tema": "Ofertas de terceiros no Perfil da Empresa no Google",
+      "notas": "utilidade 3, servico 2, busca 3, original 3",
+      "decisao": "adiado",
+      "motivo": "Visto só em resultado de busca secundário; página oficial do Google não aberta nesta execução."
+    },
+    {
+      "tema": "Quando a planilha de clientes deixa de dar conta e um CRM faz sentido",
+      "notas": "utilidade 4, servico 4, busca 4, original 3",
+      "decisao": "adiado",
+      "motivo": "Sem fonte primária; menos oportuno."
+    }
+  ],
+  "pesquisas": [
+    "novo decreto SAC 2026 Planalto atendimento ao consumidor WhatsApp (extended)",
+    "novembro 2026 Google Perfil da Empresa novidade WhatsApp Business Pix mudança pequenas empresas"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/d13135.htm",
+      "lida": true,
+      "como": "curl + extração de texto (python3)",
+      "observacao": "Texto integral lido (arts. 1º a 25). Primeira tentativa de curl teve resposta vazia; a segunda abriu."
+    },
+    {
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2022/decreto/d11034.htm",
+      "lida": true,
+      "como": "curl + extração de texto (python3)",
+      "observacao": "Lidos arts. 1º a 4º (alcance do decreto revogado)."
+    },
+    {
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/decreto/d7962.htm",
+      "lida": true,
+      "como": "curl + extração de texto (python3)",
+      "observacao": "Lidos arts. 1º a 4º."
+    },
+    {
+      "url": "https://www.gov.br/mj/pt-br/assuntos/noticias-1/novo-decreto-do-sac-amplia-protecao-ao-consumidor-e-estabelece-regras-de-atendimento",
+      "lida": false,
+      "como": "WebFetch (resumo); curl retornou 404",
+      "observacao": "Só obtido resumo; não usada como fonte nem para sustentar afirmação."
+    }
+  ],
+  "fontesNaoAbertas": [
+    {
+      "url": "https://www.mattosfilho.com.br/unico/novo-decreto-sac/",
+      "motivo": "Não aberta; não usada."
+    },
+    {
+      "url": "https://clickmassa.com.br/decreto-do-sac-whatsapp/",
+      "motivo": "Não aberta; não usada."
+    }
+  ],
+  "afirmacoes": [
+    {
+      "afirmacao": "O decreto se aplica a fornecedores regulados pelo Executivo federal enquadrados nos critérios do regulador e a serviços financeiros/pagamento/crédito digitais sob o Banco Central.",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/d13135.htm",
+      "trecho": "Estão sujeitos ao disposto neste Decreto os fornecedores: I - de produtos e serviços regulados pelo Poder Executivo federal que se enquadrem nos critérios estabelecidos pela agência ou pelo órgão regulador competente; e II - que ofertem ou prestem, por meio de plataformas ou outros meios digitais, serviços financeiros, de pagamento, de crédito"
+    },
+    {
+      "afirmacao": "Decreto de 9/10/2026, publicado no DOU de 13/10/2026, vigor 20 dias após a publicação; revoga o 11.034/2022.",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/d13135.htm",
+      "trecho": "Art. 24. Fica revogado o Decreto nº 11.034, de 5 de abril de 2022. Art. 25. Este Decreto entra em vigor vinte dias após a data de sua publicação. ... Este texto não substitui o publicado no DOU de 13.10.2026"
+    },
+    {
+      "afirmacao": "O decreto anterior regulava o SAC dos fornecedores de serviços regulados pelo Executivo federal.",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2022/decreto/d11034.htm",
+      "trecho": "Serviço de Atendimento ao Consumidor - SAC, no âmbito dos fornecedores dos serviços regulados pelo Poder Executivo federal"
+    },
+    {
+      "afirmacao": "Plataformas de intermediação, transporte por aplicativo e entrega apresentam modelos de atendimento à Senacon com dados de reclamações e taxa de resolução.",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/d13135.htm",
+      "trecho": "Art. 2º Os fornecedores que operem plataformas digitais de intermediação da oferta ou comercialização de produtos ou serviços por terceiros, de transporte remunerado privado individual de passageiros ou de entrega de produtos ou mercadorias apresentarão à Secretaria Nacional do Consumidor"
+    },
+    {
+      "afirmacao": "Telefone obrigatório com pessoa das 8h às 20h, sete dias.",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/d13135.htm",
+      "trecho": "Art. 14. O atendimento ao consumidor por canais telefônicos é obrigatório. § 1º O atendimento telefônico realizado por pessoa humana deverá ser prestado no período das oito às vinte horas, de forma ininterrupta, sete dias por semana"
+    },
+    {
+      "afirmacao": "Canal eletrônico inclui mensageria instantânea; IA permitida com opção de pessoa humana; oferta e contratação não são SAC.",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/d13135.htm",
+      "trecho": "incluídos, entre outros, os chats disponibilizados em sítios eletrônicos ou aplicativos e os serviços de mensageria instantânea. § 3º O fornecedor poderá adotar procedimentos automatizados, inclusive sistemas de inteligência artificial ... desde que assegurada ao consumidor a opção de atendimento em tempo real por pessoa humana"
+    },
+    {
+      "afirmacao": "Um canal eletrônico 24x7 e atendimento humano em tempo real das 8h às 20h, sete dias.",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/d13135.htm",
+      "trecho": "funcionar, ininterruptamente, durante vinte e quatro horas por dia, sete dias por semana. § 1º Nos canais eletrônicos de comunicação, será garantido o atendimento em tempo real por pessoa humana no período das oito às vinte horas"
+    },
+    {
+      "afirmacao": "Máximo de cinco níveis; cancelamento e pessoa humana em qualquer nível; informar tempo estimado de espera.",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/d13135.htm",
+      "trecho": "não poderão utilizar mais de cinco níveis de atendimento ... a qualquer tempo e em qualquer nível de atendimento, inclusive o primeiro: I - a opção de cancelamento imediato de contratos e serviços; e II - a opção de atendimento em tempo real por pessoa humana"
+    },
+    {
+      "afirmacao": "Vedado pedir repetição da demanda, exigir reinício do atendimento e veicular publicidade no SAC.",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/d13135.htm",
+      "trecho": "a veiculação, em qualquer etapa do atendimento, inclusive durante o tempo de espera, de mensagens publicitárias nos canais do SAC; e II - a solicitação da repetição da demanda do consumidor após o seu registro no primeiro atendimento, exceto por razão técnica fundamentada"
+    },
+    {
+      "afirmacao": "Histórico enviado em 5 dias úteis e mantido 6 meses; mensagens mantidas 90 dias.",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/d13135.htm",
+      "trecho": "no prazo de cinco dias úteis ... pelo período mínimo de seis meses, contado da data de resolução da demanda. Art. 19. ... serão mantidos pelo período mínimo de noventa dias"
+    },
+    {
+      "afirmacao": "Demandas não urgentes respondidas em até 7 dias corridos; cobrança indevida suspensa em até 48 horas.",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/d13135.htm",
+      "trecho": "As demandas do consumidor que não sejam urgentes serão respondidas no prazo de até sete dias corridos ... no prazo máximo de quarenta e oito horas"
+    },
+    {
+      "afirmacao": "No comércio eletrônico: atendimento eletrônico adequado, confirmação imediata pelo mesmo meio e manifestação em até cinco dias.",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/decreto/d7962.htm",
+      "trecho": "V - manter serviço adequado e eficaz de atendimento em meio eletrônico ... A manifestação do fornecedor às demandas previstas no inciso V do caput será encaminhada em até cinco dias ao consumidor."
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Revisor independente (subagente) conferiu todas as afirmações contra o texto extraído das três normas: citações literais corretas. Apontou 1 problema grave (o texto sugeria que o SAC poderia ser só eletrônico; o art. 14 torna o telefone obrigatório) e 6 ajustes: decreto não faz recorte por porte, obrigação das plataformas apresentada como leitura do texto, comparação de prazos 5 x 7 dias retirada, WhatsApp descrito como exemplo de mensageria instantânea, definição de SAC alinhada ao art. 3º, trecho da fonte completado. Tudo corrigido; clínica trocada por salão na ilustração (saúde tem regulação federal)."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}
