@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-24-manha",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "cliente-desistiu-da-compra-online-direito-de-arrependimento",
   "inicio": "2026-11-24T08:06:49-03:00",
@@ -119,6 +119,10 @@
     "observacoes": "Subagente revisor conferiu as afirmações contra o texto extraído das três normas: todas conferem e as aspas e trechos são literais. Corrigido: frete na devolução apresentado como leitura mais comum (a lei não cita frete); extensão do Decreto 5.903 limitada aos arts. 2º, 3º e 9º; prazo descrito como 'para produto entregue, contados do recebimento'; 'confirmar que recebeu o pedido' virou 'que a recebeu'; afirmações causais sem fonte viraram hipótese; acrescentada a confirmação imediata do art. 4º, VI; 'ligada no rodapé' virou 'com link no rodapé'. Antes da revisão, retirada a frase sem fonte sobre estorno em plataformas de pagamento e acrescentado o art. 51, II do CDC."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-24T11:11:55.535Z",
+    "url": "https://blog.spolaortecnologia.com.br/cliente-desistiu-da-compra-online-direito-de-arrependimento",
+    "commit": "4dff150b728a234a5f7dcf308d14ab47631adb39",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
