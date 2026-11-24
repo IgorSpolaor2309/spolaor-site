@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-24-tarde",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "novo-decreto-do-sac-vale-para-minha-empresa",
   "inicio": "2026-11-24T18:09:22-03:00",
@@ -139,6 +139,10 @@
     "observacoes": "Revisor independente (subagente) conferiu todas as afirmações contra o texto extraído das três normas: citações literais corretas. Apontou 1 problema grave (o texto sugeria que o SAC poderia ser só eletrônico; o art. 14 torna o telefone obrigatório) e 6 ajustes: decreto não faz recorte por porte, obrigação das plataformas apresentada como leitura do texto, comparação de prazos 5 x 7 dias retirada, WhatsApp descrito como exemplo de mensageria instantânea, definição de SAC alinhada ao art. 3º, trecho da fonte completado. Tudo corrigido; clínica trocada por salão na ilustração (saúde tem regulação federal)."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-24T21:14:37.023Z",
+    "url": "https://blog.spolaortecnologia.com.br/novo-decreto-do-sac-vale-para-minha-empresa",
+    "commit": "2bff6652540a4f5a65ff6de775a0268f1eb62377",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
