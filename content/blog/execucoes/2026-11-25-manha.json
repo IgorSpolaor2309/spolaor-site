@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-25-manha",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "planilha-de-clientes-ou-crm-quando-trocar",
   "inicio": "2026-11-25T08:07:14-03:00",
@@ -201,6 +201,10 @@
     "observacoes": "Subagente conferiu as afirmações contra o texto das fontes: aprovado com correções. Corrigido: link do guia apontava para o processo SEI (trocado pela página oficial do guia, aberta nesta execução); frase de abertura ('alguma dessas três coisas falha'); contratos de TI descritos com a força do guia ('podem tratar, por exemplo'); condição 'rede interna' nos níveis de permissão; MEI incluído na definição de ME/EPP; limite próprio de startups (LC 182); ressalva 'nos termos de regulamentação específica' no prazo em dobro. Sem preço, cliente, resultado ou serviço inventado; links internos conferidos."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-25T11:18:28.299Z",
+    "url": "https://blog.spolaortecnologia.com.br/planilha-de-clientes-ou-crm-quando-trocar",
+    "commit": "31cc6e7b68ae624c7c19435b9bb4ccc14faf0e4b",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
