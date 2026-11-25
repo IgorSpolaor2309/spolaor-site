@@ -13,7 +13,7 @@
     { "id": "orcamento-sem-retorno", "servico": "automacao", "pergunta": "Orçamentos enviados e sem resposta: como organizar o retorno", "situacao": "ideia", "slug": null },
     { "id": "ia-whatsapp-limites", "servico": "atendimento", "pergunta": "Atendimento com IA no WhatsApp: o que ela resolve bem e quando passar para uma pessoa", "situacao": "ideia", "slug": null },
     { "id": "whatsapp-api-oficial", "servico": "atendimento", "pergunta": "WhatsApp Business app ou API oficial: diferenças práticas para atendimento", "situacao": "ideia", "slug": null },
-    { "id": "crm-planilha", "servico": "sistemas", "pergunta": "Quando a planilha de clientes deixa de dar conta e um CRM passa a fazer sentido", "situacao": "ideia", "slug": null },
+    { "id": "crm-planilha", "servico": "sistemas", "pergunta": "Quando a planilha de clientes deixa de dar conta e um CRM passa a fazer sentido", "situacao": "usado", "slug": "planilha-de-clientes-ou-crm-quando-trocar" },
     { "id": "sistema-pronto-ou-sob-medida", "servico": "sistemas", "pergunta": "Sistema pronto ou sob medida: perguntas para decidir antes de contratar", "situacao": "ideia", "slug": null },
     { "id": "por-onde-comecar-tecnologia", "servico": "consultoria", "pergunta": "Sei que tenho problema operacional, mas não sei que tecnologia preciso: por onde começar", "situacao": "ideia", "slug": null },
     { "id": "site-lento-contato", "servico": "diagnostico-site", "pergunta": "Sinais de que o site está atrapalhando o contato e como conferir sem ser técnico", "situacao": "usado", "slug": "site-lento-como-conferir-sem-ser-tecnico" },
@@ -33,6 +33,8 @@
     { "id": "ofertas-terceiros-perfil-google", "servico": "consultoria", "pergunta": "Ofertas no Perfil da Empresa no Google: de onde vêm, como remover ofertas de terceiros sem contrato (conferir na ajuda oficial do Google)", "situacao": "ideia", "slug": null },
     { "id": "arrependimento-processo-loja", "servico": "lojas", "pergunta": "Cliente desistiu da compra on-line: o que a loja precisa fazer no direito de arrependimento", "situacao": "usado", "slug": "cliente-desistiu-da-compra-online-direito-de-arrependimento" },
     { "id": "novo-decreto-sac-pequenas-empresas", "servico": "atendimento", "pergunta": "Novo decreto do SAC em 2026: a quem se aplica e o que muda para empresas que atendem pelo WhatsApp (confirmar número, vigência e alcance no texto oficial do Planalto antes de escrever)", "situacao": "usado", "slug": "novo-decreto-do-sac-vale-para-minha-empresa" },
-    { "id": "protocolo-historico-whatsapp", "servico": "sistemas", "pergunta": "Protocolo e histórico de atendimento no WhatsApp: como registrar reclamações e pedidos para não pedir ao cliente que repita tudo", "situacao": "ideia", "slug": null }
+    { "id": "protocolo-historico-whatsapp", "servico": "sistemas", "pergunta": "Protocolo e histórico de atendimento no WhatsApp: como registrar reclamações e pedidos para não pedir ao cliente que repita tudo", "situacao": "ideia", "slug": null },
+    { "id": "pedido-do-titular-lgpd", "servico": "sistemas", "pergunta": "Cliente pediu os próprios dados pela LGPD: como a pequena empresa encontra, entrega ou apaga tudo dentro do prazo (conferir prazos na LGPD e na regulamentação da ANPD antes de escrever)", "situacao": "ideia", "slug": null },
+    { "id": "aviso-de-privacidade-site", "servico": "sites", "pergunta": "Aviso de privacidade no site da pequena empresa: o que a LGPD exige informar e onde colocar (conferir art. 9º da LGPD e guias da ANPD)", "situacao": "ideia", "slug": null }
   ]
 }

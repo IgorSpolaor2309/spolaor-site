@@ -1,0 +1,206 @@
+{
+  "turno": "2026-11-25-manha",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "planilha-de-clientes-ou-crm-quando-trocar",
+  "inicio": "2026-11-25T08:07:14-03:00",
+  "fim": "2026-11-25T08:17:11-03:00",
+  "motivo": "Dúvida duradoura de contratação da pauta (crm-planilha) com ângulo próprio sustentado por fonte oficial: o que a LGPD, a Resolução CD/ANPD nº 2/2022 e o guia de segurança da ANPD para pequenas empresas pedem sobre acesso, senhas, registro e cópias, e como isso pesa na troca da planilha por CRM. Serviço principal (sistemas) diferente dos dois artigos anteriores (lojas e atendimento). A pesquisa de novidades não trouxe mudança recente com fonte oficial aberta.",
+  "temas": [
+    {
+      "tema": "Planilha de clientes ou CRM: quando trocar e o que a LGPD pede de uma pequena empresa",
+      "notas": "utilidade 5, servico 5, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Pergunta frequente; resultados de busca são quase todos de fornecedores de CRM; o ângulo LGPD/ANPD tem fontes oficiais abertas e lidas na íntegra."
+    },
+    {
+      "tema": "Agendar por mensagem: quando migrar para agendamento online",
+      "notas": "utilidade 4, servico 4, busca 3, original 2",
+      "decisao": "adiado",
+      "motivo": "Sem fonte primária que acrescente algo; tema próximo do artigo de faltas."
+    },
+    {
+      "tema": "O que automatizar primeiro numa empresa pequena",
+      "notas": "utilidade 4, servico 4, busca 3, original 2",
+      "decisao": "adiado",
+      "motivo": "Sem fonte oficial que sustente afirmações além de opinião."
+    },
+    {
+      "tema": "Pagamentos do WhatsApp com Pix para lojistas",
+      "notas": "utilidade 3, servico 2, busca 3, original 2",
+      "decisao": "descartado",
+      "motivo": "Só em resultado de busca e notícias sem data recente confirmada; nenhuma página oficial aberta; serviço de atendimento foi o do artigo anterior."
+    }
+  ],
+  "pesquisas": [
+    "novidades novembro 2026 Google Perfil da Empresa WhatsApp Business Pix pequenas empresas mudança (standard)",
+    "quando trocar planilha de clientes por CRM pequena empresa dúvidas (standard)",
+    "Resolução CD/ANPD nº 2 2022 agentes de tratamento de pequeno porte texto gov.br (standard)",
+    "ANPD guia orientativo segurança da informação para agentes de tratamento de pequeno porte pdf checklist (standard)",
+    "Resolução CD/ANPD nº 2/2022 alterada agentes de pequeno porte alteração nova resolução (standard)"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "lida": true,
+      "como": "curl + extração de texto do HTML",
+      "observacao": "Texto vigente com a redação dada pela Resolução 15/2024 ao art. 14, II (incidentes), ponto não usado no artigo."
+    },
+    {
+      "url": "https://www.gov.br/palmares/pt-br/midias/arquivos-menu-acesso-a-informacao/legislacao/resolucao-cd-anpd-n2-2022.pdf",
+      "lida": true,
+      "como": "curl+pdftotext",
+      "observacao": "Cópia do DOU de 28/01/2022 (texto original); usada só para conferência, não citada."
+    },
+    {
+      "url": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd",
+      "lida": true,
+      "como": "curl + extração de texto do HTML; WebFetch",
+      "observacao": "Confirma Res. 2 'Vigente com alterações pela Resolução CD/ANPD nº 15, de 24 de abril de 2024'."
+    },
+    {
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm",
+      "lida": true,
+      "como": "curl (--http1.1) + extração de texto do HTML",
+      "observacao": "Arts. 6º, 9º, 18, 37, 41, 46, 48 e 52 lidos."
+    },
+    {
+      "url": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-sobre-seguranca-da-informacao-para-agentes-de-tratamento-de-pequeno-porte",
+      "lida": true,
+      "como": "curl da página oficial e do PDF nela oferecido (guia_seguranca_da_informacao_para_atpps___defeso_eleitoral.pdf) + pdftotext",
+      "observacao": "PDF oficial idêntico (md5) à cópia do TCE-PB lida antes."
+    },
+    {
+      "url": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/anonimizado___guia_orientat-_seg_da_inf_p_atpp.pdf",
+      "lida": true,
+      "como": "curl (@@download/file) + pdftotext",
+      "observacao": "Processo SEI do guia (nota técnica + minutas + versão final); trechos conferidos; substituído no artigo pela página oficial do guia por indicação da revisão."
+    },
+    {
+      "url": "https://tce.pb.gov.br/wp-content/uploads/2025/03/pequeno-porte.pdf",
+      "lida": true,
+      "como": "curl+pdftotext",
+      "observacao": "Cópia do guia v1.0; não citada."
+    }
+  ],
+  "fontesNaoAbertas": [
+    {
+      "url": "https://www.in.gov.br/en/web/dou/-/resolucao-cd/anpd-n-2-de-27-de-janeiro-de-2022-376562019",
+      "motivo": "Página devolveu só a estrutura sem o texto; não usada."
+    }
+  ],
+  "afirmacoes": [
+    {
+      "afirmacao": "Agentes de pequeno porte incluem ME e EPP (incluído o MEI), startups e outras PJ de direito privado",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "trecho": "agentes de tratamento de pequeno porte: microempresas, empresas de pequeno porte, startups, pessoas jurídicas de direito privado, inclusive sem fins lucrativos"
+    },
+    {
+      "afirmacao": "A Resolução 2 está vigente, com alterações de 2024",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd",
+      "trecho": "Vigente com alterações pela Resolução CD/ANPD nº 15, de 24 de abril de 2024"
+    },
+    {
+      "afirmacao": "A flexibilização não isenta do restante da LGPD",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "trecho": "A dispensa ou flexibilização das obrigações dispostas neste regulamento não isenta os agentes de tratamento de pequeno porte do cumprimento dos demais dispositivos da LGPD, inclusive das bases legais e dos princípios"
+    },
+    {
+      "afirmacao": "Devem adotar medidas de segurança essenciais; seguir guias da ANPD conta no critério do art. 52 §1º VIII",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "trecho": "O atendimento às recomendações e às boas práticas de prevenção e segurança divulgadas pela ANPD, inclusive por meio de guias orientativos, será considerado como observância ao disposto no art. 52, §1º, VIII da LGPD."
+    },
+    {
+      "afirmacao": "Art. 52 §1º VIII da LGPD trata de mecanismos internos para minimizar o dano",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm",
+      "trecho": "VIII - a adoção reiterada e demonstrada de mecanismos e procedimentos internos capazes de minimizar o dano"
+    },
+    {
+      "afirmacao": "Política de segurança simplificada permitida",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "trecho": "Os agentes de tratamento de pequeno porte podem estabelecer política simplificada de segurança da informação"
+    },
+    {
+      "afirmacao": "Registro das operações simplificado",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "trecho": "podem cumprir a obrigação de elaboração e manutenção de registro das operações de tratamento de dados pessoais, constante do art. 37 da LGPD, de forma simplificada"
+    },
+    {
+      "afirmacao": "Encarregado não obrigatório, mas canal de comunicação obrigatório",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "trecho": "O agente de tratamento de pequeno porte que não indicar um encarregado deve disponibilizar um canal de comunicação com o titular de dados"
+    },
+    {
+      "afirmacao": "Exclusões: alto risco, receita acima do limite da LC 123 (ou LC 182 para startups), grupo econômico",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "trecho": "aufiram receita bruta superior ao limite estabelecido no art. 3º, II, da Lei Complementar nº 123, de 2006 ou, no caso de startups, no art. 4º, § 1º, I, da Lei Complementar nº 182, de 2021"
+    },
+    {
+      "afirmacao": "Alto risco exige um critério geral e um específico, cumulativamente; dados sensíveis e de crianças, adolescentes e idosos são critério específico",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "trecho": "será considerado de alto risco o tratamento de dados pessoais que atender cumulativamente a pelo menos um critério geral e um critério específico"
+    },
+    {
+      "afirmacao": "Direitos do titular: confirmação, acesso, correção, eliminação de desnecessários",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm",
+      "trecho": "I - confirmação da existência de tratamento; II - acesso aos dados; III - correção de dados incompletos, inexatos ou desatualizados;"
+    },
+    {
+      "afirmacao": "Prazo em dobro para solicitações dos titulares, nos termos de regulamentação específica",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "trecho": "no atendimento das solicitações dos titulares referentes ao tratamento de seus dados pessoais, conforme previsto no art. 18, §§ 3º e 5º da LGPD, nos termos de regulamentação específica"
+    },
+    {
+      "afirmacao": "Guia v1.0 out/2021 sem efeito normativo vinculante",
+      "fonte": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-sobre-seguranca-da-informacao-para-agentes-de-tratamento-de-pequeno-porte",
+      "trecho": "este documento não tem efeito normativo vinculante e deve ser entendido como um guia de boas práticas"
+    },
+    {
+      "afirmacao": "Controle de acesso: autenticação, autorização, auditoria; níveis de permissão (quem tem rede interna)",
+      "fonte": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-sobre-seguranca-da-informacao-para-agentes-de-tratamento-de-pequeno-porte",
+      "trecho": "a auditoria registra o que foi feito pelo usuário"
+    },
+    {
+      "afirmacao": "Não compartilhar contas e senhas",
+      "fonte": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-sobre-seguranca-da-informacao-para-agentes-de-tratamento-de-pequeno-porte",
+      "trecho": "não permitam o compartilhamento de contas ou de senhas entre funcionários, visto que isso é um vetor crítico de vulnerabilidade de segurança da informação"
+    },
+    {
+      "afirmacao": "Menor privilégio",
+      "fonte": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-sobre-seguranca-da-informacao-para-agentes-de-tratamento-de-pequeno-porte",
+      "trecho": "os usuários de um sistema terão o menor nível de acesso necessário para a realização de suas atividades"
+    },
+    {
+      "afirmacao": "MFA preferencialmente",
+      "fonte": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-sobre-seguranca-da-informacao-para-agentes-de-tratamento-de-pequeno-porte",
+      "trecho": "sugere-se que os agentes considerem, preferencialmente, utilizar a autenticação multi-fatores (MFA) para acessar sistemas ou base de dados que contenham dados pessoais"
+    },
+    {
+      "afirmacao": "Backups regulares, completos, separados e não sincronizados em tempo real",
+      "fonte": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-sobre-seguranca-da-informacao-para-agentes-de-tratamento-de-pequeno-porte",
+      "trecho": "é importante que elas sejam realizadas regularmente de forma completa e armazenadas em locais seguros e distintos dos dispositivos de armazenamento principais"
+    },
+    {
+      "afirmacao": "Não guardar dados só porque um dia podem ser úteis",
+      "fonte": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-sobre-seguranca-da-informacao-para-agentes-de-tratamento-de-pequeno-porte",
+      "trecho": "tratar (coletar e guardar, por exemplo) dados pessoais sem uma utilidade imediata e concreta, apenas porque um dia poderão ser úteis"
+    },
+    {
+      "afirmacao": "Evitar dispositivos externos; se imprescindível, inventariar e cifrar",
+      "fonte": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-sobre-seguranca-da-informacao-para-agentes-de-tratamento-de-pequeno-porte",
+      "trecho": "evitar a transferência de dados pessoais de estações de trabalho para dispositivos de armazenamento externo, como pendrives"
+    },
+    {
+      "afirmacao": "Contratos com fornecedores de TI com cláusulas de segurança",
+      "fonte": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-sobre-seguranca-da-informacao-para-agentes-de-tratamento-de-pequeno-porte",
+      "trecho": "recomenda-se que estabeleçam com os fornecedores contratos que incluam dentre outras, cláusulas de segurança da informação"
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Subagente conferiu as afirmações contra o texto das fontes: aprovado com correções. Corrigido: link do guia apontava para o processo SEI (trocado pela página oficial do guia, aberta nesta execução); frase de abertura ('alguma dessas três coisas falha'); contratos de TI descritos com a força do guia ('podem tratar, por exemplo'); condição 'rede interna' nos níveis de permissão; MEI incluído na definição de ME/EPP; limite próprio de startups (LC 182); ressalva 'nos termos de regulamentação específica' no prazo em dobro. Sem preço, cliente, resultado ou serviço inventado; links internos conferidos."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}
