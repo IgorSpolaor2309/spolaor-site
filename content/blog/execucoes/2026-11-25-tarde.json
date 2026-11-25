@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-25-tarde",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "whatsapp-no-perfil-da-empresa-no-google",
   "inicio": "2026-11-25T18:09:15-03:00",
@@ -132,6 +132,10 @@
     "observacoes": "Subagente revisor: aprovado com correções. Bloqueante corrigido: conclusão sobre comparar a métrica Mensagens com o atendimento (a fonte não diz como cliques no WhatsApp entram na métrica); agora tratada como sinal de interesse, com o aviso do Google de que nem todas as métricas aparecem. Corrigidos também: campo Chat ausente pode ser região ou perfil não verificado; ressalva de até dez dispositivos com Meta Verified; título real da página de performance; trecho literal da página do WhatsApp Business; fonte própria para a regra de links de agendamento; 'costuma ser' trocado por recomendação; chamada reescrita; número de exemplo trocado por padrão genérico."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-25T21:15:36.040Z",
+    "url": "https://blog.spolaortecnologia.com.br/whatsapp-no-perfil-da-empresa-no-google",
+    "commit": "a9a0552334064c1a82f60b8268f2a9d2c864fd19",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
