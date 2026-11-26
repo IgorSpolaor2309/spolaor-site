@@ -1,0 +1,134 @@
+{
+  "turno": "2026-11-26-tarde",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "relatorio-de-performance-perfil-da-empresa-google",
+  "inicio": "2026-11-26T18:09:00-03:00",
+  "fim": "2026-11-26T18:11:57-03:00",
+  "motivo": "A manhã publicou o aviso de privacidade no site (sites/diagnóstico); a busca de novidades da tarde não trouxe mudança com fonte oficial que corrigisse ou complementasse esse artigo, então não coube atualização. Escolhido o item da pauta metricas-perfil-google: dúvida duradoura de operação, sustentada pela ajuda oficial do Google aberta e lida, com serviço principal (consultoria) diferente do artigo da manhã.",
+  "temas": [
+    {
+      "tema": "Relatório de performance do Perfil da Empresa no Google: o que cada métrica mede e o que não diz",
+      "notas": "utilidade 4, servico 4, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Fonte oficial completa em pt-BR; acrescenta como ligar as métricas aos contatos reais; não repete os artigos de Perfil já publicados."
+    },
+    {
+      "tema": "Atualizar o artigo da manhã (aviso de privacidade) com novidade",
+      "notas": "utilidade 3, servico 4, busca 2, original 1",
+      "decisao": "descartado",
+      "motivo": "Nenhuma novidade com fonte oficial encontrada após a manhã; banner de cookies já tratado no artigo da manhã."
+    },
+    {
+      "tema": "Informações obrigatórias na loja virtual (Decreto 7.962/2013)",
+      "notas": "utilidade 4, servico 4, busca 3, original 2",
+      "decisao": "adiado",
+      "motivo": "Sobreposição grande com o artigo de direito de arrependimento de 24/11, que já usa o Decreto 7.962."
+    },
+    {
+      "tema": "Mudanças recentes no Perfil da Empresa (formulário único de recurso, links de reserva)",
+      "notas": "utilidade 3, servico 3, busca 3, original 2",
+      "decisao": "descartado",
+      "motivo": "Só fontes secundárias de agências; nenhuma página oficial aberta que confirme."
+    },
+    {
+      "tema": "Pix no WhatsApp / fim de transferência por cartão de débito",
+      "notas": "utilidade 2, servico 2, busca 2, original 1",
+      "decisao": "descartado",
+      "motivo": "Notícias de 2024; sem novidade atual."
+    }
+  ],
+  "pesquisas": [
+    "novidade novembro 2026 WhatsApp Business Pix Google Perfil da Empresa ANPD pequenas empresas (standard)",
+    "Decreto 7.962/2013 informações obrigatórias loja virtual endereço CNPJ site comércio eletrônico (standard)",
+    "Google Business Profile performance metrics help interações perfil da empresa métricas de performance ajuda (standard)",
+    "Google Business Profile update November 2026 (extended)"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://support.google.com/business/answer/9918094?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração de texto do HTML",
+      "observacao": "Página inteira lida (métricas, caminhos, download)."
+    },
+    {
+      "url": "https://support.google.com/analytics/answer/10917952?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração de texto do HTML",
+      "observacao": "Seções de parâmetros UTM e práticas recomendadas lidas."
+    },
+    {
+      "url": "https://support.google.com/business/answer/9918094?hl=en",
+      "lida": true,
+      "como": "curl + extração de texto",
+      "observacao": "Versão em inglês conferida; não traz a menção a '6 meses' vista em resultado de busca; não usada."
+    },
+    {
+      "url": "https://support.google.com/business/answer/13769188?hl=pt-BR",
+      "lida": true,
+      "como": "curl + extração de texto",
+      "observacao": "Diretrizes de links de empresa; não trata do link do site nem de UTM; não usada."
+    },
+    {
+      "url": "https://tecnoblog.net/comunidade/t/exclusivo-whatsapp-brasileiro-perde-funcao-financeira-em-dezembro/140710",
+      "lida": true,
+      "como": "WebFetch",
+      "observacao": "Notícia de 25/11/2024; antiga; não usada."
+    }
+  ],
+  "fontesNaoAbertas": [
+    {
+      "url": "https://seoforum.com/news/google-finishes-its-november-2026-core-update-and-ships-several-search-profiles-and-ads",
+      "motivo": "Fonte secundária; tema descartado; não usada."
+    }
+  ],
+  "afirmacoes": [
+    {
+      "afirmacao": "Dados de performance só para perfis verificados, com login na conta associada",
+      "fonte": "https://support.google.com/business/answer/9918094?hl=pt-BR",
+      "trecho": "Os dados de performance estão disponíveis somente para Perfis de Empresas verificados."
+    },
+    {
+      "afirmacao": "Só aparecem as métricas aplicáveis; definições de cada métrica",
+      "fonte": "https://support.google.com/business/answer/9918094?hl=pt-BR",
+      "trecho": "Importante: somente métricas aplicáveis à sua empresa aparecem. Nem todas as métricas estão disponíveis para você."
+    },
+    {
+      "afirmacao": "Visualizações contam visitantes únicos, uma vez por dia",
+      "fonte": "https://support.google.com/business/answer/9918094?hl=pt-BR",
+      "trecho": "A métrica contabiliza o número de visitantes únicos que acessaram seu perfil. [...] Uma pessoa só pode ser contabilizada uma vez por dia."
+    },
+    {
+      "afirmacao": "Pesquisas atualizada no início do mês, até 5 dias",
+      "fonte": "https://support.google.com/business/answer/9918094?hl=pt-BR",
+      "trecho": "A métrica \"Pesquisas\" é atualizada no início de cada mês. As informações podem levar até 5 dias para aparecer."
+    },
+    {
+      "afirmacao": "Dados incluem orgânico e Google Ads",
+      "fonte": "https://support.google.com/business/answer/9918094?hl=pt-BR",
+      "trecho": "Os dados de performance incluem visualizações, pesquisas e ações originadas dos resultados de pesquisa orgânica e do Google Ads."
+    },
+    {
+      "afirmacao": "Chamadas = cliques no botão; exige telefone",
+      "fonte": "https://support.google.com/business/answer/9918094?hl=pt-BR",
+      "trecho": "Chamadas: o número de vezes que um cliente clicou no botão de chamada no seu Perfil da Empresa. Adicione seu número de telefone para acompanhar essa métrica."
+    },
+    {
+      "afirmacao": "Agendamentos só com provedor",
+      "fonte": "https://support.google.com/business/answer/9918094?hl=pt-BR",
+      "trecho": "Para receber dados dessa métrica, seus agendamentos precisam ser gerenciados por um provedor."
+    },
+    {
+      "afirmacao": "UTM identifica origem no relatório de aquisição; usar sempre source, medium, campaign",
+      "fonte": "https://support.google.com/analytics/answer/10917952?hl=pt-BR",
+      "trecho": "Ao adicionar parâmetros a um URL, você deve usar sempre utm_source, utm_medium e utm_campaign."
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Subagente revisor conferiu todas as afirmações contra o texto extraído das fontes e aprovou; apontou 5 ajustes de baixa gravidade. Corrigidos: título 'Rotas tiram duplicidades' (virou 'Rotas contam pedidos únicos'), inferência sobre link próprio de agendamento marcada como provável e sem 'integrado', frase de visualizações aproximada da fonte. Não aplicados (opcionais): nota sobre '***' na planilha e frase sobre minúsculas na UTM."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}
