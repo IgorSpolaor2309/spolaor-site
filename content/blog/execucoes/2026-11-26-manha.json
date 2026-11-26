@@ -1,0 +1,131 @@
+{
+  "turno": "2026-11-26-manha",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "aviso-de-privacidade-no-site-da-empresa",
+  "inicio": "2026-11-26T08:06:54-03:00",
+  "fim": "2026-11-26T08:11:22-03:00",
+  "motivo": "Item da pauta aviso-de-privacidade-site: dúvida duradoura de quem tem site e recebe contatos, sustentada só por fontes oficiais (LGPD, Resolução CD/ANPD nº 2/2022 e guia de cookies da ANPD), todas abertas e lidas. Serviço principal (sites/diagnóstico) diferente do artigo anterior (atendimento). A busca de novidades não trouxe mudança recente com fonte oficial.",
+  "temas": [
+    {
+      "tema": "Aviso de privacidade no site da pequena empresa: o que a LGPD pede e onde colocar",
+      "notas": "utilidade 4, servico 5, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Fontes oficiais completas; junta art. 9º, regra de pequeno porte e guia de cookies num roteiro prático; serviço diferente do artigo anterior."
+    },
+    {
+      "tema": "Orçamentos enviados e sem resposta: como organizar o retorno",
+      "notas": "utilidade 4, servico 4, busca 3, original 2",
+      "decisao": "adiado",
+      "motivo": "Sem fonte primária que acrescente algo além de opinião."
+    },
+    {
+      "tema": "Cliente pediu os próprios dados pela LGPD: como atender no prazo",
+      "notas": "utilidade 4, servico 4, busca 3, original 3",
+      "decisao": "adiado",
+      "motivo": "Prazo do art. 18 depende de regulamentação não localizada nesta execução; parte do assunto já foi tratada no artigo de planilha ou CRM de 25/11."
+    },
+    {
+      "tema": "Pagamentos com Pix no WhatsApp para lojistas",
+      "notas": "utilidade 3, servico 2, busca 3, original 2",
+      "decisao": "descartado",
+      "motivo": "Resultados só de 2024 e de veículos secundários; nenhuma novidade com página oficial aberta; atendimento foi o serviço do artigo anterior."
+    }
+  ],
+  "pesquisas": [
+    "novidade novembro 2026 Perfil da Empresa Google WhatsApp Business Pix LGPD ANPD pequenas empresas (standard)",
+    "aviso de privacidade site pequena empresa LGPD art. 9 o que informar ANPD guia (standard)",
+    "ANPD novembro 2026 resolução agentes de pequeno porte alteração (extended)",
+    "ANPD guia orientativo cookies e proteção de dados pessoais pdf gov.br (standard)"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm",
+      "lida": true,
+      "como": "curl (--http1.1, após duas tentativas com resposta vazia) + extração de texto do HTML",
+      "observacao": "Arts. 6º (IV, VI), 9º, 18 e 41 lidos."
+    },
+    {
+      "url": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "lida": true,
+      "como": "curl + extração de texto do HTML",
+      "observacao": "Texto vigente (alterado pela Res. 15/2024); arts. 2º, 3º, 4º, 6º, 7º e 11 lidos."
+    },
+    {
+      "url": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-cookies-e-protecao-de-dados-pessoais.pdf",
+      "lida": true,
+      "como": "curl da página oficial e do PDF (@@download/file) + pdftotext",
+      "observacao": "Guia v. out/2022; seções de políticas de cookies, banners, bases legais e exemplo 7 lidas."
+    }
+  ],
+  "fontesNaoAbertas": [
+    {
+      "url": "https://www.gov.br/governodigital/pt-br/privacidade-e-seguranca/ppsi-2.0/arquivos/guia-para-elaboracao-de-avisos-de-privacidade-v1-0-17062026.pdf",
+      "motivo": "Não aberto; voltado a órgãos públicos; não usado."
+    }
+  ],
+  "afirmacoes": [
+    {
+      "afirmacao": "O titular tem direito a acesso facilitado, claro, adequado e ostensivo a 7 itens (finalidade, forma e duração, identificação e contato do controlador, uso compartilhado, responsabilidades, direitos do art. 18)",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm",
+      "trecho": "Art. 9º O titular tem direito ao acesso facilitado às informações sobre o tratamento de seus dados, que deverão ser disponibilizadas de forma clara, adequada e ostensiva"
+    },
+    {
+      "afirmacao": "Se o tratamento for condição para o produto ou serviço, informar com destaque",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm",
+      "trecho": "Quando o tratamento de dados pessoais for condição para o fornecimento de produto ou de serviço ou para o exercício de direito, o titular será informado com destaque sobre esse fato"
+    },
+    {
+      "afirmacao": "Direitos do art. 18 (confirmação, acesso, correção, eliminação, compartilhamento, revogação)",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm",
+      "trecho": "Art. 18. O titular dos dados pessoais tem direito a obter do controlador, em relação aos dados do titular por ele tratados, a qualquer momento e mediante requisição: I - confirmação da existência de tratamento; II - acesso aos dados;"
+    },
+    {
+      "afirmacao": "Contato do encarregado divulgado preferencialmente no site",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm",
+      "trecho": "A identidade e as informações de contato do encarregado deverão ser divulgadas publicamente, de forma clara e objetiva, preferencialmente no sítio eletrônico do controlador."
+    },
+    {
+      "afirmacao": "Pequeno porte deve informar conforme arts. 9º e 18 por meio eletrônico, impresso ou outro",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "trecho": "Art. 7º Os agentes de tratamento de pequeno porte devem disponibilizar informações sobre o tratamento de dados pessoais e atender às requisições dos titulares em conformidade com o disposto nos arts. 9º e 18 da LGPD"
+    },
+    {
+      "afirmacao": "Encarregado não obrigatório; sem ele, canal obrigatório",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "trecho": "O agente de tratamento de pequeno porte que não indicar um encarregado deve disponibilizar um canal de comunicação com o titular de dados"
+    },
+    {
+      "afirmacao": "Alto risco exclui da regra simplificada; exige critério geral e específico",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "trecho": "será considerado de alto risco o tratamento de dados pessoais que atender cumulativamente a pelo menos um critério geral e um critério específico"
+    },
+    {
+      "afirmacao": "Política de cookies pode ser seção do aviso, página separada ou banner",
+      "fonte": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-cookies-e-protecao-de-dados-pessoais.pdf",
+      "trecho": "a Política de Cookies pode ser apresentada: (i) como uma seção específica do Aviso de Privacidade; (ii) em um local específico e separado; ou (iii) no próprio banner de cookies."
+    },
+    {
+      "afirmacao": "Informar cookies só no aviso de privacidade pode não ser suficiente",
+      "fonte": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-cookies-e-protecao-de-dados-pessoais.pdf",
+      "trecho": "disponibilizar informações sobre cookies somente por meio da Política de Privacidade pode não ser suficiente, pois o titular de dados nem sempre irá consultar a página da Política de Privacidade de um site."
+    },
+    {
+      "afirmacao": "Boas práticas do banner: botão para rejeitar não necessários, categorias, consentimento por finalidade, desativados por padrão",
+      "fonte": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-cookies-e-protecao-de-dados-pessoais.pdf",
+      "trecho": "Disponibilizar botão que permita rejeitar todos os cookies não necessários, de fácil visualização, nos banners de primeiro e segundo nível."
+    },
+    {
+      "afirmacao": "Consentimento não apropriado para cookies estritamente necessários; legítimo interesse pode ser",
+      "fonte": "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-cookies-e-protecao-de-dados-pessoais.pdf",
+      "trecho": "não é apropriado utilizar a hipótese legal do consentimento nas hipóteses de cookies estritamente necessários."
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Subagente conferiu as afirmações contra o texto extraído das fontes; todas com suporte e trechos literais. Apontou: descrição do diagnóstico de site além de servicos.json (corrigida para o resumo oficial do serviço); CNPJ apresentado como exigência da lei (virou recomendação); transparência atribuída ao art. 9º (separado); 'flexibilização' soando como texto da norma (reescrito); alto risco simplificado (acrescentados critérios cumulativos); 'jeito mais comum' sem fonte (trocado por 'forma usual'). Antes da revisão, retirada a promessa de que os sites da Spolaor já incluem aviso e banner (não consta em servicos.json)."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}
