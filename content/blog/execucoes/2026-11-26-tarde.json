@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-26-tarde",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "relatorio-de-performance-perfil-da-empresa-google",
   "inicio": "2026-11-26T18:09:00-03:00",
@@ -129,6 +129,10 @@
     "observacoes": "Subagente revisor conferiu todas as afirmações contra o texto extraído das fontes e aprovou; apontou 5 ajustes de baixa gravidade. Corrigidos: título 'Rotas tiram duplicidades' (virou 'Rotas contam pedidos únicos'), inferência sobre link próprio de agendamento marcada como provável e sem 'integrado', frase de visualizações aproximada da fonte. Não aplicados (opcionais): nota sobre '***' na planilha e frase sobre minúsculas na UTM."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-26T21:12:56.687Z",
+    "url": "https://blog.spolaortecnologia.com.br/relatorio-de-performance-perfil-da-empresa-google",
+    "commit": "13106178bfdb7bbcc391dcb7abae908c662da1d7",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
