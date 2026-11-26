@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-26-manha",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "aviso-de-privacidade-no-site-da-empresa",
   "inicio": "2026-11-26T08:06:54-03:00",
@@ -126,6 +126,10 @@
     "observacoes": "Subagente conferiu as afirmações contra o texto extraído das fontes; todas com suporte e trechos literais. Apontou: descrição do diagnóstico de site além de servicos.json (corrigida para o resumo oficial do serviço); CNPJ apresentado como exigência da lei (virou recomendação); transparência atribuída ao art. 9º (separado); 'flexibilização' soando como texto da norma (reescrito); alto risco simplificado (acrescentados critérios cumulativos); 'jeito mais comum' sem fonte (trocado por 'forma usual'). Antes da revisão, retirada a promessa de que os sites da Spolaor já incluem aviso e banner (não consta em servicos.json)."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-26T11:12:25.052Z",
+    "url": "https://blog.spolaortecnologia.com.br/aviso-de-privacidade-no-site-da-empresa",
+    "commit": "1eeb63cf8a7244c6776e501b5d60dfc11f5bc55e",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
