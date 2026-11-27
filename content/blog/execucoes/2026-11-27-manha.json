@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-27-manha",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "cliente-pediu-os-proprios-dados-lgpd",
   "inicio": "2026-11-27T08:06:53-03:00",
@@ -144,6 +144,10 @@
     "observacoes": "Subagente conferiu as 7 afirmações principais contra o texto das fontes: todas confirmadas, trechos literais. Corrigido: nome do órgão (Agência, não Autoridade, conforme art. 55-A da LGPD compilada); frases de experiência/generalização sem fonte reescritas como hipótese ou recomendação; definição de agente de pequeno porte completada; limite da LC 182 para startups; 'ainda não publicada' trocado por 'não encontramos na lista consultada'; contagem de prazo restrita à declaração completa; incluída a 3ª atividade do Tema 1 da Res. 30; ressalva de relação de consumo. Aviso do revisor, fora do escopo desta execução: os artigos aviso-de-privacidade-no-site-da-empresa e planilha-de-clientes-ou-crm-quando-trocar usam 'Autoridade Nacional de Proteção de Dados'."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-27T11:13:15.488Z",
+    "url": "https://blog.spolaortecnologia.com.br/cliente-pediu-os-proprios-dados-lgpd",
+    "commit": "847138a85e23a48305c0bd9397f74d5bf4f74d69",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
