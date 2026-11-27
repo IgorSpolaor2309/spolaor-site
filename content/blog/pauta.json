@@ -236,8 +236,8 @@
       "id": "pedido-do-titular-lgpd",
       "servico": "sistemas",
       "pergunta": "Cliente pediu os próprios dados pela LGPD: como a pequena empresa encontra, entrega ou apaga tudo dentro do prazo (conferir prazos na LGPD e na regulamentação da ANPD antes de escrever)",
-      "situacao": "ideia",
-      "slug": null
+      "situacao": "usado",
+      "slug": "cliente-pediu-os-proprios-dados-lgpd"
     },
     {
       "id": "aviso-de-privacidade-site",
@@ -264,6 +264,13 @@
       "id": "origem-dos-contatos",
       "servico": "sistemas",
       "pergunta": "Como registrar de onde veio cada contato (Google, Instagram, indicação) na planilha ou no CRM sem dar trabalho à equipe",
+      "situacao": "ideia",
+      "slug": null
+    },
+    {
+      "id": "descadastro-promocoes-whatsapp",
+      "servico": "automacao",
+      "pergunta": "Cliente pediu para sair da lista de promoções: como registrar a revogação do consentimento e garantir que ninguém da equipe volte a enviar (conferir art. 8º, § 5º, e art. 18, IX, da LGPD)",
       "situacao": "ideia",
       "slug": null
     }

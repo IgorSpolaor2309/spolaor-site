@@ -1,0 +1,149 @@
+{
+  "turno": "2026-11-27-manha",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "cliente-pediu-os-proprios-dados-lgpd",
+  "inicio": "2026-11-27T08:06:53-03:00",
+  "fim": "2026-11-27T08:12:16-03:00",
+  "motivo": "Item da pauta pedido-do-titular-lgpd: dúvida de operação real (o que fazer quando o cliente pede os próprios dados), sustentada por fontes oficiais abertas e lidas (LGPD, Res. CD/ANPD 2/2022, página e lista de regulamentações da ANPD, Res. CD/ANPD 30/2025). Serviço principal (sistemas) diferente do artigo anterior (consultoria). Complementa, sem repetir, o artigo de ontem sobre aviso de privacidade.",
+  "temas": [
+    {
+      "tema": "Cliente pediu os próprios dados pela LGPD: prazos e como responder",
+      "notas": "utilidade 5, servico 4, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Fontes oficiais completas; acrescenta a conta dos prazos para agentes de pequeno porte e um roteiro de atendimento ligado a CRM/sistemas."
+    },
+    {
+      "tema": "Informações obrigatórias na loja virtual (Decreto 7.962/2013, art. 2º)",
+      "notas": "utilidade 4, servico 4, busca 4, original 1",
+      "decisao": "descartado",
+      "motivo": "Já tratado nos artigos vender-pelo-whatsapp-ou-loja-virtual-quando-mudar e cliente-desistiu-da-compra-online-direito-de-arrependimento."
+    },
+    {
+      "tema": "Banner de cookies: como conferir se permite recusar",
+      "notas": "utilidade 4, servico 4, busca 3, original 2",
+      "decisao": "descartado",
+      "motivo": "Boa parte já coberta no artigo de ontem (aviso de privacidade) e seria o segundo texto seguido do mesmo assunto."
+    },
+    {
+      "tema": "Janela de 7 dias sem cobrança em anúncio que leva ao WhatsApp",
+      "notas": "utilidade 4, servico 4, busca 3, original 3",
+      "decisao": "adiado",
+      "motivo": "Atendimento já apareceu muito na semana; fica na pauta."
+    },
+    {
+      "tema": "Novidades recentes de WhatsApp/Google/Pix",
+      "notas": "utilidade 2, servico 2, busca 2, original 1",
+      "decisao": "descartado",
+      "motivo": "Busca não trouxe mudança recente com fonte oficial relevante para os clientes."
+    }
+  ],
+  "pesquisas": [
+    "novidades novembro 2026 WhatsApp Business Google Perfil da Empresa Pix pequenas empresas",
+    "Decreto 7.962 2013 informações obrigatórias site loja virtual CNPJ endereço",
+    "ANPD guia orientativo cookies proteção de dados banner rejeitar",
+    "ANPD regulamento direitos dos titulares 2026 resolução prazo atendimento (extended)",
+    "Resolução CD/ANPD nº 2 2022 agentes de pequeno porte prazo em dobro solicitações titulares art. 14"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm",
+      "lida": true,
+      "como": "curl --http1.1 (várias tentativas com resposta vazia antes) + extração de texto do HTML",
+      "observacao": "Arts. 5º, 16, 18, 19, 20, 41 e 55-A lidos."
+    },
+    {
+      "url": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "lida": true,
+      "como": "curl + extração de texto do HTML",
+      "observacao": "Texto vigente lido integralmente (arts. 1º a 16)."
+    },
+    {
+      "url": "https://www.gov.br/anpd/pt-br/assuntos/titular-de-dados-1/direito-dos-titulares",
+      "lida": true,
+      "como": "curl + extração de texto do HTML",
+      "observacao": "Página inteira lida."
+    },
+    {
+      "url": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd",
+      "lida": true,
+      "como": "curl + extração de texto do HTML",
+      "observacao": "Lista de resoluções lida: não há regulamento específico de atendimento dos direitos dos titulares."
+    },
+    {
+      "url": "https://www.in.gov.br/web/dou/-/resolucao-cd/anpd-n-30-de-23-de-dezembro-de-2025-677947163",
+      "lida": true,
+      "como": "curl + extração de texto do HTML",
+      "observacao": "Arts. 1º a 4º e Tema 1 do Anexo lidos."
+    }
+  ],
+  "fontesNaoAbertas": [
+    {
+      "url": "https://confidata.com.br/blog/resolucoes-anpd-dpo-2026",
+      "motivo": "Só resultado de busca; não usada."
+    },
+    {
+      "url": "https://baptistaluz.com.br/wp-content/uploads/2025/10/RA_Guia_de_direitos_dos_titulares_2a-edicao_2025_v3-1.pdf",
+      "motivo": "Só resultado de busca; não usada."
+    }
+  ],
+  "afirmacoes": [
+    {
+      "afirmacao": "Declaração clara e completa em até 15 dias; formato simplificado imediatamente",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm",
+      "trecho": "I - em formato simplificado, imediatamente; ou II - por meio de declaração clara e completa, que indique a origem dos dados, a inexistência de registro, os critérios utilizados e a finalidade do tratamento, observados os segredos comercial e industrial, fornecida no prazo de até 15 (quinze) dias"
+    },
+    {
+      "afirmacao": "Pedido atendido sem custos, nos prazos do regulamento",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm",
+      "trecho": "§ 5º O requerimento referido no § 3º deste artigo será atendido sem custos para o titular, nos prazos e nos termos previstos em regulamento."
+    },
+    {
+      "afirmacao": "Resposta quando não é possível atender de imediato",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm",
+      "trecho": "II - indicar as razões de fato ou de direito que impedem a adoção imediata da providência."
+    },
+    {
+      "afirmacao": "Comunicar quem recebeu os dados",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm",
+      "trecho": "O responsável deverá informar, de maneira imediata, aos agentes de tratamento com os quais tenha realizado uso compartilhado de dados a correção, a eliminação, a anonimização ou o bloqueio dos dados"
+    },
+    {
+      "afirmacao": "Conservação por obrigação legal",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709compilado.htm",
+      "trecho": "I - cumprimento de obrigação legal ou regulatória pelo controlador;"
+    },
+    {
+      "afirmacao": "Pequeno porte: 15 dias para declaração simplificada",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "trecho": "Art. 15. Os agentes de tratamento de pequeno porte podem fornecer a declaração simplificada de que trata o art. 19, I, da LGPD no prazo de até quinze dias"
+    },
+    {
+      "afirmacao": "Pequeno porte: prazo em dobro para declaração completa e para solicitações do art. 18 (nos termos de regulamentação específica)",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "trecho": "Art. 14. Aos agentes de tratamento de pequeno porte será concedido prazo em dobro: I - no atendimento das solicitações dos titulares referentes ao tratamento de seus dados pessoais, conforme previsto no art. 18, §§ 3º e 5º da LGPD, nos termos de regulamentação específica"
+    },
+    {
+      "afirmacao": "Exclusões (receita, grupo, alto risco) e critérios de alto risco",
+      "fonte": "https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022",
+      "trecho": "I - realizem tratamento de alto risco para os titulares, ressalvada a hipótese prevista no art. 8º; II - aufiram receita bruta superior ao limite estabelecido no art. 3º, II, da Lei Complementar nº 123, de 2006"
+    },
+    {
+      "afirmacao": "Prazos serão estabelecidos em regulamento da ANPD",
+      "fonte": "https://www.gov.br/anpd/pt-br/assuntos/titular-de-dados-1/direito-dos-titulares",
+      "trecho": "Os prazos para atendimento dos seus pedidos serão estabelecidos em regulamento pela ANPD."
+    },
+    {
+      "afirmacao": "Direitos dos titulares é o tema 1 do mapa 2026-2027, com 25 atividades de fiscalização",
+      "fonte": "https://www.in.gov.br/web/dou/-/resolucao-cd/anpd-n-30-de-23-de-dezembro-de-2025-677947163",
+      "trecho": "Tema 1: Direitos dos Titulares Realizar ações de fiscalização que protejam e promovam os direitos dos titulares"
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Subagente conferiu as 7 afirmações principais contra o texto das fontes: todas confirmadas, trechos literais. Corrigido: nome do órgão (Agência, não Autoridade, conforme art. 55-A da LGPD compilada); frases de experiência/generalização sem fonte reescritas como hipótese ou recomendação; definição de agente de pequeno porte completada; limite da LC 182 para startups; 'ainda não publicada' trocado por 'não encontramos na lista consultada'; contagem de prazo restrita à declaração completa; incluída a 3ª atividade do Tema 1 da Res. 30; ressalva de relação de consumo. Aviso do revisor, fora do escopo desta execução: os artigos aviso-de-privacidade-no-site-da-empresa e planilha-de-clientes-ou-crm-quando-trocar usam 'Autoridade Nacional de Proteção de Dados'."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}
