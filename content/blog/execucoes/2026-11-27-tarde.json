@@ -1,6 +1,6 @@
 {
   "turno": "2026-11-27-tarde",
-  "situacao": "enviado",
+  "situacao": "publicado",
   "acao": "novo",
   "artigo": "orcamento-enviado-sem-resposta-como-organizar-o-retorno",
   "inicio": "2026-11-27T18:09:14-03:00",
@@ -119,6 +119,10 @@
     "observacoes": "Subagente conferiu as afirmações contra o texto das fontes e reabriu as páginas: CDC e guia do WhatsApp confirmados, trechos literais. Corrigido: abertura generalizada ('quase nunca é um não') virou hipótese/recomendação; afirmação sem fonte de que a lista não avisa a data reescrita como recomendação; art. 30 descrito com as palavras da lei e marcado como leitura nossa; §3º citado literalmente; validade restrita ao valor; 'por extenso' corrigido; descrição com ressalva 'quando nada é combinado'."
   },
   "verificacao": {
-    "situacao": "pendente"
+    "situacao": "ok",
+    "em": "2026-11-27T21:14:58.330Z",
+    "url": "https://blog.spolaortecnologia.com.br/orcamento-enviado-sem-resposta-como-organizar-o-retorno",
+    "commit": "ec2de12983475f90294f5231d5ca6e8d79e2f83e",
+    "detalhes": "Página no ar com título, canonical, sem noindex e no sitemap."
   }
 }
