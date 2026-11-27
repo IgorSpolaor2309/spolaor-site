@@ -1,0 +1,124 @@
+{
+  "turno": "2026-11-27-tarde",
+  "situacao": "enviado",
+  "acao": "novo",
+  "artigo": "orcamento-enviado-sem-resposta-como-organizar-o-retorno",
+  "inicio": "2026-11-27T18:09:14-03:00",
+  "fim": "2026-11-27T18:14:11-03:00",
+  "motivo": "O artigo da manhã (pedido do titular pela LGPD) não tinha novidade a corrigir ou complementar: a busca não encontrou regulamento novo da ANPD sobre direitos dos titulares (agenda regulatória segue 'em andamento'). Escolhido o item da pauta orcamento-sem-retorno (automação), dúvida duradoura de operação, com ângulo próprio na validade de 10 dias do orçamento (CDC, art. 40), lida no texto oficial. Serviço principal diferente do artigo anterior (sistemas).",
+  "temas": [
+    {
+      "tema": "Orçamento enviado e sem resposta: retorno antes da validade (CDC art. 40)",
+      "notas": "utilidade 5, servico 5, busca 4, original 4",
+      "decisao": "escolhido",
+      "motivo": "Fonte oficial lida; liga a regra do CDC a um roteiro de acompanhamento e ao serviço de automação."
+    },
+    {
+      "tema": "Atualizar o artigo da manhã com regulamento de direitos dos titulares",
+      "notas": "utilidade 4, servico 4, busca 3, original 2",
+      "decisao": "descartado",
+      "motivo": "Não há regulamento publicado; nada a corrigir ou complementar."
+    },
+    {
+      "tema": "Ofertas/links de terceiros no Perfil da Empresa no Google",
+      "notas": "utilidade 3, servico 3, busca 3, original 1",
+      "decisao": "descartado",
+      "motivo": "Remoção de links de terceiros já coberta no artigo botao-agendar-perfil-da-empresa-google; página oficial achada trata de pedidos de comida."
+    },
+    {
+      "tema": "Janela gratuita de anúncio que leva ao WhatsApp",
+      "notas": "utilidade 4, servico 4, busca 3, original 1",
+      "decisao": "descartado",
+      "motivo": "Já explicada no artigo whatsapp-api-cobranca-mensagens-de-servico."
+    },
+    {
+      "tema": "Descadastro de promoções no WhatsApp (LGPD)",
+      "notas": "utilidade 4, servico 4, busca 3, original 3",
+      "decisao": "adiado",
+      "motivo": "Seria o terceiro texto seguido sobre LGPD."
+    }
+  ],
+  "pesquisas": [
+    "ANPD regulamento direitos dos titulares novembro 2026",
+    "novidades novembro 2026 WhatsApp Business Pix Google Perfil da Empresa pequenas empresas",
+    "Perfil da Empresa no Google ofertas de terceiros remover links de pedidos provedor ajuda",
+    "faq.whatsapp.com etiquetas WhatsApp Business como usar organizar conversas",
+    "site:faq.whatsapp.com WhatsApp Business listas etiquetas conversas"
+  ],
+  "fontesAbertas": [
+    {
+      "url": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm",
+      "lida": true,
+      "como": "WebFetch",
+      "observacao": "curl recusado pelo servidor (empty reply); lidos arts. 30, 39 VI e 40 via WebFetch."
+    },
+    {
+      "url": "https://whatsappbusiness.com/pt-br/resources/resource-library/staying-organized-smb-using-lists-quick-replies/",
+      "lida": true,
+      "como": "WebFetch",
+      "observacao": "Guia oficial sem data (© 2026)."
+    },
+    {
+      "url": "https://whatsappbusiness.com/pt-br/resources/resource-library/organize-whatsapp-inbox-meta-business-suite/",
+      "lida": true,
+      "como": "WebFetch",
+      "observacao": "Pouco específico; não usado."
+    },
+    {
+      "url": "https://blog.whatsapp.com/focus-on-what-matters-with-custom-lists?lang=pt_br",
+      "lida": true,
+      "como": "WebFetch",
+      "observacao": "Só resumo disponível (31/10/2024); não citado."
+    }
+  ],
+  "fontesNaoAbertas": [
+    {
+      "url": "https://support.google.com/business/answer/10842217?hl=pt-BR",
+      "motivo": "tema descartado antes da leitura; não usada"
+    }
+  ],
+  "afirmacoes": [
+    {
+      "afirmacao": "Orçamento prévio de serviço discrimina mão de obra, materiais e equipamentos, condições de pagamento e datas",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm",
+      "trecho": "O fornecedor de serviço será obrigado a entregar ao consumidor orçamento prévio discriminando o valor da mão-de-obra, dos materiais e equipamentos a serem empregados, as condições de pagamento, bem como as datas de início e término dos serviços."
+    },
+    {
+      "afirmacao": "Validade de 10 dias salvo estipulação em contrário",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm",
+      "trecho": "Salvo estipulação em contrário, o valor orçado terá validade pelo prazo de dez dias, contado de seu recebimento pelo consumidor."
+    },
+    {
+      "afirmacao": "Orçamento aprovado obriga as partes",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm",
+      "trecho": "Uma vez aprovado pelo consumidor, o orçamento obriga os contraentes e somente pode ser alterado mediante livre negociação das partes."
+    },
+    {
+      "afirmacao": "Consumidor não paga serviços de terceiros não previstos",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm",
+      "trecho": "O consumidor não responde por quaisquer ônus ou acréscimos decorrentes da contratação de serviços de terceiros não previstos no orçamento prévio."
+    },
+    {
+      "afirmacao": "Executar serviço sem orçamento e autorização é prática abusiva",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm",
+      "trecho": "executar serviços sem a prévia elaboração de orçamento e autorização expressa do consumidor, ressalvadas as decorrentes de práticas anteriores entre as partes;"
+    },
+    {
+      "afirmacao": "Informação suficientemente precisa obriga o fornecedor e integra o contrato",
+      "fonte": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm",
+      "trecho": "Toda informação ou publicidade, suficientemente precisa, veiculada por qualquer forma ou meio de comunicação com relação a produtos e serviços oferecidos ou apresentados, obriga o fornecedor"
+    },
+    {
+      "afirmacao": "Guia do WhatsApp sugere listas pela jornada do cliente, como 'Precisa de acompanhamento', e respostas rápidas",
+      "fonte": "https://whatsappbusiness.com/pt-br/resources/resource-library/staying-organized-smb-using-lists-quick-replies/",
+      "trecho": "As listas oferecem um jeito simples de classificar as conversas de acordo com o que deve acontecer em seguida."
+    }
+  ],
+  "revisao": {
+    "situacao": "aprovado",
+    "observacoes": "Subagente conferiu as afirmações contra o texto das fontes e reabriu as páginas: CDC e guia do WhatsApp confirmados, trechos literais. Corrigido: abertura generalizada ('quase nunca é um não') virou hipótese/recomendação; afirmação sem fonte de que a lista não avisa a data reescrita como recomendação; art. 30 descrito com as palavras da lei e marcado como leitura nossa; §3º citado literalmente; validade restrita ao valor; 'por extenso' corrigido; descrição com ressalva 'quando nada é combinado'."
+  },
+  "verificacao": {
+    "situacao": "pendente"
+  }
+}

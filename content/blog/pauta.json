@@ -68,8 +68,8 @@
       "id": "orcamento-sem-retorno",
       "servico": "automacao",
       "pergunta": "Orçamentos enviados e sem resposta: como organizar o retorno",
-      "situacao": "ideia",
-      "slug": null
+      "situacao": "usado",
+      "slug": "orcamento-enviado-sem-resposta-como-organizar-o-retorno"
     },
     {
       "id": "ia-whatsapp-limites",
@@ -271,6 +271,13 @@
       "id": "descadastro-promocoes-whatsapp",
       "servico": "automacao",
       "pergunta": "Cliente pediu para sair da lista de promoções: como registrar a revogação do consentimento e garantir que ninguém da equipe volte a enviar (conferir art. 8º, § 5º, e art. 18, IX, da LGPD)",
+      "situacao": "ideia",
+      "slug": null
+    },
+    {
+      "id": "validade-e-aprovacao-do-orcamento",
+      "servico": "sistemas",
+      "pergunta": "Orçamento aprovado pelo WhatsApp vale? Como registrar a aprovação do cliente e as mudanças depois dela (conferir art. 40 e art. 39, VI, do CDC)",
       "situacao": "ideia",
       "slug": null
     }
